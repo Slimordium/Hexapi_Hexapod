@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ namespace HexapiBackground
     sealed class XboxController
     {
         /*
+        Leaving in for future use, probably gait and nom gait speed.
         * Buttons Boolean ID's mapped to 0-9 array
         * A - 5 
         * B - 6
@@ -31,7 +33,6 @@ namespace HexapiBackground
         private ControllerVector _leftStickDirectionVector = new ControllerVector();
         private ControllerVector _rightStickDirectionVector = new ControllerVector();
         private ControllerVector _dpadDirectionVector = new ControllerVector();
-        private int[] _lastButtons = new int[10];
 
         private int _leftTrigger;
         private int _rightTrigger;
@@ -57,80 +58,68 @@ namespace HexapiBackground
         /// <param name="args">InputReport received from the XboxController</param>
         private void InputReportReceived(HidDevice sender, HidInputReportReceivedEventArgs args)
         {
-            //Task.Factory.StartNew(() =>
-            //{
-                var dPad = (int) args.Report.GetNumericControl(0x01, 0x39).Value;
+            var dPad = (int) args.Report.GetNumericControl(0x01, 0x39).Value;
 
-                var lstickX = args.Report.GetNumericControl(0x01, 0x30).Value - 32768;
-                var lstickY = args.Report.GetNumericControl(0x01, 0x31).Value - 32768;
+            var lstickX = args.Report.GetNumericControl(0x01, 0x30).Value - 32768;
+            var lstickY = args.Report.GetNumericControl(0x01, 0x31).Value - 32768;
 
-                var rstickX = args.Report.GetNumericControl(0x01, 0x33).Value - 32768;
-                var rstickY = args.Report.GetNumericControl(0x01, 0x34).Value - 32768;
+            var rstickX = args.Report.GetNumericControl(0x01, 0x33).Value - 32768;
+            var rstickY = args.Report.GetNumericControl(0x01, 0x34).Value - 32768;
 
-                var lt = (int)Math.Max(0, args.Report.GetNumericControl(0x01, 0x32).Value - 32768);
-                var rt = (int)Math.Max(0, (-1)*(args.Report.GetNumericControl(0x01, 0x32).Value - 32768));
+            var lt = (int)Math.Max(0, args.Report.GetNumericControl(0x01, 0x32).Value - 32768);
+            var rt = (int)Math.Max(0, (-1)*(args.Report.GetNumericControl(0x01, 0x32).Value - 32768));
 
-                if (_leftTrigger != lt)
-                {
-                    LeftTriggerChanged?.Invoke(lt);
-                    _leftTrigger = lt;
-                }
+            if (_leftTrigger != lt)
+            {
+                LeftTriggerChanged?.Invoke(lt);
+                _leftTrigger = lt;
+            }
 
-                if (_rightTrigger != rt)
-                {
-                    RightTriggerChanged?.Invoke(rt);
-                    _rightTrigger = rt;
-                }
+            if (_rightTrigger != rt)
+            {
+                RightTriggerChanged?.Invoke(rt);
+                _rightTrigger = rt;
+            }
 
-                var lStickMagnitude = GetMagnitude(lstickX, lstickY);
-                var rStickMagnitude = GetMagnitude(rstickX, rstickY);
+            var lStickMagnitude = GetMagnitude(lstickX, lstickY);
+            var rStickMagnitude = GetMagnitude(rstickX, rstickY);
 
-                var vector = new ControllerVector
-                {
-                    Direction = CoordinatesToDirection(lstickX, lstickY),
-                    Magnitude = lStickMagnitude
-                };
+            var vector = new ControllerVector
+            {
+                Direction = CoordinatesToDirection(lstickX, lstickY),
+                Magnitude = lStickMagnitude
+            };
 
-                if (!_leftStickDirectionVector.Equals(vector) && LeftDirectionChanged != null)
-                {
-                    _leftStickDirectionVector = vector;
-                    LeftDirectionChanged(_leftStickDirectionVector);
-                }
+            if (!_leftStickDirectionVector.Equals(vector) && LeftDirectionChanged != null)
+            {
+                _leftStickDirectionVector = vector;
+                LeftDirectionChanged(_leftStickDirectionVector);
+            }
 
-                vector = new ControllerVector
-                {
-                    Direction = CoordinatesToDirection(rstickX, rstickY),
-                    Magnitude = rStickMagnitude
-                };
+            vector = new ControllerVector
+            {
+                Direction = CoordinatesToDirection(rstickX, rstickY),
+                Magnitude = rStickMagnitude
+            };
 
-                if (!_rightStickDirectionVector.Equals(vector) && RightDirectionChanged != null)
-                {
-                    _rightStickDirectionVector = vector;
-                    RightDirectionChanged(_rightStickDirectionVector);
-                }
+            if (!_rightStickDirectionVector.Equals(vector) && RightDirectionChanged != null)
+            {
+                _rightStickDirectionVector = vector;
+                RightDirectionChanged(_rightStickDirectionVector);
+            }
 
-                vector = new ControllerVector
-                {
-                    Direction = (ControllerDirection) dPad,
-                    Magnitude = 10000
-                };
+            vector = new ControllerVector
+            {
+                Direction = (ControllerDirection) dPad,
+                Magnitude = 10000
+            };
 
-                if (!_dpadDirectionVector.Equals(vector) && DpadDirectionChanged != null)
-                {
-                    _dpadDirectionVector = vector;
-                    DpadDirectionChanged(vector);
-                }
-            //});
-            //_buttons = new [] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //foreach (var btn in args.Report.ActivatedBooleanControls)
-            //    _buttons[btn.Id - 5] = 1;
-
-            //if (!_lastButtons.Equals(_buttons) && ButtonChanged != null)
-            //{
-            //    _lastButtons = _buttons;
-            //    ButtonChanged(_buttons);
-            //}
+            if (!_dpadDirectionVector.Equals(vector) && DpadDirectionChanged != null)
+            {
+                _dpadDirectionVector = vector;
+                DpadDirectionChanged(vector);
+            }
+            
         }
 
         /// <summary>
@@ -198,13 +187,12 @@ namespace HexapiBackground
 
         public event DirectionChangedHandler DpadDirectionChanged;
 
-        public event ButtonChangedHandler ButtonChanged;
-
         public event TriggerChangedHandler LeftTriggerChanged;
 
         public event TriggerChangedHandler RightTriggerChanged;
     }
 
+    [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
     sealed class ControllerVector
     {
         public ControllerVector()
@@ -239,9 +227,9 @@ namespace HexapiBackground
             // disable overflow
             unchecked
             {
-                int hash = 27;
-                hash = (13 * hash) + this.Direction.GetHashCode();
-                hash = (13 * hash) + this.Magnitude.GetHashCode();
+                var hash = 27;
+                hash = (13 * hash) + Direction.GetHashCode();
+                hash = (13 * hash) + Magnitude.GetHashCode();
                 return hash;
             }
         }

@@ -1,105 +1,24 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using Windows.ApplicationModel;
 using Windows.Devices.Enumeration;
 using Windows.Devices.HumanInterfaceDevice;
 using Windows.Devices.SerialCommunication;
+using Windows.Storage;
 using Windows.Storage.Streams;
+#pragma warning disable 4014
 
 namespace HexapiBackground
 {
     sealed class Hexapi
     {
-        public Hexapi()
-        {
-            //var asdf = new MPU6050();
-            //asdf.InitHardware();
-            //asdf.SensorInterruptEvent += Asdf_SensorInterruptEvent;
-        }
-
-        private int _samples = 10;
-        private int _progress = 1;
-
-        float base_x_gyro = 0;
-        float base_y_gyro = 0;
-        float base_z_gyro = 0;
-        float base_x_accel = 0;
-        float base_y_accel = 0;
-        float base_z_accel = 0;
-
-        //private void Asdf_SensorInterruptEvent(object sender, MpuSensorEventArgs e)
-        //{
-        //    Debug.WriteLine("-----------------------");
-        //    Debug.WriteLine(e.Values[0].GyroX);
-        //    Debug.WriteLine(e.Values[0].GyroY);
-        //    Debug.WriteLine(e.Values[0].GyroZ);
-
-        //    //var gx = e.Values[0].GyroX;
-        //    //var gy = e.Values[0].GyroY;
-        //    //var gz = e.Values[0].GyroZ;
-
-        //    //var ax = e.Values[0].AccelerationX;
-        //    //var ay = e.Values[0].AccelerationY;
-        //    //var az = e.Values[0].AccelerationZ;
-
-        //    //if (_progress <= _samples)
-        //    //{
-        //    //    _progress++;
-
-        //    //    base_x_gyro += gx;
-        //    //    base_y_gyro += gy;
-        //    //    base_z_gyro += gz;
-        //    //    base_x_accel += ax;
-        //    //    base_y_accel += ay;
-        //    //    base_y_accel += az;
-
-
-        //    //    return;
-        //    //}
-
-
-
-        //    //float gyro_x = (gx - base_x_gyro) / GYRO_FACTOR;
-        //    //float gyro_y = (gy - base_y_gyro) / GYRO_FACTOR;
-        //    //float gyro_z = (gz - base_z_gyro) / GYRO_FACTOR;
-        //    //float accel_x = ax; // - base_x_accel;
-        //    //float accel_y = ay; // - base_y_accel;
-        //    //float accel_z = az; // - base_z_accel;
-
-
-        //    //float accel_angle_y = atan(-1 * accel_x / sqrt(pow(accel_y, 2) + pow(accel_z, 2))) * RADIANS_TO_DEGREES;
-        //    //float accel_angle_x = atan(accel_y / sqrt(pow(accel_x, 2) + pow(accel_z, 2))) * RADIANS_TO_DEGREES;
-        //    //float accel_angle_z = 0;
-
-        //    //// Compute the (filtered) gyro angles
-        //    //float dt = (t_now - get_last_time()) / 1000.0;
-        //    //float gyro_angle_x = gyro_x * dt + get_last_x_angle();
-        //    //float gyro_angle_y = gyro_y * dt + get_last_y_angle();
-        //    //float gyro_angle_z = gyro_z * dt + get_last_z_angle();
-
-        //    //// Compute the drifting gyro angles
-        //    //float unfiltered_gyro_angle_x = gyro_x * dt + get_last_gyro_x_angle();
-        //    //float unfiltered_gyro_angle_y = gyro_y * dt + get_last_gyro_y_angle();
-        //    //float unfiltered_gyro_angle_z = gyro_z * dt + get_last_gyro_z_angle();
-
-        //    //// Apply the complementary filter to figure out the change in angle - choice of alpha is
-        //    //// estimated now.  Alpha depends on the sampling rate...
-        //    //float alpha = 0.96;
-        //    //float angle_x = alpha * gyro_angle_x + (1.0 - alpha) * accel_angle_x;
-        //    //float angle_y = alpha * gyro_angle_y + (1.0 - alpha) * accel_angle_y;
-        //    //float angle_z = gyro_angle_z;  //Accelerometer doesn't give z-angle
-
-
-        //}
-
-        private readonly LegConfiguration _legConfiguration = new LegConfiguration();
         private XboxController _xboxController;
         private SerialDevice _serialPort;
         private DataWriter _dataWriter;
-        private DataReader _dataReader;
-        private readonly Stopwatch _sw = new Stopwatch();
-        //private bool _balanceMode;
+        private readonly Stopwatch _sw = new Stopwatch(); //For sync between commands sent to SSC. Elapsed will match T value sent to SSC. More accurate than task delay, or thread sleep.
 
         public async void XboxControllerInit()
         {
@@ -146,12 +65,6 @@ namespace HexapiBackground
         private void _xboxController_LeftTriggerChanged(int trigger)
         {
             _travelLengthX = -Map(trigger, 0, 32640, 0, 90);
-        }
-
-        private void _xboxController_ButtonChanged(int[] buttons)
-        {
-            for (var i = 0; i < buttons.Length;i++)
-                Debug.WriteLine("Buttons changed " + i + " value " + buttons[i]);
         }
 
         private void _xboxController_DpadDirectionChanged(ControllerVector sender)
@@ -204,35 +117,35 @@ namespace HexapiBackground
             switch (sender.Direction)
             {
                 case ControllerDirection.Left:
-                    _travelRotationY = -(double)Map(sender.Magnitude, 0, 10000, 0, 4);
+                    _travelRotationY = -Map(sender.Magnitude, 0, 10000, 0, 4);
                     _travelLengthZ = 0;
                     break;
                 case ControllerDirection.UpLeft:
-                    _travelRotationY = -(double)Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = -(double)Map(sender.Magnitude, 0, 10000, 0, 80);
+                    _travelRotationY = -Map(sender.Magnitude, 0, 10000, 0, 2);
+                    _travelLengthZ = -Map(sender.Magnitude, 0, 10000, 0, 80);
                     break;
                 case ControllerDirection.DownLeft:
-                    _travelRotationY = -(double)Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = (double)Map(sender.Magnitude, 0, 10000, 0, 80);
+                    _travelRotationY = -Map(sender.Magnitude, 0, 10000, 0, 2);
+                    _travelLengthZ = Map(sender.Magnitude, 0, 10000, 0, 80);
                     break;
                 case ControllerDirection.Right:
-                    _travelRotationY = (double)Map(sender.Magnitude, 0, 10000, 0, 4);
+                    _travelRotationY = Map(sender.Magnitude, 0, 10000, 0, 4);
                     _travelLengthZ = 0;
                     break;
                 case ControllerDirection.UpRight:
-                    _travelRotationY = (double)Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = -(double)Map(sender.Magnitude, 0, 10000, 0, 80);
+                    _travelRotationY = Map(sender.Magnitude, 0, 10000, 0, 2);
+                    _travelLengthZ = -Map(sender.Magnitude, 0, 10000, 0, 80);
                     break;
                 case ControllerDirection.DownRight:
-                    _travelRotationY = (double)Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = (double)Map(sender.Magnitude, 0, 10000, 0, 80);
+                    _travelRotationY = Map(sender.Magnitude, 0, 10000, 0, 2);
+                    _travelLengthZ = Map(sender.Magnitude, 0, 10000, 0, 80);
                     break;
                 case ControllerDirection.Up:
-                    _travelLengthZ = -(double)Map(sender.Magnitude, 0, 10000, 0, 130);
+                    _travelLengthZ = -Map(sender.Magnitude, 0, 10000, 0, 130);
                     _travelRotationY = 0;
                     break;
                 case ControllerDirection.Down:
-                    _travelLengthZ = (double)Map(sender.Magnitude, 0, 10000, 0, 130);
+                    _travelLengthZ = Map(sender.Magnitude, 0, 10000, 0, 130);
                     _travelRotationY = 0;
                     break;
             }
@@ -244,38 +157,38 @@ namespace HexapiBackground
             {
                 case ControllerDirection.Left:
                     _bodyRotX1 = 0;
-                    _bodyRotZ1 = -(double)Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotZ1 = -Map(sender.Magnitude, 0, 10000, 0, 8);
 
 
                     break;
                 case ControllerDirection.UpLeft:
-                    _bodyRotX1 = (double)Map(sender.Magnitude, 0, 10000, 0, 8);
-                    _bodyRotZ1 = -(double)Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotX1 = Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotZ1 = -Map(sender.Magnitude, 0, 10000, 0, 8);
                     break;
                 case ControllerDirection.UpRight:
-                    _bodyRotX1 = (double)Map(sender.Magnitude, 0, 10000, 0, 8);
-                    _bodyRotZ1 = (double)Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotX1 = Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotZ1 = Map(sender.Magnitude, 0, 10000, 0, 8);
                     break;
                 case ControllerDirection.Right:
                     _bodyRotX1 = 0;
-                    _bodyRotZ1 = (double)Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotZ1 = Map(sender.Magnitude, 0, 10000, 0, 8);
                     break;
                 case ControllerDirection.Up:
-                    _bodyRotX1 = (double)Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotX1 = Map(sender.Magnitude, 0, 10000, 0, 8);
                     _bodyRotZ1 = 0;
 
                     break;
                 case ControllerDirection.Down:
-                    _bodyRotX1 = -(double)Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotX1 = -Map(sender.Magnitude, 0, 10000, 0, 8);
                     _bodyRotZ1 = 0;
                     break;
                 case ControllerDirection.DownLeft:
-                    _bodyRotZ1 = -(double)Map(sender.Magnitude, 0, 10000, 0, 8);
-                    _bodyRotX1 = -(double)Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotZ1 = -Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotX1 = -Map(sender.Magnitude, 0, 10000, 0, 8);
                     break;
                 case ControllerDirection.DownRight:
-                    _bodyRotZ1 = (double)Map(sender.Magnitude, 0, 10000, 0, 8);
-                    _bodyRotX1 = -(double)Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotZ1 = Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotX1 = -Map(sender.Magnitude, 0, 10000, 0, 8);
                     break;
             }
         }
@@ -299,36 +212,20 @@ namespace HexapiBackground
             }
         }
 
-        private async Task<string> ReadSerial()
-        {
-            await WriteSerial("Q" + Convert.ToChar(13));
-
-            var data = _dataReader.ReadString(2);
-            return data;
-        }
-
         private async void SerialSetup()
         {
-            try
-            {
-                var dis = await DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector());
-                var selectedPort = dis.First();
+            var dis = await DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector());
+            var selectedPort = dis.First();
 
-                _serialPort = await SerialDevice.FromIdAsync(selectedPort.Id);
+            _serialPort = await SerialDevice.FromIdAsync(selectedPort.Id);
 
-                _serialPort.ReadTimeout = TimeSpan.FromMilliseconds(1000);
-                _serialPort.BaudRate = 38400;
-                _serialPort.Parity = SerialParity.None;
-                _serialPort.StopBits = SerialStopBitCount.One;
-                _serialPort.DataBits = 8;
+            _serialPort.ReadTimeout = TimeSpan.FromMilliseconds(1000);
+            _serialPort.BaudRate = 38400;
+            _serialPort.Parity = SerialParity.None;
+            _serialPort.StopBits = SerialStopBitCount.One;
+            _serialPort.DataBits = 8;
 
-                _dataReader = new DataReader(_serialPort.InputStream);
-                _dataWriter = new DataWriter(_serialPort.OutputStream);
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e);
-            }
+            _dataWriter = new DataWriter(_serialPort.OutputStream);
         }
 
         private const short CRrFemurHornOffset1 = 0;
@@ -337,10 +234,12 @@ namespace HexapiBackground
         private const short CLrFemurHornOffset1 = 0;
         private const short CLmFemurHornOffset1 = 0;
         private const short CLfFemurHornOffset1 = 0;
+
         private const int CPfConst = 592; //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500
         private const int CPwmDiv = 991; //old 1059, new 991;
+
         private const double CTravelDeadZone = 1;
-        private const double C1Dec = 10;
+        
         private const double C2Dec = 100;
         private const double C4Dec = 10000;
         private const double C6Dec = 1000000;
@@ -352,10 +251,11 @@ namespace HexapiBackground
         private const int CRm = 1;
         private const int CRr = 0;
 
-        private const int CoxaMin = -650; //-650
+        //All legs being equal, all legs will have the same values
+        private const int CoxaMin = -650; //-650 
         private const int CoxaMax = 650; //650
-        private const int FemurMin = -2850; //-1050
-        private const int FemurMax = 2850; //150
+        private const int FemurMin = -2500; //-1050
+        private const int FemurMax = 2500; //150
         private const int TibiaMin = -2250; //-450
         private const int TibiaMax = 2250; //350
 
@@ -572,10 +472,12 @@ namespace HexapiBackground
         private double _travelLengthZ; //Current Travel length Z
         private double _travelRotationY; //Current Travel Rotation Y
 
-        //Used to store start values of gyro when in balance mode
-        private double _yawLevel;
-        private double _pitchLevel;
-        private double _rollLevel;
+        private readonly int[] _legOneServos = new int[3]; //coxa, femur, tibia
+        private readonly int[] _legTwoServos = new int[3];
+        private readonly int[] _legThreeServos = new int[3];
+        private readonly int[] _legFourServos = new int[3];
+        private readonly int[] _legFiveServos = new int[3];
+        private readonly int[] _legSixServos = new int[3];
 
         private static double Map(double x, double inMin, double inMax, double outMin, double outMax)
         {
@@ -583,44 +485,11 @@ namespace HexapiBackground
             return r;
         }
 
-        /// <summary>
-        /// This does not work yet
-        /// </summary>
-        //void Balance()
-        //{
-        //    if (!BalanceMode) return;
-
-        //    if (_sensor.Roll < 2 && _sensor.Roll > -2)
-        //    {
-        //        if (_sensor.Roll > RollLevel + .8)
-        //        {
-        //            BodyRotZ1 = Math.Round((Map(_sensor.Roll, RollLevel, 8, 0, 8)));
-        //        }
-        //        else if (_sensor.Roll < -(RollLevel - .8))
-        //        {
-        //            BodyRotZ1 = -Math.Abs(Math.Round((Map(_sensor.Roll, RollLevel, 8, 0, 8))));
-        //        }
-        //        else
-        //            BodyRotZ1 = 0;
-        //    }
-
-        //    if (_sensor.Pitch > 2 || _sensor.Pitch < -2) return;
-
-        //    if (_sensor.Pitch > (PitchLevel + .6))
-        //    {
-        //        BodyRotX1 = Math.Round((Map(_sensor.Pitch, PitchLevel, 8, 0, 8)));
-        //    }
-        //    else if (_sensor.Pitch < -(PitchLevel - .6))
-        //    {
-        //        BodyRotX1 = -Math.Abs(Math.Round((Map(_sensor.Pitch, PitchLevel, 8, 0, 8))));
-        //    }
-        //    else
-        //        BodyRotX1 = 0;
-        //}
-
-        public async void Run()
+        public void Run()
         {
+            LoadLegDefaults();
             SerialSetup();
+            XboxControllerInit();
 
             //Tars Init Positions
             for (var legIndex = 0; legIndex <= 5; legIndex++)
@@ -631,32 +500,15 @@ namespace HexapiBackground
             }
 
             _gaitStep = 0;
-
-            XboxControllerInit();
-
+            _nomGaitSpeed = 60;
             _legLiftHeight = 15;
             _bodyPosY = 70;
             _gaitType = 1;
 
             GaitSelect();
 
-            //RollLevel = _sensor.Roll;
-            //PitchLevel = _sensor.Pitch;
-
             while (true)
             {
-                //while (true)
-                //{
-                //    var r = await ReadSerial();
-                //    if (r.Equals("."))
-                //        break;
-                //}
-
-                //Balance();
-
-                //Debug.WriteLine("TravelLengthZ " + TravelLengthZ);
-                //Debug.WriteLine("TravelLengthX " + TravelLengthX);
-                //Debug.WriteLine("TravelRotationY " + TravelRotationY);
                 //Gait
                 GaitSeq();
 
@@ -706,16 +558,12 @@ namespace HexapiBackground
                 if (_ikSolutionError == 1 || _ikSolution == 0)
                     continue;
 
-                //Task.Delay(NomGaitSpeed).Wait();
-
+                //most accurate way to hang out and wait for something else to complete. Instead, perhaps we read the SSC status here, and continue when the group move is complete?
                 _sw.Restart();
-                while (_sw.ElapsedMilliseconds < _nomGaitSpeed)
-                { }
+                while (_sw.ElapsedMilliseconds < _nomGaitSpeed) { }
 
                 CheckAngles();
                 UpdateServoDriver();
-
-
             }
         }
 
@@ -903,13 +751,12 @@ namespace HexapiBackground
             }
 
             //Advance to the next step
-            if (_lastLeg == 1)
-            {
-                //The last leg in this step
-                _gaitStep = _gaitStep + 1;
-                if (_gaitStep > _stepsInGait)
-                    _gaitStep = 1;
-            }
+            if (_lastLeg != 1) return;
+
+            //The last leg in this step
+            _gaitStep = _gaitStep + 1;
+            if (_gaitStep > _stepsInGait)
+                _gaitStep = 1;
         }
 
         //[GETSINCOS] Get the sinus and cosinus from the angle +/- multiple circles
@@ -920,17 +767,17 @@ namespace HexapiBackground
         {
             var angle = Math.PI * angleDeg1 / 180.0; //Convert to raidans
 
-            sin = Math.Sin(angle) * 10000;
-            cos = Math.Cos(angle) * 10000;
+            sin = Math.Sin(angle) * C4Dec;
+            cos = Math.Cos(angle) * C4Dec;
         }
 
         //(GETARCCOS) Get the sinus and cosinus from the angle +/- multiple circles
         //cos4        - Input Cosinus
         //AngleRad4     - Output Angle in AngleRad4
-        private double GetArcCos(double cos4)
+        private static double GetArcCos(double cos4)
         {
-            var c = cos4 / 10000; //Wont work right unless you do / 10000 then * 10000
-            return (Math.Abs(c) == 1.0 ? (1 - c) * Math.PI / 2.0 : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * 10000; ;
+            var c = cos4 / C4Dec; //Wont work right unless you do / 10000 then * 10000
+            return (Math.Abs(Math.Abs(c) - 1.0) < .001 ? (1 - c) * Math.PI / 2.0 : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * C4Dec; ;
         }
 
         //(GETATAN2) Simplyfied ArcTan2 function based on fixed point ArcCos
@@ -938,7 +785,7 @@ namespace HexapiBackground
         //ArcTanY         - Input Y
         //ArcTan4          - Output ARCTAN2(X/Y)
         //XYhyp2            - Output presenting Hypotenuse of X and Y
-        private double GetATan2(double atanX, double atanY, out double xyhyp2)
+        private static double GetATan2(double atanX, double atanY, out double xyhyp2)
         {
             double atan4;
 
@@ -991,7 +838,7 @@ namespace HexapiBackground
 
             GetSinCos(_bodyRotZ1, out sinB4, out cosB4);
 
-            GetSinCos(_bodyRotY1 + (rotationY * C1Dec), out sinA4, out cosA4);
+            GetSinCos(_bodyRotY1 + (rotationY * 10), out sinA4, out cosA4);
 
             //Calculation of rotation matrix: 
             bodyFkPosX = (cprX * C2Dec - ((cprX * C2Dec * cosA4 / C4Dec * cosB4 / C4Dec) - (cprZ * C2Dec * cosB4 / C4Dec * sinA4 / C4Dec) + (cprY * C2Dec * sinB4 / C4Dec))) / C2Dec;
@@ -1053,38 +900,9 @@ namespace HexapiBackground
             }
         }
 
-        // A PWM/deg factor of 10,09 give cPwmDiv = 991 and cPFConst = 592
-        // For a modified 5645 (to 180 deg travel): cPwmDiv = 1500 and cPFConst = 900.
-        //private void UpdateServoDriver()
-        //{
-        //    for (var legIndex = 0; legIndex <= 5; legIndex++)
-        //    {
-        //        if (legIndex < 3)
-        //        {
-        //            var wCoxaSscv = Math.Round((-_coxaAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-        //            var wFemurSscv = Math.Round((-_femurAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-        //            var wTibiaSscv = Math.Round((-_tibiaAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-
-        //            _legConfiguration.SetCoxaTarget((LegPosition)legIndex, wCoxaSscv);
-        //            _legConfiguration.SetFemurTarget((LegPosition)legIndex, wFemurSscv);
-        //            _legConfiguration.SetTibiaTarget((LegPosition)legIndex, wTibiaSscv);
-        //        }
-        //        else
-        //        {
-        //            var wCoxaSscv = Math.Round((_coxaAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-        //            var wFemurSscv = Math.Round(((_femurAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst));
-        //            var wTibiaSscv = Math.Round((_tibiaAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-
-        //            _legConfiguration.SetCoxaTarget((LegPosition)legIndex, wCoxaSscv);
-        //            _legConfiguration.SetFemurTarget((LegPosition)legIndex, wFemurSscv);
-        //            _legConfiguration.SetTibiaTarget((LegPosition)legIndex, wTibiaSscv);
-        //        }
-        //    }
-        //}
-
         private void UpdateServoDriver()
         {
-            var sscString = string.Empty;
+            var stringBuilder = new StringBuilder();
 
             for (var legIndex = 0; legIndex <= 5; legIndex++)
             {
@@ -1096,21 +914,21 @@ namespace HexapiBackground
 
                     if (legIndex == 0)
                     {
-                        sscString += "#" + _legConfiguration.LegOne.CoxaServo + "P" + wCoxaSscv;
-                        sscString += "#" + _legConfiguration.LegOne.FemurServo + "P" + wFemurSscv;
-                        sscString += "#" + _legConfiguration.LegOne.TibiaServo + "P" + wTibiaSscv;
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legOneServos[0], wCoxaSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legOneServos[1], wFemurSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legOneServos[2], wTibiaSscv));
                     }
                     if (legIndex == 1)
                     {
-                        sscString += "#" + _legConfiguration.LegTwo.CoxaServo + "P" + wCoxaSscv;
-                        sscString += "#" + _legConfiguration.LegTwo.FemurServo + "P" + wFemurSscv;
-                        sscString += "#" + _legConfiguration.LegTwo.TibiaServo + "P" + wTibiaSscv;
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legTwoServos[0], wCoxaSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legTwoServos[1], wFemurSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legTwoServos[2], wTibiaSscv));
                     }
                     if (legIndex == 2)
                     {
-                        sscString += "#" + _legConfiguration.LegThree.CoxaServo + "P" + wCoxaSscv;
-                        sscString += "#" + _legConfiguration.LegThree.FemurServo + "P" + wFemurSscv;
-                        sscString += "#" + _legConfiguration.LegThree.TibiaServo + "P" + wTibiaSscv;
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legThreeServos[0], wCoxaSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legThreeServos[1], wFemurSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legThreeServos[2], wTibiaSscv));
                     }
                 }
                 else
@@ -1119,65 +937,120 @@ namespace HexapiBackground
                     var wFemurSscv = Math.Round(((_femurAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst));
                     var wTibiaSscv = Math.Round((_tibiaAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
 
-                    if (legIndex == 5)
+                    if (legIndex == 3)
                     {
-                        sscString += "#" + _legConfiguration.LegFour.CoxaServo + "P" + wCoxaSscv;
-                        sscString += "#" + _legConfiguration.LegFour.FemurServo + "P" + wFemurSscv;
-                        sscString += "#" + _legConfiguration.LegFour.TibiaServo + "P" + wTibiaSscv;
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legSixServos[0], wCoxaSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legSixServos[1], wFemurSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legSixServos[2], wTibiaSscv));
                     }
                     if (legIndex == 4)
                     {
-                        sscString += "#" + _legConfiguration.LegFive.CoxaServo + "P" + wCoxaSscv;
-                        sscString += "#" + _legConfiguration.LegFive.FemurServo + "P" + wFemurSscv;
-                        sscString += "#" + _legConfiguration.LegFive.TibiaServo + "P" + wTibiaSscv;
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legFiveServos[0], wCoxaSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legFiveServos[1], wFemurSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legFiveServos[2], wTibiaSscv));
                     }
-                    if (legIndex == 3)
+                    if (legIndex == 5)
                     {
-                        sscString += "#" + _legConfiguration.LegSix.CoxaServo + "P" + wCoxaSscv;
-                        sscString += "#" + _legConfiguration.LegSix.FemurServo + "P" + wFemurSscv;
-                        sscString += "#" + _legConfiguration.LegSix.TibiaServo + "P" + wTibiaSscv;
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legFourServos[0], wCoxaSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legFourServos[1], wFemurSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legFourServos[2], wTibiaSscv));
                     }
                 }
             }
 
-            sscString += "T" + (_nomGaitSpeed);
+            stringBuilder.Append(string.Format("T{0}{1}", _nomGaitSpeed, Convert.ToChar(13)));
 
-            WriteSerial(sscString + Convert.ToChar(13));
+            WriteSerial(stringBuilder.ToString());
         }
 
-        //private void UpdateServoDriver()
-        //{
-        //    var builder = new StringBuilder();
+        public async void LoadLegDefaults()
+        {
+            var config = string.Empty;
 
-        //    for (var legIndex = 0; legIndex <= 5; legIndex++)
-        //    {
-        //        double wCoxaSscv;
-        //        double wFemurSscv;
-        //        double wTibiaSscv;
+            try
+            {
+                var folder = Package.Current.InstalledLocation;
+                var file = await folder.GetFileAsync("hexapod.config");
+                config = await FileIO.ReadTextAsync(file);
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Cannot read walkerDefaults.config " + e);
+                return;
+            }
 
-        //        var leg = _legConfiguration.Legs.First(l => l.LegPosition == (LegPosition)legIndex);
+            if (string.IsNullOrEmpty(config))
+            {
+                Debug.WriteLine("Empty config file. walkerDefaults.config");
+                return;
+            }
 
-        //        if (legIndex < 3)
-        //        {
-        //            wCoxaSscv = Math.Round((-_coxaAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-        //            wFemurSscv = Math.Round((-_femurAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-        //            wTibiaSscv = Math.Round((-_tibiaAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-        //        }
-        //        else
-        //        {
-        //            wCoxaSscv = Math.Round((_coxaAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-        //            wFemurSscv = Math.Round((_femurAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-        //            wTibiaSscv = Math.Round((_tibiaAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-        //        }
+            try
+            {
+                var allLegDefaults = config.Split('\n');
 
-        //        builder.Append(string.Format("#{0}{1}{2}", leg.CoxaServo, "P", wCoxaSscv));
-        //        builder.Append(string.Format("#{0}{1}{2}", leg.FemurServo, "P", wFemurSscv));
-        //        builder.Append(string.Format("#{0}{1}{2}", leg.TibiaServo, "P", wTibiaSscv));
-        //    }
+                for (var i = 0; i < 6; i++)
+                {
+                    var t = allLegDefaults[i].Replace('\r'.ToString(), "");
 
-        //    builder.Append(string.Format("T{0}", _nomGaitSpeed));
+                    var jointDefaults = t.Split('|');
 
-        //    WriteSerial(builder.ToString() + Convert.ToChar(13));
-        //}
+                    if (i == 0)
+                    {
+                        _legOneServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[2]);
+                        _legOneServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[2]);
+                        _legOneServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[2]);
+
+                        //LegOne = new Leg(LegPosition.One)
+                        //{
+                        //    CoxaServo = Convert.ToInt32(jointDefaults[0].Split(',')[2]),
+                        //    CoxaMin = Convert.ToInt32(jointDefaults[0].Split(',')[0]),
+                        //    CoxaMax = Convert.ToInt32(jointDefaults[0].Split(',')[1]),
+                        //    FemurServo = Convert.ToInt32(jointDefaults[1].Split(',')[2]),
+                        //    FemurMin = Convert.ToInt32(jointDefaults[1].Split(',')[0]),
+                        //    FemurMax = Convert.ToInt32(jointDefaults[1].Split(',')[1]),
+                        //    TibiaServo = Convert.ToInt32(jointDefaults[2].Split(',')[2]),
+                        //    TibiaMin = Convert.ToInt32(jointDefaults[2].Split(',')[0]),
+                        //    TibiaMax = Convert.ToInt32(jointDefaults[2].Split(',')[1])
+                        //};
+                    }
+                    if (i == 1)
+                    {
+                        _legTwoServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[2]);
+                        _legTwoServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[2]);
+                        _legTwoServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[2]);
+                    }
+                    if (i == 2)
+                    {
+                        _legThreeServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[2]);
+                        _legThreeServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[2]);
+                        _legThreeServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[2]);
+                    }
+                    if (i == 3)
+                    {
+                        _legFourServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[2]);
+                        _legFourServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[2]);
+                        _legFourServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[2]);
+                    }
+                    if (i == 4)
+                    {
+                        _legFiveServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[2]);
+                        _legFiveServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[2]);
+                        _legFiveServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[2]);
+                    }
+                    if (i == 5)
+                    {
+                        _legSixServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[2]);
+                        _legSixServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[2]);
+                        _legSixServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[2]);
+                    }
+
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+            }
+        }
     }
 }
