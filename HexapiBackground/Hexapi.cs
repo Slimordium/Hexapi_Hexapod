@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -7,227 +8,34 @@ using Windows.ApplicationModel;
 using Windows.Devices.Enumeration;
 using Windows.Devices.HumanInterfaceDevice;
 using Windows.Devices.SerialCommunication;
+using Windows.Media.SpeechSynthesis;
 using Windows.Storage;
 using Windows.Storage.Streams;
+using Windows.UI.Xaml.Controls;
+
 #pragma warning disable 4014
 
 namespace HexapiBackground
 {
-    sealed class Hexapi
+    internal sealed class Hexapi
     {
         private XboxController _xboxController;
         private SerialDevice _serialPort;
         private DataWriter _dataWriter;
-        private readonly Stopwatch _sw = new Stopwatch(); //For sync between commands sent to SSC. Elapsed will match T value sent to SSC. More accurate than task delay, or thread sleep.
+        
+        private readonly Stopwatch _sw = new Stopwatch(); 
+        private SelectedFunction _selectedFunction;
+        private bool _isMovementStarted;
 
-        public async void XboxControllerInit()
+        private enum SelectedFunction
         {
-            //USB\VID_045E&PID_0719\E02F1950 - receiver
-            //USB\VID_045E & PID_02A1 & IG_00\6 & F079888 & 0 & 00  - XboxController
-            //0x01, 0x05 = game controllers
-
-            var deviceInformationCollection = await DeviceInformation.FindAllAsync(HidDevice.GetDeviceSelector(0x01, 0x05));
-
-            if (deviceInformationCollection.Count == 0)
-            {
-                Debug.WriteLine("No Xbox360 XboxController found! Perhaps an appxmanifest issue?");
-                return;
-            }
-
-            foreach (var d in deviceInformationCollection)
-            {
-                Debug.WriteLine("Device ID: " + d.Id);
-
-                var hidDevice = await HidDevice.FromIdAsync(d.Id, Windows.Storage.FileAccessMode.Read);
-
-                if (hidDevice == null)
-                {
-                    Debug.WriteLine("Failed to connect to the XboxController");
-                    return;
-                }
-
-                _xboxController = new XboxController(hidDevice);
-
-                _xboxController.LeftDirectionChanged += XboxControllerLeftDirectionChanged;
-                _xboxController.RightDirectionChanged += XboxControllerRightDirectionChanged;
-                _xboxController.DpadDirectionChanged += _xboxController_DpadDirectionChanged;
-                _xboxController.LeftTriggerChanged += _xboxController_LeftTriggerChanged;
-                _xboxController.RightTriggerChanged += _xboxController_RightTriggerChanged;
-                break;
-            }
+            GaitSpeed,
+            LegHeight,
+            TranslateHorizontal,
+            Translate3D
         }
-
-        private void _xboxController_RightTriggerChanged(int trigger)
-        {
-            _travelLengthX = Map(trigger, 0, 32640, 0, 90);
-        }
-
-        private void _xboxController_LeftTriggerChanged(int trigger)
-        {
-            _travelLengthX = -Map(trigger, 0, 32640, 0, 90);
-        }
-
-        private void _xboxController_DpadDirectionChanged(ControllerVector sender)
-        {
-            switch (sender.Direction)
-            {
-                case ControllerDirection.UpRight:
-                    if (_nomGaitSpeed < 250)
-                        _nomGaitSpeed = _nomGaitSpeed + 10;
-                    break;
-                case ControllerDirection.UpLeft:
-                    if (_nomGaitSpeed > 40)
-                        _nomGaitSpeed = _nomGaitSpeed - 10;
-                    break;
-                case ControllerDirection.DownRight:
-                    if (_legLiftHeight < 70)
-                        _legLiftHeight = _legLiftHeight + 5;
-                    break;
-                case ControllerDirection.DownLeft:
-                    if (_legLiftHeight > 15)
-                        _legLiftHeight = _legLiftHeight - 5;
-                    break;
-                case ControllerDirection.Left:
-                    if (_gaitType > 0)
-                    {
-                        _gaitType--;
-                        GaitSelect();
-                    }
-                    break;
-                case ControllerDirection.Right:
-                    if (_gaitType < 4)
-                    {
-                        _gaitType++;
-                        GaitSelect();
-                    }
-                    break;
-                case ControllerDirection.Up:
-                    if (_bodyPosY < 100)
-                        _bodyPosY = _bodyPosY + 5;
-                    break;
-                case ControllerDirection.Down:
-                    if (_bodyPosY > 30)
-                        _bodyPosY = _bodyPosY - 5;
-                    break;
-            }
-        }
-
-        private void XboxControllerRightDirectionChanged(ControllerVector sender)
-        {
-            switch (sender.Direction)
-            {
-                case ControllerDirection.Left:
-                    _travelRotationY = -Map(sender.Magnitude, 0, 10000, 0, 4);
-                    _travelLengthZ = 0;
-                    break;
-                case ControllerDirection.UpLeft:
-                    _travelRotationY = -Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = -Map(sender.Magnitude, 0, 10000, 0, 80);
-                    break;
-                case ControllerDirection.DownLeft:
-                    _travelRotationY = -Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = Map(sender.Magnitude, 0, 10000, 0, 80);
-                    break;
-                case ControllerDirection.Right:
-                    _travelRotationY = Map(sender.Magnitude, 0, 10000, 0, 4);
-                    _travelLengthZ = 0;
-                    break;
-                case ControllerDirection.UpRight:
-                    _travelRotationY = Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = -Map(sender.Magnitude, 0, 10000, 0, 80);
-                    break;
-                case ControllerDirection.DownRight:
-                    _travelRotationY = Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = Map(sender.Magnitude, 0, 10000, 0, 80);
-                    break;
-                case ControllerDirection.Up:
-                    _travelLengthZ = -Map(sender.Magnitude, 0, 10000, 0, 130);
-                    _travelRotationY = 0;
-                    break;
-                case ControllerDirection.Down:
-                    _travelLengthZ = Map(sender.Magnitude, 0, 10000, 0, 130);
-                    _travelRotationY = 0;
-                    break;
-            }
-        }
-
-        private void XboxControllerLeftDirectionChanged(ControllerVector sender)
-        {
-            switch (sender.Direction)
-            {
-                case ControllerDirection.Left:
-                    _bodyRotX1 = 0;
-                    _bodyRotZ1 = -Map(sender.Magnitude, 0, 10000, 0, 8);
-
-
-                    break;
-                case ControllerDirection.UpLeft:
-                    _bodyRotX1 = Map(sender.Magnitude, 0, 10000, 0, 8);
-                    _bodyRotZ1 = -Map(sender.Magnitude, 0, 10000, 0, 8);
-                    break;
-                case ControllerDirection.UpRight:
-                    _bodyRotX1 = Map(sender.Magnitude, 0, 10000, 0, 8);
-                    _bodyRotZ1 = Map(sender.Magnitude, 0, 10000, 0, 8);
-                    break;
-                case ControllerDirection.Right:
-                    _bodyRotX1 = 0;
-                    _bodyRotZ1 = Map(sender.Magnitude, 0, 10000, 0, 8);
-                    break;
-                case ControllerDirection.Up:
-                    _bodyRotX1 = Map(sender.Magnitude, 0, 10000, 0, 8);
-                    _bodyRotZ1 = 0;
-
-                    break;
-                case ControllerDirection.Down:
-                    _bodyRotX1 = -Map(sender.Magnitude, 0, 10000, 0, 8);
-                    _bodyRotZ1 = 0;
-                    break;
-                case ControllerDirection.DownLeft:
-                    _bodyRotZ1 = -Map(sender.Magnitude, 0, 10000, 0, 8);
-                    _bodyRotX1 = -Map(sender.Magnitude, 0, 10000, 0, 8);
-                    break;
-                case ControllerDirection.DownRight:
-                    _bodyRotZ1 = Map(sender.Magnitude, 0, 10000, 0, 8);
-                    _bodyRotX1 = -Map(sender.Magnitude, 0, 10000, 0, 8);
-                    break;
-            }
-        }
-
-        private async Task WriteSerial(string data)
-        {
-            if (_dataWriter == null)
-            {
-                Debug.WriteLine("Data writer is null, serial port not configured yet");
-                return;
-            }
-
-            try
-            {
-                _dataWriter.WriteString(data);
-                await _dataWriter.StoreAsync();
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e);
-            }
-        }
-
-        private async void SerialSetup()
-        {
-            var dis = await DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector());
-            var selectedPort = dis.First();
-
-            _serialPort = await SerialDevice.FromIdAsync(selectedPort.Id);
-
-            _serialPort.ReadTimeout = TimeSpan.FromMilliseconds(1000);
-            _serialPort.BaudRate = 38400;
-            _serialPort.Parity = SerialParity.None;
-            _serialPort.StopBits = SerialStopBitCount.One;
-            _serialPort.DataBits = 8;
-
-            _dataWriter = new DataWriter(_serialPort.OutputStream);
-        }
-
+        
+        #region Inverse Kinematics setup
         private const short CRrFemurHornOffset1 = 0;
         private const short CRmFemurHornOffset1 = 0;
         private const short CRfFemurHornOffset1 = 0;
@@ -239,7 +47,7 @@ namespace HexapiBackground
         private const int CPwmDiv = 991; //old 1059, new 991;
 
         private const double CTravelDeadZone = 1;
-        
+
         private const double C2Dec = 100;
         private const double C4Dec = 10000;
         private const double C6Dec = 1000000;
@@ -252,12 +60,12 @@ namespace HexapiBackground
         private const int CRr = 0;
 
         //All legs being equal, all legs will have the same values
-        private const int CoxaMin = -650; //-650 
-        private const int CoxaMax = 650; //650
-        private const int FemurMin = -2500; //-1050
-        private const int FemurMax = 2500; //150
-        private const int TibiaMin = -2250; //-450
-        private const int TibiaMax = 2250; //350
+        private const int CoxaMin = -610; //-650 
+        private const int CoxaMax = 610; //650
+        private const int FemurMin = -2900; //-1050
+        private const int FemurMax = 2900; //150
+        private const int TibiaMin = -2900; //-450
+        private const int TibiaMax = 2900; //350
 
         private const int CRrCoxaMin1 = CoxaMin; //Mechanical limits of the Right Rear Leg
         private const int CRrCoxaMax1 = CoxaMax;
@@ -318,7 +126,7 @@ namespace HexapiBackground
 
         private const double CoxaLength = 30; //30
         private const double FemurLength = 74; //60
-        private const double TibiaLength = 125; //70
+        private const double TibiaLength = 140; //70
         private const double CRrCoxaLength = CoxaLength;
         private const double CRmCoxaLength = CoxaLength;
         private const double CRfCoxaLength = CoxaLength;
@@ -337,10 +145,12 @@ namespace HexapiBackground
         private const double CRfTibiaLength = TibiaLength;
         private const double CRmTibiaLength = TibiaLength;
         private const double CRrTibiaLength = TibiaLength;
+
         private const double CHexInitXz = 105;
         private const double CHexInitXzCos45 = 74; // COS(45) = .7071
-        private const double CHexInitXzSin45 = 74; // sin(45) = .7071
+        private const double CHexInitXzSin45 = 94; // sin(45) = .7071
         private const double CHexInitY = 36;
+
         private const double CRfInitPosX = CHexInitXzCos45;
         private const double CRfInitPosY = CHexInitY;
         private const double CRfInitPosZ = -CHexInitXzSin45;
@@ -444,12 +254,11 @@ namespace HexapiBackground
         private readonly double[] _legPosY = new double[6]; //Actual Y Position of the Leg
         private readonly double[] _legPosZ = new double[6]; //Actual Z Position of the Leg
         private readonly double[] _tibiaAngle1 = new double[6]; //Actual Angle of the knee, decimals = 1
-
-        private int _gaitStep;
-        private int _halfLiftHeigth; //If TRUE the outer positions of the ligted legs will be half height    
+        
         private int _ikSolution; //Output true if the solution is possible
         private int _ikSolutionError; //Output true if the solution is NOT possible
         private int _ikSolutionWarning; //Output true if the solution is NEARLY possible
+
         private int _lastLeg; //TRUE when the current leg is the last leg of the sequence
         private byte _liftDivFactor; //Normaly: 2, when NrLiftedPos=5: 4
         private long _nrLiftedPos; //Number of positions that a single leg is lifted [1-3]
@@ -457,17 +266,25 @@ namespace HexapiBackground
         private double _tlDivFactor; //Number of steps that a leg is on the floor while walking
         private bool _travelRequest; //Temp to check if the gait is in motion
         private double _bodyPosX; //Global Input for the position of the body
-        private double _bodyPosY;
+        private double _bodyPosY; //Controls height of the body from the ground
+        private double[] _bodyPosYPerLeg = {0, 0, 0, 0, 0, 0}; //Controls height of the body from the ground per leg. 
         private double _bodyPosZ;
+
         private double _bodyRotOffsetX; //Input X offset value to adjust centerpoint of rotation
         private double _bodyRotOffsetY; //Input Y offset value to adjust centerpoint of rotation
         private double _bodyRotOffsetZ; //Input Z offset value to adjust centerpoint of rotation
+
         private double _bodyRotX1; //Global Input pitch of the body
         private double _bodyRotY1; //Global Input rotation of the body
         private double _bodyRotZ1; //Global Input roll of the body
-        private int _gaitType;
+
+        private int _halfLiftHeight; //If TRUE the outer positions of the ligted legs will be half height    
         private double _legLiftHeight; //Current Travel height
-        private int _nomGaitSpeed = 40; //Nominal speed of the gait
+
+        private int _gaitStep;
+        private int _gaitType;
+        private int _nomGaitSpeed = 40; //Nominal speed of the gait, equates to MS between servo commands
+
         private double _travelLengthX; //Current Travel length X
         private double _travelLengthZ; //Current Travel length Z
         private double _travelRotationY; //Current Travel Rotation Y
@@ -478,41 +295,44 @@ namespace HexapiBackground
         private readonly int[] _legFourServos = new int[3];
         private readonly int[] _legFiveServos = new int[3];
         private readonly int[] _legSixServos = new int[3];
+        #endregion
 
-        private static double Map(double x, double inMin, double inMax, double outMin, double outMax)
-        {
-            var r = (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-            return r;
-        }
-
-        public void Run()
+        #region Main logic loop 
+        public bool Run()
         {
             LoadLegDefaults();
-            SerialSetup();
+            OpenSsc();
             XboxControllerInit();
 
-            //Tars Init Positions
+            _bodyPosY = 70;
+
             for (var legIndex = 0; legIndex <= 5; legIndex++)
             {
                 _legPosX[legIndex] = (_cInitPosX[legIndex]); //Set start positions for each leg
                 _legPosY[legIndex] = (_cInitPosY[legIndex]);
                 _legPosZ[legIndex] = (_cInitPosZ[legIndex]);
+
+                _bodyPosYPerLeg[legIndex] = _bodyPosY; //Eventually this will be set by foot switches
             }
 
             _gaitStep = 0;
             _nomGaitSpeed = 60;
             _legLiftHeight = 15;
-            _bodyPosY = 70;
+
             _gaitType = 1;
 
             GaitSelect();
 
             while (true)
             {
-                //Gait
+                if (!_isMovementStarted)
+                {
+                    Task.Delay(500).Wait();
+                    continue;
+                }
+
                 GaitSeq();
 
-                //Reset IKsolution indicators 
                 _ikSolution = 0;
                 _ikSolutionWarning = 0;
                 _ikSolutionError = 0;
@@ -521,7 +341,7 @@ namespace HexapiBackground
                 double bodyFkPosY;
                 double bodyFkPosZ;
 
-                //Do IK for all Right legs
+                //Attach events to each ground sensor switch on the feet. When that triggers, it sets that legs _bodyPosYPerLeg to a new value. This for loop will catch it.
                 for (var legIndex = 0; legIndex <= 2; legIndex++)
                 {
                     BodyFk(-_legPosX[legIndex] + _bodyPosX + _gaitPosX[legIndex],
@@ -536,7 +356,6 @@ namespace HexapiBackground
                         legIndex);
                 }
 
-                //Do IK for all Left legs  
                 for (var legIndex = 3; legIndex <= 5; legIndex++)
                 {
                     BodyFk(_legPosX[legIndex] - _bodyPosX + _gaitPosX[legIndex],
@@ -551,22 +370,414 @@ namespace HexapiBackground
                         legIndex);
                 }
 
-                //Debug.WriteLine("IKSolution " + _ikSolution);
-                //Debug.WriteLine("IKSolutionWarning " + _ikSolutionWarning);
-                //Debug.WriteLine("IKSolutionError " + _ikSolutionError);
-
                 if (_ikSolutionError == 1 || _ikSolution == 0)
+                {
+                    Debug.WriteLine($"Skipping solution - Error {_ikSolutionError}, Warning {_ikSolutionWarning} ");
+                    Debug.WriteLine($"_gaitType {_gaitType}, legLiftHeight {_legLiftHeight}, _bodyPosZ {_bodyPosZ}, _travelLengthZ {_travelLengthZ}, _travelLengthX {_travelLengthX}, _travelRotationY {_travelRotationY}");
                     continue;
-
-                //most accurate way to hang out and wait for something else to complete. Instead, perhaps we read the SSC status here, and continue when the group move is complete?
-                _sw.Restart();
-                while (_sw.ElapsedMilliseconds < _nomGaitSpeed) { }
+                }
 
                 CheckAngles();
-                UpdateServoDriver();
+
+                try
+                {
+                    UpdateServoDriver();
+                }
+                catch (Exception)
+                {
+                    //Sometimes the string builder barfs on itself
+                }
+
+                _sw.Restart();
+                while (_sw.ElapsedMilliseconds < _nomGaitSpeed) { }
+            }
+
+            return true;
+        } 
+        #endregion
+
+        /// <summary>
+        /// This is called from the GPS class after data is received and then validated. 
+        /// </summary>
+        /// <param name="latLon"></param>
+        public void GpsData(LatLon latLon)
+        {
+            //ToDo : Logic to steer mr hexapi
+        }
+
+        #region XBox 360 Controller related...
+
+        public void XboxControllerInit()
+        {
+            bool c = true;
+
+            while (c)
+            {
+                Task.Factory.StartNew(async () =>
+                {
+                    _xboxController = null;
+
+                    //USB\VID_045E&PID_0719\E02F1950 - receiver
+                    //USB\VID_045E & PID_02A1 & IG_00\6 & F079888 & 0 & 00  - XboxController
+                    //0x01, 0x05 = game controllers
+
+                    var deviceInformationCollection = await DeviceInformation.FindAllAsync(HidDevice.GetDeviceSelector(0x01, 0x05));
+
+                    if (deviceInformationCollection.Count == 0)
+                    {
+                        Debug.WriteLine("No Xbox360 XboxController found! Perhaps an appxmanifest issue?");
+                        return;
+                    }
+
+                    foreach (var d in deviceInformationCollection)
+                    {
+                        Debug.WriteLine("Device ID: " + d.Id);
+
+                        var hidDevice = await HidDevice.FromIdAsync(d.Id, Windows.Storage.FileAccessMode.Read);
+
+                        if (hidDevice == null)
+                        {
+                            Debug.WriteLine("Failed to connect to the XboxController");
+                            return;
+                        }
+
+                        c = false;
+
+                        try
+                        {
+                            _xboxController = new XboxController(hidDevice);
+
+                            _xboxController.LeftDirectionChanged += XboxControllerLeftDirectionChanged;
+                            _xboxController.RightDirectionChanged += XboxControllerRightDirectionChanged;
+                            _xboxController.DpadDirectionChanged += _xboxController_DpadDirectionChanged;
+                            _xboxController.LeftTriggerChanged += _xboxController_LeftTriggerChanged;
+                            _xboxController.RightTriggerChanged += _xboxController_RightTriggerChanged;
+                            _xboxController.FunctionButtonChanged += XboxControllerFunctionButtonChanged;
+                            _xboxController.BumperButtonChanged += _xboxController_BumperButtonChanged;
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.WriteLine("Failed to connect to the XboxController " + e);
+                        }
+
+                        break;
+                    }
+                }).Wait();
+
+                Debug.WriteLine("Waiting 2 seconds and trying again...");
+
+                Task.Delay(2000).Wait();
             }
         }
 
+        //4 = Left bumper, 5 = Right bumper
+        private void _xboxController_BumperButtonChanged(int button)
+        {
+            switch (_selectedFunction)
+            {
+                case SelectedFunction.TranslateHorizontal:
+                case SelectedFunction.Translate3D:
+                case SelectedFunction.GaitSpeed: //A
+                    if (button == 5)
+                    {
+                        if (_nomGaitSpeed < 250)
+                            _nomGaitSpeed = _nomGaitSpeed + 10;
+                    }
+                    else
+                    {
+                        if (_nomGaitSpeed > 40)
+                            _nomGaitSpeed = _nomGaitSpeed - 10;
+                    }
+                    break;
+                case SelectedFunction.LegHeight: //B
+                    if (button == 5)
+                    {
+                        if (_legLiftHeight < 70)
+                            _legLiftHeight = _legLiftHeight + 5;
+                    }
+                    else
+                    {
+                        if (_legLiftHeight > 15)
+                            _legLiftHeight = _legLiftHeight - 5;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void XboxControllerFunctionButtonChanged(int button)
+        {
+            switch (button)
+            {
+                case 0: //A
+                    _selectedFunction = SelectedFunction.GaitSpeed;
+                    break;
+                case 1: //B
+                    _selectedFunction = SelectedFunction.LegHeight;
+                    break;
+                case 2: //X
+                    _selectedFunction = SelectedFunction.TranslateHorizontal;
+                    break;
+                case 3: //Y
+                    _selectedFunction = SelectedFunction.Translate3D;
+                    break;
+                case 7: //Start button
+                    if (_isMovementStarted)
+                    {
+                        _isMovementStarted = false;
+                        TurnOffServos();
+                    }
+                    else
+                        _isMovementStarted = true;
+
+                    Debug.WriteLine("setting movement to  " + _isMovementStarted);
+                    break;
+                case 6://back button
+                    //This will save the current lat/lon as a waypoint
+                    break;
+                default:
+                    Debug.WriteLine("button? " + button);
+                    break;
+            }
+        }
+
+        private void _xboxController_RightTriggerChanged(int trigger)
+        {
+            _travelLengthX = Map(trigger, 0, 10000, 0, 70);
+        }
+
+        private void _xboxController_LeftTriggerChanged(int trigger)
+        {
+            _travelLengthX = -Map(trigger, 0, 10000, 0, 70);
+        }
+
+        private void _xboxController_DpadDirectionChanged(ControllerVector sender)
+        {
+            switch (sender.Direction)
+            {
+                case ControllerDirection.Left:
+                    if (_gaitType > 0)
+                    {
+                        _gaitType--;
+                        GaitSelect();
+                    }
+                    break;
+                case ControllerDirection.Right:
+                    if (_gaitType < 4)
+                    {
+                        _gaitType++;
+                        GaitSelect();
+                    }
+                    break;
+                case ControllerDirection.Up:
+                    if (_bodyPosY < 115)
+                    {
+                        _bodyPosY = _bodyPosY + 5;
+                    }
+                    break;
+                case ControllerDirection.Down:
+                    if (_bodyPosY > 25)
+                        _bodyPosY = _bodyPosY - 5;
+                    break;
+            }
+
+            //for (int i = 0; i < 5; i++)
+            //    _bodyPosYPerLeg[i] = _bodyPosY;
+        }
+
+        private void XboxControllerRightDirectionChanged(ControllerVector sender)
+        {
+            //Speak(sender.Direction.ToString());
+
+            switch (sender.Direction)
+            {
+                case ControllerDirection.Left:
+                    _travelRotationY = -Map(sender.Magnitude, 0, 10000, 0, 3);
+                    _travelLengthZ = 0;
+                    break;
+                case ControllerDirection.UpLeft:
+                    _travelRotationY = -Map(sender.Magnitude, 0, 10000, 0, 3);
+                    _travelLengthZ = -Map(sender.Magnitude, 0, 10000, 0, 80);
+                    break;
+                case ControllerDirection.DownLeft:
+                    _travelRotationY = -Map(sender.Magnitude, 0, 10000, 0, 3);
+                    _travelLengthZ = Map(sender.Magnitude, 0, 10000, 0, 80);
+                    break;
+                case ControllerDirection.Right:
+                    _travelRotationY = Map(sender.Magnitude, 0, 10000, 0, 3);
+                    _travelLengthZ = 0;
+                    break;
+                case ControllerDirection.UpRight:
+                    _travelRotationY = Map(sender.Magnitude, 0, 10000, 0, 3);
+                    _travelLengthZ = -Map(sender.Magnitude, 0, 10000, 0, 80);
+                    break;
+                case ControllerDirection.DownRight:
+                    _travelRotationY = Map(sender.Magnitude, 0, 10000, 0, 3);
+                    _travelLengthZ = Map(sender.Magnitude, 0, 10000, 0, 80);
+                    break;
+                case ControllerDirection.Up:
+                    _travelLengthZ = -Map(sender.Magnitude, 0, 10000, 0, 140);
+                    _travelRotationY = 0;
+                    break;
+                case ControllerDirection.Down:
+                    _travelLengthZ = Map(sender.Magnitude, 0, 10000, 0, 140);
+                    _travelRotationY = 0;
+                    break;
+            }
+        }
+
+        void SetBodyRot(ControllerVector sender)
+        {
+            switch (sender.Direction)
+            {
+                case ControllerDirection.Left:
+                    _bodyRotX1 = 0;
+                    _bodyRotZ1 = -Map(sender.Magnitude, 0, 10000, 0, 7);
+                    break;
+                case ControllerDirection.UpLeft:
+                    _bodyRotX1 = Map(sender.Magnitude, 0, 10000, 0, 7);
+                    _bodyRotZ1 = -Map(sender.Magnitude, 0, 10000, 0, 7);
+                    break;
+                case ControllerDirection.UpRight:
+                    _bodyRotX1 = Map(sender.Magnitude, 0, 10000, 0, 7);
+                    _bodyRotZ1 = Map(sender.Magnitude, 0, 10000, 0, 7);
+                    break;
+                case ControllerDirection.Right:
+                    _bodyRotX1 = 0;
+                    _bodyRotZ1 = Map(sender.Magnitude, 0, 10000, 0, 7);
+                    break;
+                case ControllerDirection.Up:
+                    _bodyRotX1 = Map(sender.Magnitude, 0, 10000, 0, 7);
+                    _bodyRotZ1 = 0;
+
+                    break;
+                case ControllerDirection.Down:
+                    _bodyRotX1 = -Map(sender.Magnitude, 0, 10000, 0, 7);
+                    _bodyRotZ1 = 0;
+                    break;
+                case ControllerDirection.DownLeft:
+                    _bodyRotZ1 = -Map(sender.Magnitude, 0, 10000, 0, 7);
+                    _bodyRotX1 = -Map(sender.Magnitude, 0, 10000, 0, 7);
+                    break;
+                case ControllerDirection.DownRight:
+                    _bodyRotZ1 = Map(sender.Magnitude, 0, 10000, 0, 7);
+                    _bodyRotX1 = -Map(sender.Magnitude, 0, 10000, 0, 7);
+                    break;
+            }
+        }
+
+        void SetBodyRotOffset(ControllerVector sender)
+        {
+            switch (sender.Direction)
+            {
+                case ControllerDirection.Left:
+                    _bodyPosX = 0;
+                    _bodyPosZ = -Map(sender.Magnitude, 0, 10000, 0, 40);
+                    break;
+                case ControllerDirection.UpLeft:
+                    _bodyPosX = Map(sender.Magnitude, 0, 10000, 0, 40);
+                    _bodyPosZ = -Map(sender.Magnitude, 0, 10000, 0, 40);
+                    break;
+                case ControllerDirection.UpRight:
+                    _bodyPosX = Map(sender.Magnitude, 0, 10000, 0, 40);
+                    _bodyPosZ = Map(sender.Magnitude, 0, 10000, 0, 40);
+                    break;
+                case ControllerDirection.Right:
+                    _bodyPosX = 0;
+                    _bodyPosZ = Map(sender.Magnitude, 0, 10000, 0, 40);
+                    break;
+                case ControllerDirection.Up:
+                    _bodyPosX = Map(sender.Magnitude, 0, 10000, 0, 40);
+                    _bodyPosZ = 0;
+                    break;
+                case ControllerDirection.Down:
+                    _bodyPosX = -Map(sender.Magnitude, 0, 10000, 0, 40);
+                    _bodyPosZ = 0;
+                    break;
+                case ControllerDirection.DownLeft:
+                    _bodyPosZ = -Map(sender.Magnitude, 0, 10000, 0, 40);
+                    _bodyPosX = -Map(sender.Magnitude, 0, 10000, 0, 40);
+                    break;
+                case ControllerDirection.DownRight:
+                    _bodyPosZ = Map(sender.Magnitude, 0, 10000, 0, 40);
+                    _bodyPosX = -Map(sender.Magnitude, 0, 10000, 0, 40);
+                    break;
+            }
+        }
+
+        private void XboxControllerLeftDirectionChanged(ControllerVector sender)
+        {
+            switch (_selectedFunction)
+            {
+                case SelectedFunction.TranslateHorizontal:
+                    SetBodyRotOffset(sender);
+                    break;
+                case SelectedFunction.Translate3D:
+                    SetBodyRot(sender);
+                    break;
+                default:
+                    SetBodyRot(sender);
+                    break;
+            }
+        }
+        #endregion
+
+        #region Serial port code
+        private async Task WriteSerial(string data)
+        {
+            if (_dataWriter == null)
+            {
+                Debug.WriteLine("Data writer is null, serial port not configured yet");
+
+                await Task.Delay(2000);
+                return;
+            }
+
+            try
+            {
+                _dataWriter.WriteString(data);
+                await _dataWriter.StoreAsync();
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+            }
+        }
+
+        private void OpenSsc()
+        {
+            while (_serialPort == null)
+            {
+                var dis = DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()).GetAwaiter().GetResult();
+                var selectedPort = dis.FirstOrDefault(d => d.Name.Equals("Hexapi")); //If using the direct memory mapped driver the uart name is the same as the machine name.
+
+                if (selectedPort == null)
+                {
+                    Debug.WriteLine("Could not find onboard UART. Retrying, though there is not much hope at this point. Check the d.Name.Equals( statement");
+
+                    Task.Delay(2000).Wait();
+                    return;
+                }
+
+                _serialPort = SerialDevice.FromIdAsync(selectedPort.Id).GetAwaiter().GetResult();
+
+                _serialPort.ReadTimeout = TimeSpan.FromMilliseconds(500);
+                _serialPort.WriteTimeout = TimeSpan.FromMilliseconds(500);
+                _serialPort.BaudRate = 115200;
+                _serialPort.Parity = SerialParity.None;
+                _serialPort.StopBits = SerialStopBitCount.One;
+                _serialPort.DataBits = 8;
+                _serialPort.Handshake = SerialHandshake.None;
+
+                _dataWriter = new DataWriter(_serialPort.OutputStream);
+
+
+            }
+        } 
+        #endregion
+
+        #region Gait calculations and logic
         public void GaitSelect()
         {
             //Gait selector
@@ -582,7 +793,7 @@ namespace HexapiBackground
                     _gaitLegNr[CRm] = 11;
 
                     _nrLiftedPos = 3;
-                    _halfLiftHeigth = 3;
+                    _halfLiftHeight = 3;
                     _tlDivFactor = 8;
                     _stepsInGait = 12;
                     //NomGaitSpeed = 110;
@@ -597,7 +808,7 @@ namespace HexapiBackground
                     _gaitLegNr[CRm] = 5;
 
                     _nrLiftedPos = 3;
-                    _halfLiftHeigth = 3;
+                    _halfLiftHeight = 3;
                     _tlDivFactor = 4;
                     _stepsInGait = 8;
                     //NomGaitSpeed = 80;
@@ -612,7 +823,7 @@ namespace HexapiBackground
                     _gaitLegNr[CLr] = 11;
 
                     _nrLiftedPos = 3;
-                    _halfLiftHeigth = 3;
+                    _halfLiftHeight = 3;
                     _tlDivFactor = 8;
                     _stepsInGait = 12;
                     //NomGaitSpeed = 100;
@@ -627,7 +838,7 @@ namespace HexapiBackground
                     _gaitLegNr[CLr] = 14;
 
                     _nrLiftedPos = 5;
-                    _halfLiftHeigth = 1;
+                    _halfLiftHeight = 1;
                     _tlDivFactor = 10;
                     _stepsInGait = 16;
                     //NomGaitSpeed = 100;
@@ -643,7 +854,7 @@ namespace HexapiBackground
                     _gaitLegNr[CRm] = 17;
 
                     _nrLiftedPos = 3;
-                    _halfLiftHeigth = 3;
+                    _halfLiftHeight = 3;
                     _tlDivFactor = 20;
                     _stepsInGait = 24;
                     //NomGaitSpeed = 110;
@@ -697,7 +908,7 @@ namespace HexapiBackground
             else if (((_nrLiftedPos == 2 && _gaitStep == _gaitLegNr[gaitCurrentLegNr]) || (_nrLiftedPos >= 3 && (_gaitStep == _gaitLegNr[gaitCurrentLegNr] - 1 || _gaitStep == _gaitLegNr[gaitCurrentLegNr] + (_stepsInGait - 1)))) && _travelRequest)
             {
                 _gaitPosX[gaitCurrentLegNr] = -_travelLengthX / _liftDivFactor;
-                _gaitPosY[gaitCurrentLegNr] = -3 * _legLiftHeight / (3 + _halfLiftHeigth);
+                _gaitPosY[gaitCurrentLegNr] = -3 * _legLiftHeight / (3 + _halfLiftHeight);
                 //Easier to shift between div factor: /1 (3/3), /2 (3/6) and 3/4
                 _gaitPosZ[gaitCurrentLegNr] = -_travelLengthZ / _liftDivFactor;
                 _gaitRotY[gaitCurrentLegNr] = -_travelRotationY / _liftDivFactor;
@@ -707,7 +918,7 @@ namespace HexapiBackground
             else if ((_nrLiftedPos >= 2) && (_gaitStep == _gaitLegNr[gaitCurrentLegNr] + 1 || _gaitStep == _gaitLegNr[gaitCurrentLegNr] - (_stepsInGait - 1)) && _travelRequest)
             {
                 _gaitPosX[gaitCurrentLegNr] = _travelLengthX / _liftDivFactor;
-                _gaitPosY[gaitCurrentLegNr] = -3 * _legLiftHeight / (3 + _halfLiftHeigth);
+                _gaitPosY[gaitCurrentLegNr] = -3 * _legLiftHeight / (3 + _halfLiftHeight);
                 // Easier to shift between div factor: /1 (3/3), /2 (3/6) and 3/4
                 _gaitPosZ[gaitCurrentLegNr] = _travelLengthZ / _liftDivFactor;
                 _gaitRotY[gaitCurrentLegNr] = _travelRotationY / _liftDivFactor;
@@ -758,49 +969,9 @@ namespace HexapiBackground
             if (_gaitStep > _stepsInGait)
                 _gaitStep = 1;
         }
+        #endregion
 
-        //[GETSINCOS] Get the sinus and cosinus from the angle +/- multiple circles
-        //AngleDeg1     - Input Angle in degrees
-        //sin4        - Output Sinus of AngleDeg
-        //cos4          - Output Cosinus of AngleDeg
-        private static void GetSinCos(double angleDeg1, out double sin, out double cos)
-        {
-            var angle = Math.PI * angleDeg1 / 180.0; //Convert to raidans
-
-            sin = Math.Sin(angle) * C4Dec;
-            cos = Math.Cos(angle) * C4Dec;
-        }
-
-        //(GETARCCOS) Get the sinus and cosinus from the angle +/- multiple circles
-        //cos4        - Input Cosinus
-        //AngleRad4     - Output Angle in AngleRad4
-        private static double GetArcCos(double cos4)
-        {
-            var c = cos4 / C4Dec; //Wont work right unless you do / 10000 then * 10000
-            return (Math.Abs(Math.Abs(c) - 1.0) < .001 ? (1 - c) * Math.PI / 2.0 : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * C4Dec; ;
-        }
-
-        //(GETATAN2) Simplyfied ArcTan2 function based on fixed point ArcCos
-        //ArcTanX         - Input X
-        //ArcTanY         - Input Y
-        //ArcTan4          - Output ARCTAN2(X/Y)
-        //XYhyp2            - Output presenting Hypotenuse of X and Y
-        private static double GetATan2(double atanX, double atanY, out double xyhyp2)
-        {
-            double atan4;
-
-            xyhyp2 = Math.Sqrt((atanX * atanX * C4Dec) + (atanY * atanY * C4Dec));
-
-            var angleRad4 = GetArcCos((atanX * C6Dec) / xyhyp2);
-
-            if (atanY < 0) // removed overhead... Atan4 = AngleRad4 * (AtanY/abs(AtanY));  
-                atan4 = -angleRad4;
-            else
-                atan4 = angleRad4;
-
-            return atan4;
-        }
-
+        #region Body and Leg Inverse Kinematics
         //(BODY INVERSE KINEMATICS) 
         //BodyRotX         - Global Input pitch of the body 
         //BodyRotY         - Global Input rotation of the body 
@@ -846,7 +1017,8 @@ namespace HexapiBackground
             bodyFkPosY = (cprY * C2Dec - ((cprX * C2Dec * sinA4 / C4Dec * sinG4 / C4Dec) - (cprX * C2Dec * cosA4 / C4Dec * cosG4 / C4Dec * sinB4 / C4Dec) + (cprZ * C2Dec * cosA4 / C4Dec * sinG4 / C4Dec) + (cprZ * C2Dec * cosG4 / C4Dec * sinA4 / C4Dec * sinB4 / C4Dec) + (cprY * C2Dec * cosB4 / C4Dec * cosG4 / C4Dec))) / C2Dec;
         }
 
-        //[LEG INVERSE KINEMATICS] Calculates the angles of the coxa, femur and tibia for the given position of the feet
+        //[LEG INVERSE KINEMATICS] 
+        //Calculates the angles of the coxa, femur and tibia for the given position of the feet
         //IKFeetPosX            - Input position of the Feet X
         //IKFeetPosY            - Input position of the Feet Y
         //IKFeetPosZ            - Input Position of the Feet Z
@@ -888,18 +1060,9 @@ namespace HexapiBackground
                     _ikSolutionError = 1;
             }
         }
+        #endregion
 
-        //[CHECK ANGLES] Checks the mechanical limits of the servos
-        private void CheckAngles()
-        {
-            for (var legIndex = 0; legIndex <= 5; legIndex++)
-            {
-                _coxaAngle1[legIndex] = Math.Min(Math.Max(_coxaAngle1[legIndex], (_cCoxaMin1[legIndex])), (_cCoxaMax1[legIndex]));
-                _femurAngle1[legIndex] = Math.Min(Math.Max(_femurAngle1[legIndex], (_cFemurMin1[legIndex])), (_cFemurMax1[legIndex]));
-                _tibiaAngle1[legIndex] = Math.Min(Math.Max(_tibiaAngle1[legIndex], (_cTibiaMin1[legIndex])), (_cTibiaMax1[legIndex]));
-            }
-        }
-
+        #region Servo related, build various servo controller strings and read values
         private void UpdateServoDriver()
         {
             var stringBuilder = new StringBuilder();
@@ -963,6 +1126,69 @@ namespace HexapiBackground
             WriteSerial(stringBuilder.ToString());
         }
 
+        private void TurnOffServos()
+        {
+            var stringBuilder = new StringBuilder();
+
+            for (var legIndex = 0; legIndex <= 5; legIndex++)
+            {
+                if (legIndex < 3)
+                {
+                    var wCoxaSscv = 0;
+                    var wFemurSscv = 0;
+                    var wTibiaSscv = 0;
+
+                    if (legIndex == 0)
+                    {
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legOneServos[0], wCoxaSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legOneServos[1], wFemurSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legOneServos[2], wTibiaSscv));
+                    }
+                    if (legIndex == 1)
+                    {
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legTwoServos[0], wCoxaSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legTwoServos[1], wFemurSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legTwoServos[2], wTibiaSscv));
+                    }
+                    if (legIndex == 2)
+                    {
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legThreeServos[0], wCoxaSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legThreeServos[1], wFemurSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legThreeServos[2], wTibiaSscv));
+                    }
+                }
+                else
+                {
+                    var wCoxaSscv = 0;
+                    var wFemurSscv = 0;
+                    var wTibiaSscv = 0;
+
+                    if (legIndex == 3)
+                    {
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legSixServos[0], wCoxaSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legSixServos[1], wFemurSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legSixServos[2], wTibiaSscv));
+                    }
+                    if (legIndex == 4)
+                    {
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legFiveServos[0], wCoxaSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legFiveServos[1], wFemurSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legFiveServos[2], wTibiaSscv));
+                    }
+                    if (legIndex == 5)
+                    {
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legFourServos[0], wCoxaSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legFourServos[1], wFemurSscv));
+                        stringBuilder.Append(string.Format("#{0}P{1}", _legFourServos[2], wTibiaSscv));
+                    }
+                }
+            }
+
+            stringBuilder.Append(string.Format("T{0}{1}", 0, Convert.ToChar(13)));
+
+            WriteSerial(stringBuilder.ToString());
+        }
+
         public async void LoadLegDefaults()
         {
             var config = string.Empty;
@@ -997,52 +1223,39 @@ namespace HexapiBackground
 
                     if (i == 0)
                     {
-                        _legOneServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[2]);
-                        _legOneServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[2]);
-                        _legOneServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[2]);
-
-                        //LegOne = new Leg(LegPosition.One)
-                        //{
-                        //    CoxaServo = Convert.ToInt32(jointDefaults[0].Split(',')[2]),
-                        //    CoxaMin = Convert.ToInt32(jointDefaults[0].Split(',')[0]),
-                        //    CoxaMax = Convert.ToInt32(jointDefaults[0].Split(',')[1]),
-                        //    FemurServo = Convert.ToInt32(jointDefaults[1].Split(',')[2]),
-                        //    FemurMin = Convert.ToInt32(jointDefaults[1].Split(',')[0]),
-                        //    FemurMax = Convert.ToInt32(jointDefaults[1].Split(',')[1]),
-                        //    TibiaServo = Convert.ToInt32(jointDefaults[2].Split(',')[2]),
-                        //    TibiaMin = Convert.ToInt32(jointDefaults[2].Split(',')[0]),
-                        //    TibiaMax = Convert.ToInt32(jointDefaults[2].Split(',')[1])
-                        //};
+                        _legOneServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[0]);
+                        _legOneServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[0]);
+                        _legOneServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[0]);
                     }
                     if (i == 1)
                     {
-                        _legTwoServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[2]);
-                        _legTwoServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[2]);
-                        _legTwoServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[2]);
+                        _legTwoServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[0]);
+                        _legTwoServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[0]);
+                        _legTwoServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[0]);
                     }
                     if (i == 2)
                     {
-                        _legThreeServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[2]);
-                        _legThreeServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[2]);
-                        _legThreeServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[2]);
+                        _legThreeServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[0]);
+                        _legThreeServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[0]);
+                        _legThreeServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[0]);
                     }
                     if (i == 3)
                     {
-                        _legFourServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[2]);
-                        _legFourServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[2]);
-                        _legFourServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[2]);
+                        _legFourServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[0]);
+                        _legFourServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[0]);
+                        _legFourServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[0]);
                     }
                     if (i == 4)
                     {
-                        _legFiveServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[2]);
-                        _legFiveServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[2]);
-                        _legFiveServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[2]);
+                        _legFiveServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[0]);
+                        _legFiveServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[0]);
+                        _legFiveServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[0]);
                     }
                     if (i == 5)
                     {
-                        _legSixServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[2]);
-                        _legSixServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[2]);
-                        _legSixServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[2]);
+                        _legSixServos[0] = Convert.ToInt32(jointDefaults[0].Split(',')[0]);
+                        _legSixServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[0]);
+                        _legSixServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[0]);
                     }
 
                 }
@@ -1050,6 +1263,96 @@ namespace HexapiBackground
             catch (Exception e)
             {
                 Debug.WriteLine(e);
+            }
+        }
+        #endregion
+
+        #region Helpers, and static methods
+        private static double Map(double x, double inMin, double inMax, double outMin, double outMax)
+        {
+            var r = (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+            return r;
+        }
+
+        //Checks the mechanical limits of the servos
+        private void CheckAngles()
+        {
+            for (var legIndex = 0; legIndex <= 5; legIndex++)
+            {
+                _coxaAngle1[legIndex] = Math.Min(Math.Max(_coxaAngle1[legIndex], (_cCoxaMin1[legIndex])), (_cCoxaMax1[legIndex]));
+                _femurAngle1[legIndex] = Math.Min(Math.Max(_femurAngle1[legIndex], (_cFemurMin1[legIndex])), (_cFemurMax1[legIndex]));
+                _tibiaAngle1[legIndex] = Math.Min(Math.Max(_tibiaAngle1[legIndex], (_cTibiaMin1[legIndex])), (_cTibiaMax1[legIndex]));
+            }
+        }
+
+        //Get the sinus and cosinus from the angle +/- multiple circles
+        //AngleDeg1     - Input Angle in degrees
+        //sin4        - Output Sinus of AngleDeg
+        //cos4          - Output Cosinus of AngleDeg
+        private static void GetSinCos(double angleDeg1, out double sin, out double cos)
+        {
+            var angle = Math.PI * angleDeg1 / 180.0; //Convert to raidans
+
+            sin = Math.Sin(angle) * C4Dec;
+            cos = Math.Cos(angle) * C4Dec;
+        }
+
+        //(Get the sinus and cosinus from the angle +/- multiple circles
+        //cos4        - Input Cosinus
+        //AngleRad4     - Output Angle in AngleRad4
+        private static double GetArcCos(double cos4)
+        {
+            var c = cos4 / C4Dec; //Wont work right unless you do / 10000 then * 10000
+            return (Math.Abs(Math.Abs(c) - 1.0) < .001 ? (1 - c) * Math.PI / 2.0 : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * C4Dec; ;
+        }
+
+        //ArcTan2 function based on fixed point ArcCos
+        //ArcTanX         - Input X
+        //ArcTanY         - Input Y
+        //ArcTan4          - Output ARCTAN2(X/Y)
+        //XYhyp2            - Output presenting Hypotenuse of X and Y
+        private static double GetATan2(double atanX, double atanY, out double xyhyp2)
+        {
+            double atan4;
+
+            xyhyp2 = Math.Sqrt((atanX * atanX * C4Dec) + (atanY * atanY * C4Dec));
+
+            var angleRad4 = GetArcCos((atanX * C6Dec) / xyhyp2);
+
+            if (atanY < 0) // removed overhead... Atan4 = AngleRad4 * (AtanY/abs(AtanY));  
+                atan4 = -angleRad4;
+            else
+                atan4 = angleRad4;
+
+            return atan4;
+        } 
+        #endregion
+
+        private async void Speak(string text)
+        {
+            try
+            {
+                var mediaElement = new MediaElement();
+                var synth = new SpeechSynthesizer();
+
+                foreach (var voice in SpeechSynthesizer.AllVoices)
+                {
+                    Debug.WriteLine(voice.DisplayName + ", " + voice.Description);
+                }
+
+                // Initialize a new instance of the SpeechSynthesizer.
+                var stream = await synth.SynthesizeTextToStreamAsync(text);
+
+                // Send the stream to the media object.
+                mediaElement.SetSource(stream, stream.ContentType);
+                mediaElement.Play();
+
+                mediaElement.Stop();
+                synth.Dispose();
+            }
+            catch (Exception e)
+            {
+                //
             }
         }
     }

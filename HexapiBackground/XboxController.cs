@@ -1,61 +1,40 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Windows.Devices.HumanInterfaceDevice;
 
 namespace HexapiBackground
 {
-    sealed class XboxController
+    internal sealed class XboxController
     {
-        /*
-        Leaving in for future use, probably gait and nom gait speed.
-        * Buttons Boolean ID's mapped to 0-9 array
-        * A - 5 
-        * B - 6
-        * X - 7
-        * Y - 8
-        * LB - 9
-        * RB - 10
-        * Back - 11
-        * Start - 12
-        * LStick - 13
-        * RStick - 14
-        */
-        int[] _buttons;
+        public delegate void ButtonChangedHandler(int button);
+        public delegate void DirectionChangedHandler(ControllerVector sender);
+        public delegate void TriggerChangedHandler(int trigger);
 
-        /// <summary>
-        /// Tolerance to ignore around (0,0) for thumbstick movement
-        /// </summary>
-        const double DeadzoneTolerance = 6000;
-        private ControllerVector _leftStickDirectionVector = new ControllerVector();
-        private ControllerVector _rightStickDirectionVector = new ControllerVector();
-        private ControllerVector _dpadDirectionVector = new ControllerVector();
-
-        private int _leftTrigger;
-        private int _rightTrigger;
+        private const double DeadzoneTolerance = 6000;
 
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
         private readonly HidDevice _deviceHandle;
 
+        private ControllerVector _dpadDirectionVector = new ControllerVector();
+        private ControllerVector _leftStickDirectionVector = new ControllerVector();
+        private ControllerVector _rightStickDirectionVector = new ControllerVector();
+
+        private int _leftTrigger;
+        private int _rightTrigger;
+
         /// <summary>
-        /// Initializes a new instance of the XboxHidController class from a 
-        /// HidDevice handle
+        ///     Initializes a new instance of the XboxHidController class from a
+        ///     HidDevice handle
         /// </summary>
         /// <param name="deviceHandle">Handle to the HidDevice</param>
         public XboxController(HidDevice deviceHandle)
         {
             _deviceHandle = deviceHandle;
+
+            _deviceHandle.InputReportReceived -= InputReportReceived;
             _deviceHandle.InputReportReceived += InputReportReceived;
         }
 
-        /// <summary>
-        /// Handler for processing/filtering input from the XboxController
-        /// </summary>
-        /// <param name="sender">HidDevice handle to the XboxController</param>
-        /// <param name="args">InputReport received from the XboxController</param>
         private void InputReportReceived(HidDevice sender, HidInputReportReceivedEventArgs args)
         {
             var dPad = (int) args.Report.GetNumericControl(0x01, 0x39).Value;
@@ -66,8 +45,20 @@ namespace HexapiBackground
             var rstickX = args.Report.GetNumericControl(0x01, 0x33).Value - 32768;
             var rstickY = args.Report.GetNumericControl(0x01, 0x34).Value - 32768;
 
-            var lt = (int)Math.Max(0, args.Report.GetNumericControl(0x01, 0x32).Value - 32768);
-            var rt = (int)Math.Max(0, (-1)*(args.Report.GetNumericControl(0x01, 0x32).Value - 32768));
+            var lt = (int) Math.Max(0, args.Report.GetNumericControl(0x01, 0x32).Value - 32768);
+            var rt = (int) Math.Max(0, -1*(args.Report.GetNumericControl(0x01, 0x32).Value - 32768));
+
+            foreach (var btn in args.Report.ActivatedBooleanControls) //Start = 7, Back = 6
+            {
+                var id = (int) (btn.Id - 5);
+
+                if (id < 4)
+                    FunctionButtonChanged?.Invoke(id);
+                else if (id >= 4 && id < 6)
+                    BumperButtonChanged?.Invoke(id);
+                else
+                    FunctionButtonChanged?.Invoke(id);
+            }
 
             if (_leftTrigger != lt)
             {
@@ -114,16 +105,15 @@ namespace HexapiBackground
                 Magnitude = 10000
             };
 
-            if (!_dpadDirectionVector.Equals(vector) && DpadDirectionChanged != null)
-            {
-                _dpadDirectionVector = vector;
-                DpadDirectionChanged(vector);
-            }
-            
+            if (_dpadDirectionVector.Equals(vector) || DpadDirectionChanged == null)
+                return;
+
+            _dpadDirectionVector = vector;
+            DpadDirectionChanged(vector);
         }
 
         /// <summary>
-        /// Gets the magnitude of the vector formed by the X/Y coordinates
+        ///     Gets the magnitude of the vector formed by the X/Y coordinates
         /// </summary>
         /// <param name="x">Horizontal coordinate</param>
         /// <param name="y">Vertical coordinate</param>
@@ -137,16 +127,16 @@ namespace HexapiBackground
             else
             {
                 // Scale so deadzone is removed, and max value is 10000
-                magnitude = ((magnitude - DeadzoneTolerance) / (32768 - DeadzoneTolerance)) * 10000;
+                magnitude = (magnitude - DeadzoneTolerance)/(32768 - DeadzoneTolerance)*10000;
                 if (magnitude > 10000)
                     magnitude = 10000;
             }
 
-            return (int)magnitude;
+            return (int) magnitude;
         }
 
         /// <summary>
-        /// Converts thumbstick X/Y coordinates centered at (0,0) to a direction
+        ///     Converts thumbstick X/Y coordinates centered at (0,0) to a direction
         /// </summary>
         /// <param name="x">Horizontal coordinate</param>
         /// <param name="y">Vertical coordinate</param>
@@ -154,32 +144,25 @@ namespace HexapiBackground
         private static ControllerDirection CoordinatesToDirection(double x, double y)
         {
             var radians = Math.Atan2(y, x);
-            var orientation = (radians * (180 / Math.PI));
+            var orientation = radians*(180/Math.PI);
 
             orientation = orientation
-                + 180  // adjust so values are 0-360 rather than -180 to 180
-                + 22.5 // offset so the middle of each direction has a +/- 22.5 buffer
-                + 270; // adjust so when dividing by 45, up is 1
+                          + 180 // adjust so values are 0-360 rather than -180 to 180
+                          + 22.5 // offset so the middle of each direction has a +/- 22.5 buffer
+                          + 270; // adjust so when dividing by 45, up is 1
 
-            // Wrap around so that the value is 0-360
-            orientation = orientation % 360;
+            orientation = orientation%360;
 
             // Dividing by 45 should chop the orientation into 8 chunks, which 
             // maps 0 to Up.  Shift that by 1 since we need 1-8.
-            var direction = (int)((orientation / 45)) + 1;
+            var direction = (int) (orientation/45) + 1;
 
-            return (ControllerDirection)direction;
+            return (ControllerDirection) direction;
         }
 
-        /// <summary>
-        /// Delegate to call when a LeftDirectionChanged event is raised
-        /// </summary>
-        /// <param name="sender"></param>
-        public delegate void DirectionChangedHandler(ControllerVector sender);
+        public event ButtonChangedHandler FunctionButtonChanged;
 
-        public delegate void ButtonChangedHandler(int[] buttons);
-
-        public delegate void TriggerChangedHandler(int trigger);
+        public event ButtonChangedHandler BumperButtonChanged;
 
         public event DirectionChangedHandler LeftDirectionChanged;
 
@@ -193,7 +176,7 @@ namespace HexapiBackground
     }
 
     [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
-    sealed class ControllerVector
+    internal sealed class ControllerVector
     {
         public ControllerVector()
         {
@@ -202,12 +185,12 @@ namespace HexapiBackground
         }
 
         /// <summary>
-        /// Get what direction the XboxController is pointing
+        ///     Get what direction the XboxController is pointing
         /// </summary>
         public ControllerDirection Direction { get; set; }
 
         /// <summary>
-        /// Gets a value indicating the magnitude of the direction
+        ///     Gets a value indicating the magnitude of the direction
         /// </summary>
         public int Magnitude { get; set; }
 
@@ -218,7 +201,7 @@ namespace HexapiBackground
 
             var otherVector = obj as ControllerVector;
 
-            return otherVector != null && (Magnitude == otherVector.Magnitude && Direction == otherVector.Direction);
+            return otherVector != null && Magnitude == otherVector.Magnitude && Direction == otherVector.Direction;
         }
 
         // override object.GetHashCode
@@ -228,12 +211,23 @@ namespace HexapiBackground
             unchecked
             {
                 var hash = 27;
-                hash = (13 * hash) + Direction.GetHashCode();
-                hash = (13 * hash) + Magnitude.GetHashCode();
+                hash = 13*hash + Direction.GetHashCode();
+                hash = 13*hash + Magnitude.GetHashCode();
                 return hash;
             }
         }
     }
 
-    public enum ControllerDirection { None = 0, Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft }
+    public enum ControllerDirection
+    {
+        None = 0,
+        Up,
+        UpRight,
+        Right,
+        DownRight,
+        Down,
+        DownLeft,
+        Left,
+        UpLeft
+    }
 }
