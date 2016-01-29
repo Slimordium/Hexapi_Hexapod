@@ -731,12 +731,17 @@ namespace HexapiBackground
         #region Serial port code
         internal async void WriteSerial(string data)
         {
-            //var dataWriter = new DataWriter(_serialPort.OutputStream);
+            using (var writer = new DataWriter(_serialPort.OutputStream))
+            {
+                writer.WriteString(data);
 
-            dataWriter.WriteString(data);
-            var sa = await dataWriter.StoreAsync().AsTask();
+                using (var cts = new CancellationTokenSource(_serialPort.WriteTimeout))
+                {
+                    await writer.StoreAsync().AsTask(cts.Token);
+                }
 
-            //dataWriter.DetachStream();
+                writer.DetachStream();
+            }
 
             _mre.Set();
         }
@@ -749,23 +754,52 @@ namespace HexapiBackground
             //var dataReader = new DataReader(_serialPort.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
             //var dataWriter = new DataWriter(_serialPort.OutputStream);
 
-            while (!r.Equals("."))
-            {
-                dataWriter.WriteString("Q" + Convert.ToChar(13));
-                var sa = await dataWriter.StoreAsync().AsTask();
+            //while (!r.Equals("."))
+            //{
+            //    dataWriter.WriteString("Q" + Convert.ToChar(13));
+            //    var sa = await dataWriter.StoreAsync().AsTask();
 
-                var br = await dataReader.LoadAsync(1).AsTask();
-                r = dataReader.ReadString(br);
+            //    var br = await dataReader.LoadAsync(1).AsTask();
+            //    r = dataReader.ReadString(br);
 
-                if (!string.IsNullOrEmpty(r))
-                    continue;
+            //    if (!string.IsNullOrEmpty(r))
+            //        continue;
 
-                Debug.WriteLine($"Null string returned from SSC?");
-                break;
-            }
+            //    Debug.WriteLine($"Null string returned from SSC?");
+            //    break;
+            //}
 
             //dataWriter.DetachStream();
             //dataReader.DetachStream();
+
+            while (!r.Equals("."))
+            {
+                using (var writer = new DataWriter(_serialPort.OutputStream))
+                {
+                    writer.WriteString(("Q" + Convert.ToChar(13)));
+
+                    using (var cts = new CancellationTokenSource(_serialPort.WriteTimeout))
+                    {
+                        await writer.StoreAsync().AsTask(cts.Token);
+                    }
+
+                    writer.DetachStream();
+                }
+
+                using (var reader = new DataReader(_serialPort.InputStream))
+                {
+                    using (var cts = new CancellationTokenSource(_serialPort.ReadTimeout))
+                    {
+                        var read = await reader.LoadAsync(1).AsTask(cts.Token);
+
+                        if (read >= 1)
+                        {
+                            r = reader.ReadString(read);
+                            reader.DetachStream();
+                        }
+                    }
+                }
+            }
 
             _mre.Set();
         }
