@@ -22,7 +22,6 @@ namespace HexapiBackground
     {
         private XboxController _xboxController;
         private SerialDevice _serialPort;
-        private DataWriter _dataWriter;
         
         private readonly Stopwatch _sw = new Stopwatch(); 
         private SelectedFunction _selectedFunction;
@@ -725,9 +724,6 @@ namespace HexapiBackground
         }
         #endregion
 
-        private DataWriter dataWriter;
-        private DataReader dataReader;
-
         #region Serial port code
         internal async void WriteSerial(string data)
         {
@@ -828,9 +824,6 @@ namespace HexapiBackground
                 _serialPort.StopBits = SerialStopBitCount.One;
                 _serialPort.DataBits = 8;
                 _serialPort.Handshake = SerialHandshake.None;
-
-                dataReader = new DataReader(_serialPort.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
-                dataWriter = new DataWriter(_serialPort.OutputStream);
             }
         } 
         #endregion
