@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Windows.Devices.Enumeration;
@@ -283,7 +284,7 @@ namespace HexapiBackground
 
         private int _gaitStep;
         private int _gaitType;
-        private int _nomGaitSpeed = 40; //Nominal speed of the gait, equates to MS between servo commands
+        private int _nomGaitSpeed = 65; //Nominal speed of the gait, equates to MS between servo commands
 
         private double _travelLengthX; //Current Travel length X
         private double _travelLengthZ; //Current Travel length Z
@@ -377,19 +378,20 @@ namespace HexapiBackground
                     continue;
                 }
 
-                CheckAngles();
+                //if (!CheckAngles())//This last part IS magic.
+                //    continue;
 
-                try
-                {
-                    UpdateServoDriver();
-                }
-                catch (Exception)
-                {
-                    //Sometimes the string builder barfs on itself
-                }
+                var toWrite = UpdateServoDriver();
 
-                _sw.Restart();
-                while (_sw.ElapsedMilliseconds < _nomGaitSpeed) { }
+                WriteSerial(toWrite);
+
+                _mre.Wait(250);
+                _mre.Reset();
+
+                CheckMoveComplete();
+
+                _mre.Wait(250);
+                _mre.Reset();
             }
 
             return true;
@@ -480,25 +482,25 @@ namespace HexapiBackground
                 case SelectedFunction.GaitSpeed: //A
                     if (button == 5)
                     {
-                        if (_nomGaitSpeed < 250)
-                            _nomGaitSpeed = _nomGaitSpeed + 10;
+                        if (_nomGaitSpeed < 150)
+                            _nomGaitSpeed = _nomGaitSpeed + 1;
                     }
                     else
                     {
-                        if (_nomGaitSpeed > 40)
-                            _nomGaitSpeed = _nomGaitSpeed - 10;
+                        if (_nomGaitSpeed > 60)
+                            _nomGaitSpeed = _nomGaitSpeed - 1;
                     }
                     break;
                 case SelectedFunction.LegHeight: //B
                     if (button == 5)
                     {
-                        if (_legLiftHeight < 70)
-                            _legLiftHeight = _legLiftHeight + 5;
+                        if (_legLiftHeight < 90)
+                            _legLiftHeight = _legLiftHeight + 1;
                     }
                     else
                     {
-                        if (_legLiftHeight > 15)
-                            _legLiftHeight = _legLiftHeight - 5;
+                        if (_legLiftHeight > 25)
+                            _legLiftHeight = _legLiftHeight - 1;
                     }
                     break;
                 default:
@@ -617,11 +619,11 @@ namespace HexapiBackground
                     _travelLengthZ = Map(sender.Magnitude, 0, 10000, 0, 80);
                     break;
                 case ControllerDirection.Up:
-                    _travelLengthZ = -Map(sender.Magnitude, 0, 10000, 0, 140);
+                    _travelLengthZ = -Map(sender.Magnitude, 0, 10000, 0, 130);
                     _travelRotationY = 0;
                     break;
                 case ControllerDirection.Down:
-                    _travelLengthZ = Map(sender.Magnitude, 0, 10000, 0, 140);
+                    _travelLengthZ = Map(sender.Magnitude, 0, 10000, 0, 130);
                     _travelRotationY = 0;
                     break;
             }
@@ -723,26 +725,49 @@ namespace HexapiBackground
         }
         #endregion
 
+        private DataWriter dataWriter;
+        private DataReader dataReader;
+
         #region Serial port code
-        private async Task WriteSerial(string data)
+        internal async void WriteSerial(string data)
         {
-            if (_dataWriter == null)
-            {
-                Debug.WriteLine("Data writer is null, serial port not configured yet");
+            //var dataWriter = new DataWriter(_serialPort.OutputStream);
 
-                await Task.Delay(2000);
-                return;
+            dataWriter.WriteString(data);
+            var sa = await dataWriter.StoreAsync().AsTask();
+
+            //dataWriter.DetachStream();
+
+            _mre.Set();
+        }
+
+        readonly ManualResetEventSlim _mre = new ManualResetEventSlim(false);
+
+        internal async void CheckMoveComplete()
+        {
+            var r = string.Empty;
+            //var dataReader = new DataReader(_serialPort.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
+            //var dataWriter = new DataWriter(_serialPort.OutputStream);
+
+            while (!r.Equals("."))
+            {
+                dataWriter.WriteString("Q" + Convert.ToChar(13));
+                var sa = await dataWriter.StoreAsync().AsTask();
+
+                var br = await dataReader.LoadAsync(1).AsTask();
+                r = dataReader.ReadString(br);
+
+                if (!string.IsNullOrEmpty(r))
+                    continue;
+
+                Debug.WriteLine($"Null string returned from SSC?");
+                break;
             }
 
-            try
-            {
-                _dataWriter.WriteString(data);
-                await _dataWriter.StoreAsync();
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e);
-            }
+            //dataWriter.DetachStream();
+            //dataReader.DetachStream();
+
+            _mre.Set();
         }
 
         private void OpenSsc()
@@ -762,17 +787,16 @@ namespace HexapiBackground
 
                 _serialPort = SerialDevice.FromIdAsync(selectedPort.Id).GetAwaiter().GetResult();
 
-                _serialPort.ReadTimeout = TimeSpan.FromMilliseconds(500);
-                _serialPort.WriteTimeout = TimeSpan.FromMilliseconds(500);
-                _serialPort.BaudRate = 115200;
+                _serialPort.ReadTimeout = TimeSpan.FromMilliseconds(300);
+                _serialPort.WriteTimeout = TimeSpan.FromMilliseconds(300);
+                _serialPort.BaudRate = 38400;
                 _serialPort.Parity = SerialParity.None;
                 _serialPort.StopBits = SerialStopBitCount.One;
                 _serialPort.DataBits = 8;
                 _serialPort.Handshake = SerialHandshake.None;
 
-                _dataWriter = new DataWriter(_serialPort.OutputStream);
-
-
+                dataReader = new DataReader(_serialPort.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
+                dataWriter = new DataWriter(_serialPort.OutputStream);
             }
         } 
         #endregion
@@ -905,7 +929,9 @@ namespace HexapiBackground
                 _gaitRotY[gaitCurrentLegNr] = 0;
             }
             //Optional Half height Rear (2, 3, 5 lifted positions)
-            else if (((_nrLiftedPos == 2 && _gaitStep == _gaitLegNr[gaitCurrentLegNr]) || (_nrLiftedPos >= 3 && (_gaitStep == _gaitLegNr[gaitCurrentLegNr] - 1 || _gaitStep == _gaitLegNr[gaitCurrentLegNr] + (_stepsInGait - 1)))) && _travelRequest)
+            else if (((_nrLiftedPos == 2 && _gaitStep == _gaitLegNr[gaitCurrentLegNr]) ||
+                    (_nrLiftedPos >= 3 && 
+                    (_gaitStep == _gaitLegNr[gaitCurrentLegNr] - 1 || _gaitStep == _gaitLegNr[gaitCurrentLegNr] + (_stepsInGait - 1)))) && _travelRequest)
             {
                 _gaitPosX[gaitCurrentLegNr] = -_travelLengthX / _liftDivFactor;
                 _gaitPosY[gaitCurrentLegNr] = -3 * _legLiftHeight / (3 + _halfLiftHeight);
@@ -1063,7 +1089,7 @@ namespace HexapiBackground
         #endregion
 
         #region Servo related, build various servo controller strings and read values
-        private void UpdateServoDriver()
+        private string UpdateServoDriver()
         {
             var stringBuilder = new StringBuilder();
 
@@ -1123,7 +1149,7 @@ namespace HexapiBackground
 
             stringBuilder.Append(string.Format("T{0}{1}", _nomGaitSpeed, Convert.ToChar(13)));
 
-            WriteSerial(stringBuilder.ToString());
+            return stringBuilder.ToString();
         }
 
         private void TurnOffServos()
@@ -1275,7 +1301,7 @@ namespace HexapiBackground
         }
 
         //Checks the mechanical limits of the servos
-        private void CheckAngles()
+        private bool CheckAngles()
         {
             for (var legIndex = 0; legIndex <= 5; legIndex++)
             {
@@ -1283,6 +1309,8 @@ namespace HexapiBackground
                 _femurAngle1[legIndex] = Math.Min(Math.Max(_femurAngle1[legIndex], (_cFemurMin1[legIndex])), (_cFemurMax1[legIndex]));
                 _tibiaAngle1[legIndex] = Math.Min(Math.Max(_tibiaAngle1[legIndex], (_cTibiaMin1[legIndex])), (_cTibiaMax1[legIndex]));
             }
+
+            return true;
         }
 
         //Get the sinus and cosinus from the angle +/- multiple circles
