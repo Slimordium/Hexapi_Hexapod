@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,10 +10,12 @@ using Windows.ApplicationModel;
 using Windows.Devices.Enumeration;
 using Windows.Devices.HumanInterfaceDevice;
 using Windows.Devices.SerialCommunication;
+using Windows.Foundation;
 using Windows.Media.SpeechSynthesis;
 using Windows.Storage;
 using Windows.Storage.Streams;
 using Windows.UI.Xaml.Controls;
+using Buffer = Windows.Storage.Streams.Buffer;
 
 #pragma warning disable 4014
 
@@ -283,7 +286,7 @@ namespace HexapiBackground
 
         private int _gaitStep;
         private int _gaitType;
-        private int _nomGaitSpeed = 65; //Nominal speed of the gait, equates to MS between servo commands
+        private int _nomGaitSpeed = 45; //Nominal speed of the gait, equates to MS between servo commands
 
         private double _travelLengthX; //Current Travel length X
         private double _travelLengthZ; //Current Travel length Z
@@ -316,8 +319,8 @@ namespace HexapiBackground
             }
 
             _gaitStep = 0;
-            _nomGaitSpeed = 60;
-            _legLiftHeight = 15;
+            _nomGaitSpeed = 30;
+            _legLiftHeight = 25;
 
             _gaitType = 1;
 
@@ -370,27 +373,13 @@ namespace HexapiBackground
                         legIndex);
                 }
 
-                if (_ikSolutionError == 1 || _ikSolution == 0)
-                {
-                    Debug.WriteLine($"Skipping solution - Error {_ikSolutionError}, Warning {_ikSolutionWarning} ");
-                    Debug.WriteLine($"_gaitType {_gaitType}, legLiftHeight {_legLiftHeight}, _bodyPosZ {_bodyPosZ}, _travelLengthZ {_travelLengthZ}, _travelLengthX {_travelLengthX}, _travelRotationY {_travelRotationY}");
-                    continue;
-                }
-
-                //if (!CheckAngles())//This last part IS magic.
-                //    continue;
-
+                var r = CheckAngles();
                 var toWrite = UpdateServoDriver();
 
                 WriteSerial(toWrite);
 
-                _mre.Wait(250);
-                _mre.Reset();
-
-                CheckMoveComplete();
-
-                _mre.Wait(250);
-                _mre.Reset();
+                _mreNextStep.Wait(300);
+                _mreNextStep.Reset();
             }
 
             return true;
@@ -482,24 +471,24 @@ namespace HexapiBackground
                     if (button == 5)
                     {
                         if (_nomGaitSpeed < 150)
-                            _nomGaitSpeed = _nomGaitSpeed + 1;
+                            _nomGaitSpeed = _nomGaitSpeed + 2;
                     }
                     else
                     {
-                        if (_nomGaitSpeed > 60)
-                            _nomGaitSpeed = _nomGaitSpeed - 1;
+                        if (_nomGaitSpeed > 30)
+                            _nomGaitSpeed = _nomGaitSpeed - 2;
                     }
                     break;
                 case SelectedFunction.LegHeight: //B
                     if (button == 5)
                     {
                         if (_legLiftHeight < 90)
-                            _legLiftHeight = _legLiftHeight + 1;
+                            _legLiftHeight = _legLiftHeight + 2;
                     }
                     else
                     {
                         if (_legLiftHeight > 25)
-                            _legLiftHeight = _legLiftHeight - 1;
+                            _legLiftHeight = _legLiftHeight - 2;
                     }
                     break;
                 default:
@@ -724,80 +713,34 @@ namespace HexapiBackground
         }
         #endregion
 
+
         #region Serial port code
-        internal async void WriteSerial(string data)
+        static readonly ASCIIEncoding AsciiEncoding = new ASCIIEncoding();
+
+        internal async void WriteSerial(string data, Action action = null)
         {
-            using (var writer = new DataWriter(_serialPort.OutputStream))
-            {
-                writer.WriteString(data);
-
-                using (var cts = new CancellationTokenSource(_serialPort.WriteTimeout))
-                {
-                    await writer.StoreAsync().AsTask(cts.Token);
-                }
-
-                writer.DetachStream();
-            }
-
-            _mre.Set();
+            var r = await _serialPort.OutputStream.WriteAsync(AsciiEncoding.GetBytes(data).AsBuffer());
+            CheckMoveComplete();
         }
 
-        readonly ManualResetEventSlim _mre = new ManualResetEventSlim(false);
+        readonly ManualResetEventSlim _mreNextStep = new ManualResetEventSlim(false);
+        readonly IBuffer _queryString = AsciiEncoding.GetBytes("Q" + "\r").AsBuffer();
 
         internal async void CheckMoveComplete()
         {
-            var r = string.Empty;
-            //var dataReader = new DataReader(_serialPort.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
-            //var dataWriter = new DataWriter(_serialPort.OutputStream);
+            var buffer = new Buffer(1);
+            var readByte = 0x00;
 
-            //while (!r.Equals("."))
-            //{
-            //    dataWriter.WriteString("Q" + Convert.ToChar(13));
-            //    var sa = await dataWriter.StoreAsync().AsTask();
-
-            //    var br = await dataReader.LoadAsync(1).AsTask();
-            //    r = dataReader.ReadString(br);
-
-            //    if (!string.IsNullOrEmpty(r))
-            //        continue;
-
-            //    Debug.WriteLine($"Null string returned from SSC?");
-            //    break;
-            //}
-
-            //dataWriter.DetachStream();
-            //dataReader.DetachStream();
-
-            while (!r.Equals("."))
+            while (readByte != 0x2e)
             {
-                using (var writer = new DataWriter(_serialPort.OutputStream))
-                {
-                    writer.WriteString(("Q" + Convert.ToChar(13)));
+                var os = await _serialPort.OutputStream.WriteAsync(_queryString);
+                var ra = await _serialPort.InputStream.ReadAsync(buffer, 1, InputStreamOptions.Partial);
 
-                    using (var cts = new CancellationTokenSource(_serialPort.WriteTimeout))
-                    {
-                        await writer.StoreAsync().AsTask(cts.Token);
-                    }
-
-                    writer.DetachStream();
-                }
-
-                using (var reader = new DataReader(_serialPort.InputStream))
-                {
-                    using (var cts = new CancellationTokenSource(_serialPort.ReadTimeout))
-                    {
-                        var read = await reader.LoadAsync(1).AsTask(cts.Token);
-
-                        if (read >= 1)
-                        {
-                            r = reader.ReadString(read);
-                            reader.DetachStream();
-                        }
-                    }
-                }
+                if (buffer.Length > 0)
+                    readByte = buffer.ToArray()[0];
             }
 
-            _mre.Set();
+            _mreNextStep.Set();
         }
 
         private void OpenSsc()
@@ -805,7 +748,7 @@ namespace HexapiBackground
             while (_serialPort == null)
             {
                 var dis = DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()).GetAwaiter().GetResult();
-                var selectedPort = dis.FirstOrDefault(d => d.Name.Equals("Hexapi")); //If using the direct memory mapped driver the uart name is the same as the machine name.
+                var selectedPort = dis.FirstOrDefault(d => d.Name.Equals("MINWINPC")); //If using the direct memory mapped driver the uart name is the same as the machine name.
 
                 if (selectedPort == null)
                 {
@@ -824,6 +767,8 @@ namespace HexapiBackground
                 _serialPort.StopBits = SerialStopBitCount.One;
                 _serialPort.DataBits = 8;
                 _serialPort.Handshake = SerialHandshake.None;
+
+                writer = new DataWriter(_serialPort.OutputStream);
             }
         } 
         #endregion
