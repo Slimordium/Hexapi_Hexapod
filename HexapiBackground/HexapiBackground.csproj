@@ -105,8 +105,8 @@
   <ItemGroup>
     <Compile Include="Enums\GpsFixQuality.cs" />
     <Compile Include="Enums\SelectedFunction.cs" />
-    <Compile Include="Gps\UltimateGps.cs" />
-    <Compile Include="Gps\LatLon.cs" />
+    <Compile Include="Hardware\UltimateGps.cs" />
+    <Compile Include="Hardware\LatLon.cs" />
     <Compile Include="Hexapi.cs" />
     <Compile Include="Hardware\I2CDevice.cs" />
     <Compile Include="Hardware\Mpu9150.cs" />
