@@ -1,43 +1,38 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
-using Windows.Devices.Enumeration;
-using Windows.Devices.HumanInterfaceDevice;
-using Windows.Devices.SerialCommunication;
 using Windows.Media.SpeechSynthesis;
 using Windows.Storage;
-using Windows.Storage.Streams;
 using Windows.UI.Xaml.Controls;
-using Buffer = Windows.Storage.Streams.Buffer;
+// ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
 
 namespace HexapiBackground
 {
     internal sealed class Hexapi
     {
-        private static readonly ASCIIEncoding AsciiEncoding = new ASCIIEncoding();
         private static readonly ManualResetEventSlim MreNextStep = new ManualResetEventSlim(false);
-        private static readonly IBuffer QueryString = AsciiEncoding.GetBytes("Q" + "\r").AsBuffer();
-        private static readonly IBuffer CheckMoveBuffer = new Buffer(1);
         private bool _isMovementStarted;
-
         private SelectedFunction _selectedFunction;
-        private SerialDevice _serialPort;
-        private XboxController _xboxController;
+        private readonly SerialPort _serialPort;
+        private readonly XboxController _xboxController;
 
-        #region Main logic loop 
-
-        public bool Run()
+        internal Hexapi()
         {
-            LoadLegDefaults();
-            OpenSsc();
-            XboxControllerInit();
+            _serialPort = new SerialPort("UART0", 115200, 500, 500);
 
-            _bodyPosY = 70;
+            _xboxController = new XboxController();
+            _xboxController.Open();
+
+            _xboxController.LeftDirectionChanged += XboxControllerLeftDirectionChanged;
+            _xboxController.RightDirectionChanged += XboxControllerRightDirectionChanged;
+            _xboxController.DpadDirectionChanged += _xboxController_DpadDirectionChanged;
+            _xboxController.LeftTriggerChanged += _xboxController_LeftTriggerChanged;
+            _xboxController.RightTriggerChanged += _xboxController_RightTriggerChanged;
+            _xboxController.FunctionButtonChanged += XboxControllerFunctionButtonChanged;
+            _xboxController.BumperButtonChanged += _xboxController_BumperButtonChanged;
 
             for (var legIndex = 0; legIndex <= 5; legIndex++)
             {
@@ -45,11 +40,18 @@ namespace HexapiBackground
                 _legPosY[legIndex] = (_cInitPosY[legIndex]);
                 _legPosZ[legIndex] = (_cInitPosZ[legIndex]);
             }
+        }
 
+        #region Main logic loop 
+
+        public bool Start()
+        {
+            LoadLegDefaults();
+
+            _bodyPosY = 70;
             _gaitStep = 0;
             _nomGaitSpeed = 30;
             _legLiftHeight = 25;
-
             _gaitType = 1;
 
             GaitSelect();
@@ -113,10 +115,21 @@ namespace HexapiBackground
                         legIndex);
                 }
 
-                WriteSerial(UpdateServoDriver());
+                _serialPort.Write(UpdateServoDriver(), () =>
+                {
+                    byte b = 0x00;
 
-                MreNextStep.Wait(_nomGaitSpeed + 50);
-                    //Timeout is needed as sometimes the read throws some sort of silent exception and gets stuck. 
+                    while (b != 0x2e)
+                    {
+                        _serialPort.Write("Q" + "\r");
+                        b = _serialPort.ReadByte();
+                    }
+
+                    MreNextStep.Set();
+                });
+
+
+                MreNextStep.Wait(_nomGaitSpeed + 30); //Timeout is needed as sometimes the read throws some sort of silent exception and gets stuck. 
                 MreNextStep.Reset();
             }
 
@@ -324,67 +337,6 @@ namespace HexapiBackground
         #endregion
 
         #region XBox 360 Controller related...
-
-        public void XboxControllerInit()
-        {
-            while (_xboxController == null)
-            {
-                Task.Factory.StartNew(async () =>
-                {
-                    _xboxController = null;
-
-                    //USB\VID_045E&PID_0719\E02F1950 - receiver
-                    //USB\VID_045E & PID_02A1 & IG_00\6 & F079888 & 0 & 00  - XboxController
-                    //0x01, 0x05 = game controllers
-
-                    var deviceInformationCollection =
-                        await DeviceInformation.FindAllAsync(HidDevice.GetDeviceSelector(0x01, 0x05));
-
-                    if (deviceInformationCollection.Count == 0)
-                    {
-                        Debug.WriteLine("No Xbox360 XboxController found! Perhaps an appxmanifest issue?");
-                        return;
-                    }
-
-                    foreach (var d in deviceInformationCollection)
-                    {
-                        Debug.WriteLine("Device ID: " + d.Id);
-
-                        var hidDevice = await HidDevice.FromIdAsync(d.Id, FileAccessMode.Read);
-
-                        if (hidDevice == null)
-                        {
-                            Debug.WriteLine("Failed to connect to the XboxController");
-                            return;
-                        }
-
-                        try
-                        {
-                            _xboxController = new XboxController(hidDevice);
-
-                            _xboxController.LeftDirectionChanged += XboxControllerLeftDirectionChanged;
-                            _xboxController.RightDirectionChanged += XboxControllerRightDirectionChanged;
-                            _xboxController.DpadDirectionChanged += _xboxController_DpadDirectionChanged;
-                            _xboxController.LeftTriggerChanged += _xboxController_LeftTriggerChanged;
-                            _xboxController.RightTriggerChanged += _xboxController_RightTriggerChanged;
-                            _xboxController.FunctionButtonChanged += XboxControllerFunctionButtonChanged;
-                            _xboxController.BumperButtonChanged += _xboxController_BumperButtonChanged;
-                        }
-                        catch (Exception e)
-                        {
-                            Debug.WriteLine("Failed to connect to the XboxController " + e);
-                        }
-
-                        break;
-                    }
-                }).Wait();
-
-                Debug.WriteLine("Waiting 2 seconds and trying again...");
-
-                Task.Delay(2000).Wait();
-            }
-        }
-
         //4 = Left bumper, 5 = Right bumper
         private void _xboxController_BumperButtonChanged(int button)
         {
@@ -629,60 +581,6 @@ namespace HexapiBackground
                 default:
                     SetBodyRot(sender);
                     break;
-            }
-        }
-
-        #endregion
-
-        #region Serial port code
-
-        internal async void WriteSerial(string data, Action action = null)
-        {
-            var r = await _serialPort.OutputStream.WriteAsync(AsciiEncoding.GetBytes(data).AsBuffer());
-            CheckMoveComplete();
-        }
-
-        internal async void CheckMoveComplete()
-        {
-            var readByte = 0x00;
-
-            while (readByte != 0x2e)
-            {
-                var os = await _serialPort.OutputStream.WriteAsync(QueryString);
-                var ra = await _serialPort.InputStream.ReadAsync(CheckMoveBuffer, 1, InputStreamOptions.Partial);
-
-                if (CheckMoveBuffer.Length > 0)
-                    readByte = CheckMoveBuffer.ToArray()[0];
-            }
-
-            MreNextStep.Set();
-        }
-
-        private void OpenSsc()
-        {
-            while (_serialPort == null)
-            {
-                var dis = DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()).GetAwaiter().GetResult();
-                var selectedPort = dis.FirstOrDefault(d => d.Id.Contains("UART0"));
-
-                if (selectedPort == null)
-                {
-                    Debug.WriteLine(
-                        "Could not find onboard UART. Retrying, though there is not much hope at this point. Check the d.Name.Equals( statement");
-
-                    Task.Delay(2000).Wait();
-                    return;
-                }
-
-                _serialPort = SerialDevice.FromIdAsync(selectedPort.Id).GetAwaiter().GetResult();
-
-                _serialPort.ReadTimeout = TimeSpan.FromMilliseconds(300);
-                _serialPort.WriteTimeout = TimeSpan.FromMilliseconds(300);
-                _serialPort.BaudRate = 38400;
-                _serialPort.Parity = SerialParity.None;
-                _serialPort.StopBits = SerialStopBitCount.One;
-                _serialPort.DataBits = 8;
-                _serialPort.Handshake = SerialHandshake.None;
             }
         }
 
@@ -1078,7 +976,7 @@ namespace HexapiBackground
 
             stringBuilder.Append(string.Format("T{0}{1}", 0, Convert.ToChar(13)));
 
-            WriteSerial(stringBuilder.ToString());
+            _serialPort.Write(stringBuilder.ToString());
         }
 
         public async void LoadLegDefaults()
@@ -1180,7 +1078,6 @@ namespace HexapiBackground
             return (Math.Abs(Math.Abs(c) - 1.0) < .001
                 ? (1 - c)*Math.PI/2.0
                 : Math.Atan(-c/Math.Sqrt(1 - c*c)) + 2*Math.Atan(1))*C4Dec;
-            ;
         }
 
         private static double GetATan2(double atanX, double atanY, out double xyhyp2)

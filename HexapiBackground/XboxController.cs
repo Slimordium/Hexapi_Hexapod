@@ -1,6 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
+using Windows.ApplicationModel.Contacts;
+using Windows.Devices.Enumeration;
 using Windows.Devices.HumanInterfaceDevice;
+using Windows.Storage;
 
 namespace HexapiBackground
 {
@@ -12,10 +17,10 @@ namespace HexapiBackground
 
         public delegate void TriggerChangedHandler(int trigger);
 
-        private const double DeadzoneTolerance = 6000;
+        private static double _deadzoneTolerance = 6000;
 
         // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-        private readonly HidDevice _deviceHandle;
+        private HidDevice _deviceHandle;
 
         private ControllerVector _dpadDirectionVector = new ControllerVector();
         private ControllerVector _leftStickDirectionVector = new ControllerVector();
@@ -25,16 +30,58 @@ namespace HexapiBackground
         private int _rightTrigger;
 
         /// <summary>
-        ///     Initializes a new instance of the XboxHidController class from a
-        ///     HidDevice handle
+        /// 
         /// </summary>
-        /// <param name="deviceHandle">Handle to the HidDevice</param>
-        public XboxController(HidDevice deviceHandle)
+        /// <param name="deadZoneTolerance">The amount the stick needs to be moved before movement is registered</param>
+        /// <returns></returns>
+        internal bool Open(int deadZoneTolerance = 6000)
         {
-            _deviceHandle = deviceHandle;
+            _deadzoneTolerance = deadZoneTolerance;
 
-            _deviceHandle.InputReportReceived -= InputReportReceived;
-            _deviceHandle.InputReportReceived += InputReportReceived;
+            while (_deviceHandle == null)
+            {
+                Task.Factory.StartNew(async () =>
+                {
+                    //USB\VID_045E&PID_0719\E02F1950 - receiver
+                    //USB\VID_045E & PID_02A1 & IG_00\6 & F079888 & 0 & 00  - XboxController
+                    //0x01, 0x05 = game controllers
+
+                    var deviceInformationCollection =
+                        await DeviceInformation.FindAllAsync(HidDevice.GetDeviceSelector(0x01, 0x05));
+
+                    if (deviceInformationCollection.Count == 0)
+                    {
+                        Debug.WriteLine("No Xbox360 XboxController found! Perhaps an appx.manifest issue?");
+                        return;
+                    }
+
+                    foreach (var d in deviceInformationCollection)
+                    {
+                        Debug.WriteLine("Device ID: " + d.Id);
+
+                        _deviceHandle = await HidDevice.FromIdAsync(d.Id, FileAccessMode.Read);
+
+                        if (_deviceHandle == null)
+                        {
+                            Debug.WriteLine("Failed to connect to the XboxController");
+                            return;
+                        }
+
+                        _deviceHandle.InputReportReceived -= InputReportReceived;
+                        _deviceHandle.InputReportReceived += InputReportReceived;
+                        break;
+                    }
+
+                    Debug.WriteLine("Waiting 2 seconds and trying again...");
+                }).Wait();
+
+                Task.Delay(2000).Wait();
+            }
+
+            if (_deviceHandle != null)
+                return true;
+
+            return false;
         }
 
         private void InputReportReceived(HidDevice sender, HidInputReportReceivedEventArgs args)
@@ -124,12 +171,12 @@ namespace HexapiBackground
         {
             var magnitude = Math.Sqrt(Math.Pow(x, 2) + Math.Pow(y, 2));
 
-            if (magnitude < DeadzoneTolerance)
+            if (magnitude < _deadzoneTolerance)
                 magnitude = 0;
             else
             {
                 // Scale so deadzone is removed, and max value is 10000
-                magnitude = (magnitude - DeadzoneTolerance)/(32768 - DeadzoneTolerance)*10000;
+                magnitude = (magnitude - _deadzoneTolerance)/(32768 - _deadzoneTolerance)*10000;
                 if (magnitude > 10000)
                     magnitude = 10000;
             }

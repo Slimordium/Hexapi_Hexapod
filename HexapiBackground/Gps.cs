@@ -2,12 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
-using Windows.Devices.Enumeration;
-using Windows.Devices.SerialCommunication;
 using Windows.Storage;
-using Windows.Storage.Streams;
 
 namespace HexapiBackground
 {
@@ -42,14 +40,11 @@ namespace HexapiBackground
     internal sealed class Gps
     {
         private readonly List<double> _correctors = new List<double>();
-
         private readonly List<LatLon> _latLons = new List<LatLon>();
         private readonly List<LatLon> _latLonsAvg = new List<LatLon>();
         private readonly Stopwatch _sw = new Stopwatch();
-        private DataReader _dataReader;
-        private DataWriter _dataWriter;
-
-        private SerialDevice _serialPort;
+        private SerialPort _serialPort;
+        readonly ASCIIEncoding _asciiEncoding = new ASCIIEncoding();
 
         internal Gps()
         {
@@ -60,6 +55,8 @@ namespace HexapiBackground
             Heading = 0.0f;
             Altitude = 0.0f;
             FeetPerSecond = 0.0f;
+
+            SetGpsBaudRate();
         }
 
         internal DateTime Time { get; set; }
@@ -82,42 +79,23 @@ namespace HexapiBackground
 
         internal double DeviationLon { get; set; }
         internal double DeviationLat { get; set; }
-
         public double DriftCutoff { get; set; }
 
         #region Configure GPS
 
         //Sets up GPS to opperate at 115200
-        public async Task SetGpsBaudRate()
+        public void SetGpsBaudRate()
         {
-            var sel = SerialDevice.GetDeviceSelector();
-            var dis = await DeviceInformation.FindAllAsync(sel);
-            var selectedPort = dis.FirstOrDefault(d => d.Name.Equals("FT232R USB UART"));
-                //This may change depending on the USB/Serial convertor used.
+            _serialPort = new SerialPort("A104OHRXA", 9600, 5000, 5000);
 
-            if (selectedPort == null)
-            {
-                Debug.WriteLine("No FTDI adapter detected");
-                return;
-            }
+            _serialPort.Write(PmtkSetBaud115200);
 
-            _serialPort = await SerialDevice.FromIdAsync(selectedPort.Id);
+            Task.Delay(1000).Wait();
 
-            _serialPort.ReadTimeout = TimeSpan.MaxValue;
-            _serialPort.WriteTimeout = TimeSpan.FromSeconds(30);
-            _serialPort.BaudRate = 9600;
-            _serialPort.Parity = SerialParity.None;
-            _serialPort.StopBits = SerialStopBitCount.One;
-            _serialPort.DataBits = 8;
-            _serialPort.Handshake = SerialHandshake.None;
-
-            Write(PmtkSetBaud115200);
-
-            await Task.Delay(1000);
-
-            _serialPort.Dispose();
-
+            _serialPort.Close();
             _serialPort = null;
+
+            Task.Delay(500).Wait();
         }
 
         #endregion
@@ -312,131 +290,60 @@ namespace HexapiBackground
 
         #region Serial Communication
 
-        public async void Open()
+        internal void Start()
         {
-            var sel = SerialDevice.GetDeviceSelector();
-            var dis = await DeviceInformation.FindAllAsync(sel);
-            var selectedPort = dis.FirstOrDefault(d => d.Name.Equals("FT232R USB UART"));
+            _serialPort = new SerialPort("A104OHRXA", 115200, 2000, 2000);
 
-            if (selectedPort == null)
+            Debug.WriteLine("Configuring GPS, please wait...");
+
+            _serialPort.Write(PmtkSetNmeaOutputRmcgga);
+            Task.Delay(1400).Wait();
+            _serialPort.Write(PmtkSetNmeaUpdate10Hz);
+            Task.Delay(1400).Wait();
+            _serialPort.Write(PmtkApiSetFixCtl10Hz);
+            Task.Delay(1400).Wait();
+            _serialPort.Write(EnableSbas);
+            Task.Delay(1400).Wait();
+            _serialPort.Write(SbasModeWaas);
+            Task.Delay(1400).Wait();
+
+            Task.Factory.StartNew(() =>
             {
-                Debug.WriteLine("No FTDI adapter detected");
-                return;
-            }
+                Debug.WriteLine("GPS Started...");
+                _sw.Start();
 
-            _serialPort = await SerialDevice.FromIdAsync(selectedPort.Id);
-            _serialPort.ReadTimeout = TimeSpan.MaxValue;
-            _serialPort.WriteTimeout = TimeSpan.FromSeconds(30);
-            _serialPort.BaudRate = 115200;
-            _serialPort.Parity = SerialParity.None;
-            _serialPort.StopBits = SerialStopBitCount.One;
-            _serialPort.DataBits = 8;
-            _serialPort.Handshake = SerialHandshake.None;
-
-            Write(PmtkSetNmeaOutputRmcgga);
-            await Task.Delay(1400);
-            Write(PmtkSetNmeaUpdate10Hz);
-            await Task.Delay(1400);
-            Write(PmtkApiSetFixCtl10Hz);
-            await Task.Delay(1400);
-            Write(EnableSbas);
-            await Task.Delay(1400);
-            Write(SbasModeWaas);
-            await Task.Delay(1400);
-
-            Read();
-        }
-
-        private void Read()
-        {
-            Task.Factory.StartNew(async () =>
-            {
                 while (true)
                 {
-                    var sentence = await ReadSentence();
+                    var sentence = ReadSentence();
 
                     if (sentence.Length > 15)
                         Parse(sentence);
-                    else
-                        Debug.WriteLine(sentence);
 
                     if (_sw.ElapsedMilliseconds <= 2000)
                         continue;
 
-                    Debug.WriteLine($"{DateTime.Now} - {Lat} {Lon} Angle: {Heading} FPS: {FeetPerSecond} {Quality}");
+                    Debug.WriteLine($"{DateTime.Now} - {Lat}, {Lon} Angle: {Heading} FPS: {FeetPerSecond} {Quality}");
                     _sw.Restart();
                 }
             }, TaskCreationOptions.LongRunning);
         }
 
-        private async void Write(string data)
-        {
-            try
-            {
-                _dataWriter = new DataWriter(_serialPort.OutputStream);
-                _dataWriter.WriteString(data + '\r' + '\n');
-                await _dataWriter.StoreAsync();
-                _dataWriter.DetachStream();
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine($"Failed to write - {e}");
-            }
-        }
+        
 
         //Only read complete sentences
-        private async Task<string> WaitForStartOfSentence()
+        private string ReadSentence()
         {
             var r = string.Empty;
 
-            try
+            while (!r.Equals("$"))
             {
-                _dataReader = new DataReader(_serialPort.InputStream) {InputStreamOptions = InputStreamOptions.Partial};
+                var b = _serialPort.ReadBytes(1);
 
-                while (!r.Equals("$"))
-                {
-                    var br = await _dataReader.LoadAsync(1).AsTask();
-                    r = _dataReader.ReadString(br);
-                }
-
-                _dataReader.DetachStream();
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e);
+                if (b != null && b.Length >= 1)
+                    r = _asciiEncoding.GetString(b, 0, 1);
             }
 
-            return r;
-        }
-
-        private async Task<string> ReadSentence()
-        {
-            await WaitForStartOfSentence();
-
-            var r = string.Empty;
-            var t = string.Empty;
-
-            try
-            {
-                _dataReader = new DataReader(_serialPort.InputStream) {InputStreamOptions = InputStreamOptions.Partial};
-
-                while (!t.Equals("\r"))
-                {
-                    var br = await _dataReader.LoadAsync(1).AsTask();
-                    t = _dataReader.ReadString(br);
-
-                    if (!t.Equals("\r"))
-                        r += t;
-                }
-
-                _dataReader.DetachStream();
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(r + " - " + e);
-            }
-
-            return r;
+            return _serialPort.ReadUntil("\r");
         }
 
         #endregion

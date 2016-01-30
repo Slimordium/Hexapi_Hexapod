@@ -12,15 +12,10 @@ namespace HexapiBackground
         {
             taskInstance.GetDeferral();
 
-            //var gps = new Gps();
+            SerialPort.ListAvailablePorts();
 
-            //Task.Factory.StartNew(async () =>
-            //{
-            //    await gps.SetGpsBaudRate();
-            //    await Task.Delay(7000);
-            //    gps.Open();
-            //});
-
+            var gps = new Gps();
+           
             //var mpu = new Mpu9150();
 
             //var im = mpu.InitMpu();
@@ -53,7 +48,10 @@ namespace HexapiBackground
 
             //gps.GpsData = hexapi.GpsData;
 
-            var r = hexapi.Run();
+            gps.Start();
+
+            var r = hexapi.Start(); //Always started last
+            
         }
     }
 }
