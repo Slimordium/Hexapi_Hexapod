@@ -19,16 +19,148 @@ namespace HexapiBackground
 {
     internal sealed class Hexapi
     {
-        private XboxController _xboxController;
-        private SerialDevice _serialPort;
-        
-        private SelectedFunction _selectedFunction;
+        private static readonly ASCIIEncoding AsciiEncoding = new ASCIIEncoding();
+        private static readonly ManualResetEventSlim MreNextStep = new ManualResetEventSlim(false);
+        private static readonly IBuffer QueryString = AsciiEncoding.GetBytes("Q" + "\r").AsBuffer();
+        private static readonly IBuffer CheckMoveBuffer = new Buffer(1);
         private bool _isMovementStarted;
 
-        static readonly ASCIIEncoding AsciiEncoding = new ASCIIEncoding();
-        static readonly ManualResetEventSlim MreNextStep = new ManualResetEventSlim(false);
-        static readonly IBuffer QueryString = AsciiEncoding.GetBytes("Q" + "\r").AsBuffer();
-        static readonly IBuffer CheckMoveBuffer = new Buffer(1);
+        private SelectedFunction _selectedFunction;
+        private SerialDevice _serialPort;
+        private XboxController _xboxController;
+
+        #region Main logic loop 
+
+        public bool Run()
+        {
+            LoadLegDefaults();
+            OpenSsc();
+            XboxControllerInit();
+
+            _bodyPosY = 70;
+
+            for (var legIndex = 0; legIndex <= 5; legIndex++)
+            {
+                _legPosX[legIndex] = (_cInitPosX[legIndex]); //Set start positions for each leg
+                _legPosY[legIndex] = (_cInitPosY[legIndex]);
+                _legPosZ[legIndex] = (_cInitPosZ[legIndex]);
+            }
+
+            _gaitStep = 0;
+            _nomGaitSpeed = 30;
+            _legLiftHeight = 25;
+
+            _gaitType = 1;
+
+            GaitSelect();
+
+            while (true)
+            {
+                if (!_isMovementStarted)
+                {
+                    Task.Delay(500).Wait();
+                    continue;
+                }
+
+                double bodyFkPosX;
+                double bodyFkPosY;
+                double bodyFkPosZ;
+
+                _travelRequest = ((Math.Abs(_travelLengthX) > CTravelDeadZone) ||
+                                  (Math.Abs(_travelLengthZ) > CTravelDeadZone) ||
+                                  (Math.Abs(_travelRotationY) > CTravelDeadZone));
+
+                if (_numberOfLiftedPositions == 5)
+                    _liftDivFactor = 4;
+                else
+                    _liftDivFactor = 2;
+
+                _lastLeg = 0;
+                for (var legIndex = 0; legIndex <= 5; legIndex++)
+                {
+                    if (legIndex == 5)
+                        _lastLeg = 1;
+
+                    var r = Gait(legIndex);
+                }
+
+                //Attach events to each ground sensor switch on the feet. When that triggers, it sets that legs _bodyPosYPerLeg to a new value. This for loop will catch it.
+                for (var legIndex = 0; legIndex <= 2; legIndex++)
+                {
+                    BodyIk(-_legPosX[legIndex] + _bodyPosX + _gaitPosX[legIndex],
+                        _legPosZ[legIndex] + _bodyPosZ + _gaitPosZ[legIndex],
+                        _legPosY[legIndex] + _bodyPosY + _gaitPosY[legIndex],
+                        _gaitRotY[legIndex], legIndex,
+                        out bodyFkPosX, out bodyFkPosZ, out bodyFkPosY);
+
+                    LegIk(_legPosX[legIndex] - _bodyPosX + bodyFkPosX - (_gaitPosX[legIndex]),
+                        _legPosY[legIndex] + _bodyPosY - bodyFkPosY + _gaitPosY[legIndex],
+                        _legPosZ[legIndex] + _bodyPosZ - bodyFkPosZ + _gaitPosZ[legIndex],
+                        legIndex);
+                }
+
+                for (var legIndex = 3; legIndex <= 5; legIndex++)
+                {
+                    BodyIk(_legPosX[legIndex] - _bodyPosX + _gaitPosX[legIndex],
+                        _legPosZ[legIndex] + _bodyPosZ + _gaitPosZ[legIndex],
+                        _legPosY[legIndex] + _bodyPosY + _gaitPosY[legIndex],
+                        _gaitRotY[legIndex], legIndex,
+                        out bodyFkPosX, out bodyFkPosZ, out bodyFkPosY);
+
+                    LegIk(_legPosX[legIndex] + _bodyPosX - bodyFkPosX + _gaitPosX[legIndex],
+                        _legPosY[legIndex] + _bodyPosY - bodyFkPosY + _gaitPosY[legIndex],
+                        _legPosZ[legIndex] + _bodyPosZ - bodyFkPosZ + _gaitPosZ[legIndex],
+                        legIndex);
+                }
+
+                WriteSerial(UpdateServoDriver());
+
+                MreNextStep.Wait(_nomGaitSpeed + 50);
+                    //Timeout is needed as sometimes the read throws some sort of silent exception and gets stuck. 
+                MreNextStep.Reset();
+            }
+
+            return true;
+        }
+
+        #endregion
+
+        /// <summary>
+        ///     This is called from the GPS class after data is received and then validated.
+        /// </summary>
+        /// <param name="latLon"></param>
+        public void GpsData(LatLon latLon)
+        {
+            //ToDo : Logic to steer mr hexapi
+        }
+
+        private async void Speak(string text)
+        {
+            try
+            {
+                var mediaElement = new MediaElement();
+                var synth = new SpeechSynthesizer();
+
+                foreach (var voice in SpeechSynthesizer.AllVoices)
+                {
+                    Debug.WriteLine(voice.DisplayName + ", " + voice.Description);
+                }
+
+                // Initialize a new instance of the SpeechSynthesizer.
+                var stream = await synth.SynthesizeTextToStreamAsync(text);
+
+                // Send the stream to the media object.
+                mediaElement.SetSource(stream, stream.ContentType);
+                mediaElement.Play();
+
+                mediaElement.Stop();
+                synth.Dispose();
+            }
+            catch (Exception e)
+            {
+                //
+            }
+        }
 
         private enum SelectedFunction
         {
@@ -37,8 +169,9 @@ namespace HexapiBackground
             TranslateHorizontal,
             Translate3D
         }
-        
+
         #region Inverse Kinematics setup
+
         private const int CPfConst = 592; //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500
         private const int CPwmDiv = 991; //old 1059, new 991;
 
@@ -131,22 +264,31 @@ namespace HexapiBackground
             CRrInitPosZ, CRmInitPosZ, CRfInitPosZ, CLrInitPosZ, CLmInitPosZ, CLfInitPosZ
         };
 
-        private readonly double[] _cOffsetX = { CRrOffsetX, CRmOffsetX, CRfOffsetX, CLrOffsetX, CLmOffsetX, CLfOffsetX };
-        private readonly double[] _cOffsetZ = { CRrOffsetZ, CRmOffsetZ, CRfOffsetZ, CLrOffsetZ, CLmOffsetZ, CLfOffsetZ };
+        private readonly double[] _cOffsetX = {CRrOffsetX, CRmOffsetX, CRfOffsetX, CLrOffsetX, CLmOffsetX, CLfOffsetX};
+        private readonly double[] _cOffsetZ = {CRrOffsetZ, CRmOffsetZ, CRfOffsetZ, CLrOffsetZ, CLmOffsetZ, CLfOffsetZ};
 
         private readonly double[] _coxaAngle1 = new double[6];
         private readonly double[] _femurAngle1 = new double[6]; //Actual Angle of the vertical hip, decimals = 1
         private readonly double[] _tibiaAngle1 = new double[6]; //Actual Angle of the knee, decimals = 1
 
         private readonly byte[] _gaitLegNr = new byte[6]; //Init position of the leg
-        private readonly double[] _gaitPosX = new double[6]; //Array containing Relative X position corresponding to the Gait
-        private readonly double[] _gaitPosY = new double[6]; //Array containing Relative Y position corresponding to the Gait
-        private readonly double[] _gaitPosZ = new double[6]; //Array containing Relative Z position corresponding to the Gait
-        private readonly double[] _gaitRotY = new double[6]; //Array containing Relative Y rotation corresponding to the Gait
+
+        private readonly double[] _gaitPosX = new double[6];
+            //Array containing Relative X position corresponding to the Gait
+
+        private readonly double[] _gaitPosY = new double[6];
+            //Array containing Relative Y position corresponding to the Gait
+
+        private readonly double[] _gaitPosZ = new double[6];
+            //Array containing Relative Z position corresponding to the Gait
+
+        private readonly double[] _gaitRotY = new double[6];
+            //Array containing Relative Y rotation corresponding to the Gait
+
         private readonly double[] _legPosX = new double[6]; //Actual X Position of the Leg should be length of 6
         private readonly double[] _legPosY = new double[6]; //Actual Y Position of the Leg
         private readonly double[] _legPosZ = new double[6]; //Actual Z Position of the Leg
-        
+
         private int _lastLeg; //TRUE when the current leg is the last leg of the sequence
         private int _liftDivFactor; //Normaly: 2, when NrLiftedPos=5: 4
         private int _numberOfLiftedPositions; //Number of positions that a single leg is lifted [1-3]
@@ -178,107 +320,8 @@ namespace HexapiBackground
         private readonly int[] _legFourServos = new int[3];
         private readonly int[] _legFiveServos = new int[3];
         private readonly int[] _legSixServos = new int[3];
+
         #endregion
-
-        #region Main logic loop 
-        public bool Run()
-        {
-            LoadLegDefaults();
-            OpenSsc();
-            XboxControllerInit();
-
-            _bodyPosY = 70;
-
-            for (var legIndex = 0; legIndex <= 5; legIndex++)
-            {
-                _legPosX[legIndex] = (_cInitPosX[legIndex]); //Set start positions for each leg
-                _legPosY[legIndex] = (_cInitPosY[legIndex]);
-                _legPosZ[legIndex] = (_cInitPosZ[legIndex]);
-            }
-
-            _gaitStep = 0;
-            _nomGaitSpeed = 30;
-            _legLiftHeight = 25;
-
-            _gaitType = 1;
-
-            GaitSelect();
-
-            while (true)
-            {
-                if (!_isMovementStarted)
-                {
-                    Task.Delay(500).Wait();
-                    continue;
-                }
-
-                double bodyFkPosX;
-                double bodyFkPosY;
-                double bodyFkPosZ;
-
-                _travelRequest = ((Math.Abs(_travelLengthX) > CTravelDeadZone) || (Math.Abs(_travelLengthZ) > CTravelDeadZone) || (Math.Abs(_travelRotationY) > CTravelDeadZone));
-
-                if (_numberOfLiftedPositions == 5)
-                    _liftDivFactor = 4;
-                else
-                    _liftDivFactor = 2;
-
-                _lastLeg = 0;
-                for (var legIndex = 0; legIndex <= 5; legIndex++)
-                {
-                    if (legIndex == 5)
-                        _lastLeg = 1;
-
-                    var r = Gait(legIndex);
-                }
-
-                //Attach events to each ground sensor switch on the feet. When that triggers, it sets that legs _bodyPosYPerLeg to a new value. This for loop will catch it.
-                for (var legIndex = 0; legIndex <= 2; legIndex++)
-                {
-                    BodyIk(-_legPosX[legIndex] + _bodyPosX + _gaitPosX[legIndex],
-                        _legPosZ[legIndex] + _bodyPosZ + _gaitPosZ[legIndex],
-                        _legPosY[legIndex] + _bodyPosY + _gaitPosY[legIndex],
-                        _gaitRotY[legIndex], legIndex,
-                        out bodyFkPosX, out bodyFkPosZ, out bodyFkPosY);
-
-                    LegIk(_legPosX[legIndex] - _bodyPosX + bodyFkPosX - (_gaitPosX[legIndex]),
-                        _legPosY[legIndex] + _bodyPosY - bodyFkPosY + _gaitPosY[legIndex],
-                        _legPosZ[legIndex] + _bodyPosZ - bodyFkPosZ + _gaitPosZ[legIndex],
-                        legIndex);
-                }
-
-                for (var legIndex = 3; legIndex <= 5; legIndex++)
-                {
-                    BodyIk(_legPosX[legIndex] - _bodyPosX + _gaitPosX[legIndex],
-                        _legPosZ[legIndex] + _bodyPosZ + _gaitPosZ[legIndex],
-                        _legPosY[legIndex] + _bodyPosY + _gaitPosY[legIndex],
-                        _gaitRotY[legIndex], legIndex,
-                        out bodyFkPosX, out bodyFkPosZ, out bodyFkPosY);
-
-                    LegIk(_legPosX[legIndex] + _bodyPosX - bodyFkPosX + _gaitPosX[legIndex],
-                        _legPosY[legIndex] + _bodyPosY - bodyFkPosY + _gaitPosY[legIndex],
-                        _legPosZ[legIndex] + _bodyPosZ - bodyFkPosZ + _gaitPosZ[legIndex],
-                        legIndex);
-                }
-
-                WriteSerial(UpdateServoDriver());
-
-                MreNextStep.Wait(_nomGaitSpeed + 50); //Timeout is needed as sometimes the read throws some sort of silent exception and gets stuck. 
-                MreNextStep.Reset();
-            }
-
-            return true;
-        } 
-        #endregion
-
-        /// <summary>
-        /// This is called from the GPS class after data is received and then validated. 
-        /// </summary>
-        /// <param name="latLon"></param>
-        public void GpsData(LatLon latLon)
-        {
-            //ToDo : Logic to steer mr hexapi
-        }
 
         #region XBox 360 Controller related...
 
@@ -294,7 +337,8 @@ namespace HexapiBackground
                     //USB\VID_045E & PID_02A1 & IG_00\6 & F079888 & 0 & 00  - XboxController
                     //0x01, 0x05 = game controllers
 
-                    var deviceInformationCollection = await DeviceInformation.FindAllAsync(HidDevice.GetDeviceSelector(0x01, 0x05));
+                    var deviceInformationCollection =
+                        await DeviceInformation.FindAllAsync(HidDevice.GetDeviceSelector(0x01, 0x05));
 
                     if (deviceInformationCollection.Count == 0)
                     {
@@ -404,7 +448,7 @@ namespace HexapiBackground
 
                     Debug.WriteLine("setting movement to  " + _isMovementStarted);
                     break;
-                case 6://back button
+                case 6: //back button
                     //This will save the current lat/lon as a waypoint
                     break;
                 default:
@@ -493,7 +537,7 @@ namespace HexapiBackground
             }
         }
 
-        void SetBodyRot(ControllerVector sender)
+        private void SetBodyRot(ControllerVector sender)
         {
             switch (sender.Direction)
             {
@@ -533,7 +577,7 @@ namespace HexapiBackground
             }
         }
 
-        void SetBodyRotOffset(ControllerVector sender)
+        private void SetBodyRotOffset(ControllerVector sender)
         {
             switch (sender.Direction)
             {
@@ -587,11 +631,10 @@ namespace HexapiBackground
                     break;
             }
         }
+
         #endregion
 
-
         #region Serial port code
-
 
         internal async void WriteSerial(string data, Action action = null)
         {
@@ -620,11 +663,12 @@ namespace HexapiBackground
             while (_serialPort == null)
             {
                 var dis = DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()).GetAwaiter().GetResult();
-                var selectedPort = dis.FirstOrDefault(d => d.Id.Contains("UART0")); 
+                var selectedPort = dis.FirstOrDefault(d => d.Id.Contains("UART0"));
 
                 if (selectedPort == null)
                 {
-                    Debug.WriteLine("Could not find onboard UART. Retrying, though there is not much hope at this point. Check the d.Name.Equals( statement");
+                    Debug.WriteLine(
+                        "Could not find onboard UART. Retrying, though there is not much hope at this point. Check the d.Name.Equals( statement");
 
                     Task.Delay(2000).Wait();
                     return;
@@ -640,10 +684,12 @@ namespace HexapiBackground
                 _serialPort.DataBits = 8;
                 _serialPort.Handshake = SerialHandshake.None;
             }
-        } 
+        }
+
         #endregion
 
         #region Gait calculations and logic
+
         public void GaitSelect()
         {
             switch (_gaitType)
@@ -739,7 +785,12 @@ namespace HexapiBackground
             //Leg middle up position
             //Gait in motion														  									
             //Gait NOT in motion, return to home position
-            if ((_travelRequest && (_numberOfLiftedPositions == 1 || _numberOfLiftedPositions == 3 || _numberOfLiftedPositions == 5) && _gaitStep == _gaitLegNr[legIndex]) || (!_travelRequest && _gaitStep == _gaitLegNr[legIndex] && ((Math.Abs(_gaitPosX[legIndex]) > 2) || (Math.Abs(_gaitPosZ[legIndex]) > 2) || (Math.Abs(_gaitRotY[legIndex]) > 2))))
+            if ((_travelRequest &&
+                 (_numberOfLiftedPositions == 1 || _numberOfLiftedPositions == 3 || _numberOfLiftedPositions == 5) &&
+                 _gaitStep == _gaitLegNr[legIndex]) ||
+                (!_travelRequest && _gaitStep == _gaitLegNr[legIndex] &&
+                 ((Math.Abs(_gaitPosX[legIndex]) > 2) || (Math.Abs(_gaitPosZ[legIndex]) > 2) ||
+                  (Math.Abs(_gaitRotY[legIndex]) > 2))))
             {
                 //Up
                 _gaitPosX[legIndex] = 0;
@@ -749,50 +800,57 @@ namespace HexapiBackground
             }
             //Optional Half height Rear (2, 3, 5 lifted positions)
             else if (((_numberOfLiftedPositions == 2 && _gaitStep == _gaitLegNr[legIndex]) ||
-                    (_numberOfLiftedPositions >= 3 && 
-                    (_gaitStep == _gaitLegNr[legIndex] - 1 || _gaitStep == _gaitLegNr[legIndex] + (_stepsInGait - 1)))) && _travelRequest)
+                      (_numberOfLiftedPositions >= 3 &&
+                       (_gaitStep == _gaitLegNr[legIndex] - 1 || _gaitStep == _gaitLegNr[legIndex] + (_stepsInGait - 1)))) &&
+                     _travelRequest)
             {
-                _gaitPosX[legIndex] = -_travelLengthX / _liftDivFactor;
-                _gaitPosY[legIndex] = -3 * _legLiftHeight / (3 + _halfLiftHeight);
+                _gaitPosX[legIndex] = -_travelLengthX/_liftDivFactor;
+                _gaitPosY[legIndex] = -3*_legLiftHeight/(3 + _halfLiftHeight);
                 //Easier to shift between div factor: /1 (3/3), /2 (3/6) and 3/4
-                _gaitPosZ[legIndex] = -_travelLengthZ / _liftDivFactor;
-                _gaitRotY[legIndex] = -_travelRotationY / _liftDivFactor;
+                _gaitPosZ[legIndex] = -_travelLengthZ/_liftDivFactor;
+                _gaitRotY[legIndex] = -_travelRotationY/_liftDivFactor;
             }
 
             // Optional Half height front (2, 3, 5 lifted positions)
-            else if ((_numberOfLiftedPositions >= 2) && (_gaitStep == _gaitLegNr[legIndex] + 1 || _gaitStep == _gaitLegNr[legIndex] - (_stepsInGait - 1)) && _travelRequest)
+            else if ((_numberOfLiftedPositions >= 2) &&
+                     (_gaitStep == _gaitLegNr[legIndex] + 1 || _gaitStep == _gaitLegNr[legIndex] - (_stepsInGait - 1)) &&
+                     _travelRequest)
             {
-                _gaitPosX[legIndex] = _travelLengthX / _liftDivFactor;
-                _gaitPosY[legIndex] = -3 * _legLiftHeight / (3 + _halfLiftHeight);
+                _gaitPosX[legIndex] = _travelLengthX/_liftDivFactor;
+                _gaitPosY[legIndex] = -3*_legLiftHeight/(3 + _halfLiftHeight);
                 // Easier to shift between div factor: /1 (3/3), /2 (3/6) and 3/4
-                _gaitPosZ[legIndex] = _travelLengthZ / _liftDivFactor;
-                _gaitRotY[legIndex] = _travelRotationY / _liftDivFactor;
+                _gaitPosZ[legIndex] = _travelLengthZ/_liftDivFactor;
+                _gaitRotY[legIndex] = _travelRotationY/_liftDivFactor;
             }
 
             //Optional Half heigth Rear 5 LiftedPos (5 lifted positions)
             else if (((_numberOfLiftedPositions == 5 && (_gaitStep == _gaitLegNr[legIndex] - 2))) && _travelRequest)
             {
-                _gaitPosX[legIndex] = -_travelLengthX / 2;
-                _gaitPosY[legIndex] = -_legLiftHeight / 2;
-                _gaitPosZ[legIndex] = -_travelLengthZ / 2;
-                _gaitRotY[legIndex] = -_travelRotationY / 2;
+                _gaitPosX[legIndex] = -_travelLengthX/2;
+                _gaitPosY[legIndex] = -_legLiftHeight/2;
+                _gaitPosZ[legIndex] = -_travelLengthZ/2;
+                _gaitRotY[legIndex] = -_travelRotationY/2;
             }
 
             //Optional Half heigth Front 5 LiftedPos (5 lifted positions)
-            else if ((_numberOfLiftedPositions == 5) && (_gaitStep == _gaitLegNr[legIndex] + 2 || _gaitStep == _gaitLegNr[legIndex] - (_stepsInGait - 2)) && _travelRequest)
+            else if ((_numberOfLiftedPositions == 5) &&
+                     (_gaitStep == _gaitLegNr[legIndex] + 2 || _gaitStep == _gaitLegNr[legIndex] - (_stepsInGait - 2)) &&
+                     _travelRequest)
             {
-                _gaitPosX[legIndex] = _travelLengthX / 2;
-                _gaitPosY[legIndex] = -_legLiftHeight / 2;
-                _gaitPosZ[legIndex] = _travelLengthZ / 2;
-                _gaitRotY[legIndex] = _travelRotationY / 2;
+                _gaitPosX[legIndex] = _travelLengthX/2;
+                _gaitPosY[legIndex] = -_legLiftHeight/2;
+                _gaitPosZ[legIndex] = _travelLengthZ/2;
+                _gaitRotY[legIndex] = _travelRotationY/2;
             }
 
             //Leg front down position
-            else if ((_gaitStep == _gaitLegNr[legIndex] + _numberOfLiftedPositions || _gaitStep == _gaitLegNr[legIndex] - (_stepsInGait - _numberOfLiftedPositions)) && _gaitPosY[legIndex] < 0)
+            else if ((_gaitStep == _gaitLegNr[legIndex] + _numberOfLiftedPositions ||
+                      _gaitStep == _gaitLegNr[legIndex] - (_stepsInGait - _numberOfLiftedPositions)) &&
+                     _gaitPosY[legIndex] < 0)
             {
-                _gaitPosX[legIndex] = _travelLengthX / 2;
-                _gaitPosZ[legIndex] = _travelLengthZ / 2;
-                _gaitRotY[legIndex] = _travelRotationY / 2;
+                _gaitPosX[legIndex] = _travelLengthX/2;
+                _gaitPosZ[legIndex] = _travelLengthZ/2;
+                _gaitRotY[legIndex] = _travelRotationY/2;
                 _gaitPosY[legIndex] = 0;
                 //Only move leg down at once if terrain adaption is turned off
             }
@@ -800,10 +858,10 @@ namespace HexapiBackground
             //Move body forward      
             else
             {
-                _gaitPosX[legIndex] = _gaitPosX[legIndex] - (_travelLengthX / _tlDivFactor);
+                _gaitPosX[legIndex] = _gaitPosX[legIndex] - (_travelLengthX/_tlDivFactor);
                 _gaitPosY[legIndex] = 0;
-                _gaitPosZ[legIndex] = _gaitPosZ[legIndex] - (_travelLengthZ / _tlDivFactor);
-                _gaitRotY[legIndex] = _gaitRotY[legIndex] - (_travelRotationY / _tlDivFactor);
+                _gaitPosZ[legIndex] = _gaitPosZ[legIndex] - (_travelLengthZ/_tlDivFactor);
+                _gaitRotY[legIndex] = _gaitRotY[legIndex] - (_travelRotationY/_tlDivFactor);
             }
 
             //Advance to the next step
@@ -817,11 +875,13 @@ namespace HexapiBackground
 
             return true;
         }
+
         #endregion
 
         #region Body and Leg Inverse Kinematics
- 
-        private void BodyIk(double posX, double posZ, double posY, double rotationY, int bodyIkLeg, out double bodyFkPosX, out double bodyFkPosZ, out double bodyFkPosY)
+
+        private void BodyIk(double posX, double posZ, double posY, double rotationY, int bodyIkLeg,
+            out double bodyFkPosX, out double bodyFkPosZ, out double bodyFkPosY)
         {
             double sinA4; //Sin buffer for BodyRotX calculations
             double cosA4; //Cos buffer for BodyRotX calculations
@@ -844,12 +904,20 @@ namespace HexapiBackground
 
             GetSinCos(_bodyRotZ1, out sinB4, out cosB4);
 
-            GetSinCos(_bodyRotY1 + (rotationY * 10), out sinA4, out cosA4);
+            GetSinCos(_bodyRotY1 + (rotationY*10), out sinA4, out cosA4);
 
             //Calculation of rotation matrix: 
-            bodyFkPosX = (cprX * C2Dec - ((cprX * C2Dec * cosA4 / C4Dec * cosB4 / C4Dec) - (cprZ * C2Dec * cosB4 / C4Dec * sinA4 / C4Dec) + (cprY * C2Dec * sinB4 / C4Dec))) / C2Dec;
-            bodyFkPosZ = (cprZ * C2Dec - ((cprX * C2Dec * cosG4 / C4Dec * sinA4 / C4Dec) + (cprX * C2Dec * cosA4 / C4Dec * sinB4 / C4Dec * sinG4 / C4Dec) + (cprZ * C2Dec * cosA4 / C4Dec * cosG4 / C4Dec) - (cprZ * C2Dec * sinA4 / C4Dec * sinB4 / C4Dec * sinG4 / C4Dec) - (cprY * C2Dec * cosB4 / C4Dec * sinG4 / C4Dec))) / C2Dec;
-            bodyFkPosY = (cprY * C2Dec - ((cprX * C2Dec * sinA4 / C4Dec * sinG4 / C4Dec) - (cprX * C2Dec * cosA4 / C4Dec * cosG4 / C4Dec * sinB4 / C4Dec) + (cprZ * C2Dec * cosA4 / C4Dec * sinG4 / C4Dec) + (cprZ * C2Dec * cosG4 / C4Dec * sinA4 / C4Dec * sinB4 / C4Dec) + (cprY * C2Dec * cosB4 / C4Dec * cosG4 / C4Dec))) / C2Dec;
+            bodyFkPosX = (cprX*C2Dec -
+                          ((cprX*C2Dec*cosA4/C4Dec*cosB4/C4Dec) - (cprZ*C2Dec*cosB4/C4Dec*sinA4/C4Dec) +
+                           (cprY*C2Dec*sinB4/C4Dec)))/C2Dec;
+            bodyFkPosZ = (cprZ*C2Dec -
+                          ((cprX*C2Dec*cosG4/C4Dec*sinA4/C4Dec) + (cprX*C2Dec*cosA4/C4Dec*sinB4/C4Dec*sinG4/C4Dec) +
+                           (cprZ*C2Dec*cosA4/C4Dec*cosG4/C4Dec) - (cprZ*C2Dec*sinA4/C4Dec*sinB4/C4Dec*sinG4/C4Dec) -
+                           (cprY*C2Dec*cosB4/C4Dec*sinG4/C4Dec)))/C2Dec;
+            bodyFkPosY = (cprY*C2Dec -
+                          ((cprX*C2Dec*sinA4/C4Dec*sinG4/C4Dec) - (cprX*C2Dec*cosA4/C4Dec*cosG4/C4Dec*sinB4/C4Dec) +
+                           (cprZ*C2Dec*cosA4/C4Dec*sinG4/C4Dec) + (cprZ*C2Dec*cosG4/C4Dec*sinA4/C4Dec*sinB4/C4Dec) +
+                           (cprY*C2Dec*cosB4/C4Dec*cosG4/C4Dec)))/C2Dec;
         }
 
         //[LEG INVERSE KINEMATICS] 
@@ -859,25 +927,27 @@ namespace HexapiBackground
 
             //Calculate IKCoxaAngle and IKFeetPosXZ
             var getatan = GetATan2(ikFeetPosX, ikFeetPosZ, out xyhyp2);
-            _coxaAngle1[legIkLegNr] = ((getatan * 180) / 3141) + (_cCoxaAngle1[legIkLegNr]);
+            _coxaAngle1[legIkLegNr] = ((getatan*180)/3141) + (_cCoxaAngle1[legIkLegNr]);
 
-            var ikFeetPosXz = xyhyp2 / C2Dec;
+            var ikFeetPosXz = xyhyp2/C2Dec;
             var ika14 = GetATan2(ikFeetPosY, ikFeetPosXz - CoxaLength, out xyhyp2);
             var iksw2 = xyhyp2;
-            var temp1 = (((FemurLength * FemurLength) - (TibiaLength * TibiaLength)) * C4Dec + (iksw2 * iksw2));
-            var temp2 = 2 * FemurLength * C2Dec * iksw2;
-            var ika24 = GetArcCos(temp1 / (temp2 / C4Dec));
+            var temp1 = (((FemurLength*FemurLength) - (TibiaLength*TibiaLength))*C4Dec + (iksw2*iksw2));
+            var temp2 = 2*FemurLength*C2Dec*iksw2;
+            var ika24 = GetArcCos(temp1/(temp2/C4Dec));
 
-            _femurAngle1[legIkLegNr] = -(ika14 + ika24) * 180 / 3141 + 900;
+            _femurAngle1[legIkLegNr] = -(ika14 + ika24)*180/3141 + 900;
 
-            temp1 = (((FemurLength * FemurLength) + (TibiaLength * TibiaLength)) * C4Dec - (iksw2 * iksw2));
-            temp2 = (2 * FemurLength * TibiaLength);
+            temp1 = (((FemurLength*FemurLength) + (TibiaLength*TibiaLength))*C4Dec - (iksw2*iksw2));
+            temp2 = (2*FemurLength*TibiaLength);
 
-            _tibiaAngle1[legIkLegNr] = -(900 - GetArcCos(temp1 / temp2) * 180 / 3141);
+            _tibiaAngle1[legIkLegNr] = -(900 - GetArcCos(temp1/temp2)*180/3141);
         }
+
         #endregion
 
         #region Servo related, build various servo controller strings and read values
+
         private string UpdateServoDriver()
         {
             var stringBuilder = new StringBuilder();
@@ -893,9 +963,9 @@ namespace HexapiBackground
             {
                 if (legIndex < 3)
                 {
-                    var wCoxaSscv = Math.Round((-_coxaAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-                    var wFemurSscv = Math.Round((-_femurAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-                    var wTibiaSscv = Math.Round((-_tibiaAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
+                    var wCoxaSscv = Math.Round((-_coxaAngle1[legIndex] + 900)*1000/CPwmDiv + CPfConst);
+                    var wFemurSscv = Math.Round((-_femurAngle1[legIndex] + 900)*1000/CPwmDiv + CPfConst);
+                    var wTibiaSscv = Math.Round((-_tibiaAngle1[legIndex] + 900)*1000/CPwmDiv + CPfConst);
 
                     if (legIndex == 0)
                     {
@@ -918,9 +988,9 @@ namespace HexapiBackground
                 }
                 else
                 {
-                    var wCoxaSscv = Math.Round((_coxaAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-                    var wFemurSscv = Math.Round(((_femurAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst));
-                    var wTibiaSscv = Math.Round((_tibiaAngle1[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
+                    var wCoxaSscv = Math.Round((_coxaAngle1[legIndex] + 900)*1000/CPwmDiv + CPfConst);
+                    var wFemurSscv = Math.Round(((_femurAngle1[legIndex] + 900)*1000/CPwmDiv + CPfConst));
+                    var wTibiaSscv = Math.Round((_tibiaAngle1[legIndex] + 900)*1000/CPwmDiv + CPfConst);
 
                     if (legIndex == 3)
                     {
@@ -1079,7 +1149,6 @@ namespace HexapiBackground
                         _legSixServos[1] = Convert.ToInt32(jointDefaults[1].Split(',')[0]);
                         _legSixServos[2] = Convert.ToInt32(jointDefaults[2].Split(',')[0]);
                     }
-
                 }
             }
             catch (Exception e)
@@ -1087,71 +1156,49 @@ namespace HexapiBackground
                 Debug.WriteLine(e);
             }
         }
+
         #endregion
 
         #region Helpers, and static methods
+
         private static double Map(double x, double inMin, double inMax, double outMin, double outMax)
         {
-            return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+            return (x - inMin)*(outMax - outMin)/(inMax - inMin) + outMin;
         }
 
         private static void GetSinCos(double angleDeg1, out double sin, out double cos)
         {
-            var angle = Math.PI * angleDeg1 / 180.0; 
+            var angle = Math.PI*angleDeg1/180.0;
 
-            sin = Math.Sin(angle) * C4Dec;
-            cos = Math.Cos(angle) * C4Dec;
+            sin = Math.Sin(angle)*C4Dec;
+            cos = Math.Cos(angle)*C4Dec;
         }
 
         private static double GetArcCos(double cos4)
         {
-            var c = cos4 / C4Dec; //Wont work right unless you do / 10000 then * 10000
-            return (Math.Abs(Math.Abs(c) - 1.0) < .001 ? (1 - c) * Math.PI / 2.0 : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * C4Dec; ;
+            var c = cos4/C4Dec; //Wont work right unless you do / 10000 then * 10000
+            return (Math.Abs(Math.Abs(c) - 1.0) < .001
+                ? (1 - c)*Math.PI/2.0
+                : Math.Atan(-c/Math.Sqrt(1 - c*c)) + 2*Math.Atan(1))*C4Dec;
+            ;
         }
 
         private static double GetATan2(double atanX, double atanY, out double xyhyp2)
         {
             double atan4;
 
-            xyhyp2 = Math.Sqrt((atanX * atanX * C4Dec) + (atanY * atanY * C4Dec));
+            xyhyp2 = Math.Sqrt((atanX*atanX*C4Dec) + (atanY*atanY*C4Dec));
 
-            var angleRad4 = GetArcCos((atanX * C6Dec) / xyhyp2);
+            var angleRad4 = GetArcCos((atanX*C6Dec)/xyhyp2);
 
-            if (atanY < 0) 
+            if (atanY < 0)
                 atan4 = -angleRad4;
             else
                 atan4 = angleRad4;
 
             return atan4;
-        } 
-        #endregion
-
-        private async void Speak(string text)
-        {
-            try
-            {
-                var mediaElement = new MediaElement();
-                var synth = new SpeechSynthesizer();
-
-                foreach (var voice in SpeechSynthesizer.AllVoices)
-                {
-                    Debug.WriteLine(voice.DisplayName + ", " + voice.Description);
-                }
-
-                // Initialize a new instance of the SpeechSynthesizer.
-                var stream = await synth.SynthesizeTextToStreamAsync(text);
-
-                // Send the stream to the media object.
-                mediaElement.SetSource(stream, stream.ContentType);
-                mediaElement.Play();
-
-                mediaElement.Stop();
-                synth.Dispose();
-            }
-            catch (Exception e)
-            {
-                //
-            }
         }
+
+        #endregion
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
@@ -12,12 +11,10 @@ namespace HexapiBackground
     {
         private I2cDevice _i2CDevice;
 
-        internal byte BaseAddress { get; }
-
         public I2CDevice(byte baseAddress, I2cBusSpeed busSpeed)
         {
             BaseAddress = baseAddress;
-            var settings = new I2cConnectionSettings(baseAddress) { BusSpeed = busSpeed };
+            var settings = new I2cConnectionSettings(baseAddress) {BusSpeed = busSpeed};
             DeviceInformationCollection devices = null;
 
             Task.Run(async () =>
@@ -35,6 +32,8 @@ namespace HexapiBackground
                     Debug.WriteLine($"Could not find I2C device at {baseAddress}");
             }).Wait();
         }
+
+        internal byte BaseAddress { get; }
 
         internal bool Write(byte[] dataBytes)
         {
@@ -89,5 +88,4 @@ namespace HexapiBackground
             }
         }
     }
-
 }

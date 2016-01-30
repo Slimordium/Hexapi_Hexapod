@@ -7,7 +7,9 @@ namespace HexapiBackground
     internal sealed class XboxController
     {
         public delegate void ButtonChangedHandler(int button);
+
         public delegate void DirectionChangedHandler(ControllerVector sender);
+
         public delegate void TriggerChangedHandler(int trigger);
 
         private const double DeadzoneTolerance = 6000;
@@ -17,9 +19,9 @@ namespace HexapiBackground
 
         private ControllerVector _dpadDirectionVector = new ControllerVector();
         private ControllerVector _leftStickDirectionVector = new ControllerVector();
-        private ControllerVector _rightStickDirectionVector = new ControllerVector();
 
         private int _leftTrigger;
+        private ControllerVector _rightStickDirectionVector = new ControllerVector();
         private int _rightTrigger;
 
         /// <summary>
