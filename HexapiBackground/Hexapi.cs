@@ -7,6 +7,9 @@ using Windows.ApplicationModel;
 using Windows.Media.SpeechSynthesis;
 using Windows.Storage;
 using Windows.UI.Xaml.Controls;
+using HexapiBackground.Enums;
+using HexapiBackground.Gps;
+
 // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
 
 namespace HexapiBackground
@@ -173,14 +176,6 @@ namespace HexapiBackground
             {
                 //
             }
-        }
-
-        private enum SelectedFunction
-        {
-            GaitSpeed,
-            LegHeight,
-            TranslateHorizontal,
-            Translate3D
         }
 
         #region Inverse Kinematics setup
