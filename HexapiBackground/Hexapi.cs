@@ -22,9 +22,13 @@ namespace HexapiBackground
         private XboxController _xboxController;
         private SerialDevice _serialPort;
         
-        private readonly Stopwatch _sw = new Stopwatch(); 
         private SelectedFunction _selectedFunction;
         private bool _isMovementStarted;
+
+        static readonly ASCIIEncoding AsciiEncoding = new ASCIIEncoding();
+        static readonly ManualResetEventSlim MreNextStep = new ManualResetEventSlim(false);
+        static readonly IBuffer QueryString = AsciiEncoding.GetBytes("Q" + "\r").AsBuffer();
+        static readonly IBuffer CheckMoveBuffer = new Buffer(1);
 
         private enum SelectedFunction
         {
@@ -162,7 +166,7 @@ namespace HexapiBackground
 
         private int _gaitStep;
         private int _gaitType;
-        private int _nomGaitSpeed = 45; //Nominal speed of the gait, equates to MS between servo commands
+        private int _nomGaitSpeed = 30; //Nominal speed of the gait, equates to MS between servo commands
 
         private double _travelLengthX; //Current Travel length X
         private double _travelLengthZ; //Current Travel length Z
@@ -259,8 +263,8 @@ namespace HexapiBackground
 
                 WriteSerial(UpdateServoDriver());
 
-                _mreNextStep.Wait(_nomGaitSpeed + 50); //Timeout is needed as sometimes the read throws some sort of silent exception and gets stuck. 
-                _mreNextStep.Reset();
+                MreNextStep.Wait(_nomGaitSpeed + 50); //Timeout is needed as sometimes the read throws some sort of silent exception and gets stuck. 
+                MreNextStep.Reset();
             }
 
             return true;
@@ -280,9 +284,7 @@ namespace HexapiBackground
 
         public void XboxControllerInit()
         {
-            bool c = true;
-
-            while (c)
+            while (_xboxController == null)
             {
                 Task.Factory.StartNew(async () =>
                 {
@@ -304,15 +306,13 @@ namespace HexapiBackground
                     {
                         Debug.WriteLine("Device ID: " + d.Id);
 
-                        var hidDevice = await HidDevice.FromIdAsync(d.Id, Windows.Storage.FileAccessMode.Read);
+                        var hidDevice = await HidDevice.FromIdAsync(d.Id, FileAccessMode.Read);
 
                         if (hidDevice == null)
                         {
                             Debug.WriteLine("Failed to connect to the XboxController");
                             return;
                         }
-
-                        c = false;
 
                         try
                         {
@@ -591,10 +591,7 @@ namespace HexapiBackground
 
 
         #region Serial port code
-        static readonly ASCIIEncoding AsciiEncoding = new ASCIIEncoding();
-        readonly ManualResetEventSlim _mreNextStep = new ManualResetEventSlim(false);
-        readonly IBuffer _queryString = AsciiEncoding.GetBytes("Q" + "\r").AsBuffer();
-        readonly IBuffer _checkMoveBuffer = new Buffer(1);
+
 
         internal async void WriteSerial(string data, Action action = null)
         {
@@ -608,14 +605,14 @@ namespace HexapiBackground
 
             while (readByte != 0x2e)
             {
-                var os = await _serialPort.OutputStream.WriteAsync(_queryString);
-                var ra = await _serialPort.InputStream.ReadAsync(_checkMoveBuffer, 1, InputStreamOptions.Partial);
+                var os = await _serialPort.OutputStream.WriteAsync(QueryString);
+                var ra = await _serialPort.InputStream.ReadAsync(CheckMoveBuffer, 1, InputStreamOptions.Partial);
 
-                if (_checkMoveBuffer.Length > 0)
-                    readByte = _checkMoveBuffer.ToArray()[0];
+                if (CheckMoveBuffer.Length > 0)
+                    readByte = CheckMoveBuffer.ToArray()[0];
             }
 
-            _mreNextStep.Set();
+            MreNextStep.Set();
         }
 
         private void OpenSsc()
@@ -623,7 +620,7 @@ namespace HexapiBackground
             while (_serialPort == null)
             {
                 var dis = DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()).GetAwaiter().GetResult();
-                var selectedPort = dis.FirstOrDefault(d => d.Name.Equals("MINWINPC")); //If using the direct memory mapped driver the uart name is the same as the machine name.
+                var selectedPort = dis.FirstOrDefault(d => d.Id.Contains("UART0")); 
 
                 if (selectedPort == null)
                 {
