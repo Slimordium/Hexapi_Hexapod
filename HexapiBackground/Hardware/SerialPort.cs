@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.SerialCommunication;
+using Windows.Foundation;
 using Windows.Storage.Streams;
 using Buffer = Windows.Storage.Streams.Buffer;
 
@@ -15,11 +16,8 @@ namespace HexapiBackground
     {
         private static IBuffer _singleByteBuffer = new Buffer(1);
         private static readonly ASCIIEncoding AsciiEncoding = new ASCIIEncoding();
-
         private static IBuffer _buffer;
-        private SerialDevice _serialPort;
-
-        private object _rwLock = new object();
+        internal SerialDevice _serialPort;
 
         internal SerialPort(string identifier, int baudRate, int readTimeoutMs, int writeTimeoutMs)
         {
@@ -82,11 +80,8 @@ namespace HexapiBackground
         internal async void Write(string data, Action writeCompleteAction = null)
         {
             var buffer = AsciiEncoding.GetBytes(data).AsBuffer();
-            var r = await _serialPort.OutputStream.WriteAsync(buffer);
-
-            if (r < buffer.Length)
-                Debug.WriteLine($"Write failed, wrote {r} of {buffer.Length}");
-
+            var r = await _serialPort.OutputStream.WriteAsync(buffer).AsTask();
+            
             writeCompleteAction?.Invoke();
         }
 
@@ -97,29 +92,41 @@ namespace HexapiBackground
 
             Task.Factory.StartNew(async () =>
             {
-                while (_singleByteBuffer.Length == 0)
-                {
-                    var ra = await _serialPort.InputStream.ReadAsync(_singleByteBuffer, 1, InputStreamOptions.Partial);
-                }
+                var b = await _serialPort.InputStream.ReadAsync(_singleByteBuffer, 1, InputStreamOptions.Partial).AsTask();
             }).Wait();
 
-            readByte = _singleByteBuffer.ToArray()[0];
+            readByte = _singleByteBuffer.GetByte(0u);
 
             readCompleteAction?.Invoke();
 
             return readByte;
         }
 
-        internal byte[] ReadBytes(int count, Action readCompleteAction = null)
+        //internal void WaitForByte(byte waitByte, string command, Action readCompleteAction)
+        //{
+        //    var buffer = AsciiEncoding.GetBytes(command).AsBuffer();
+        //    _singleByteBuffer = new Buffer(1);
+        //    byte readByte = 0x00;
+
+        //    Task.Factory.StartNew(async () =>
+        //    {
+        //        while (_singleByteBuffer.GetByte(0u) != waitByte)
+        //        {
+        //            var r = await _serialPort.OutputStream.WriteAsync(buffer);
+        //            _singleByteBuffer = await _serialPort.InputStream.ReadAsync(_singleByteBuffer, 1, InputStreamOptions.Partial).AsTask();
+        //        }
+        //    }).Wait();
+
+        //    readCompleteAction?.Invoke();
+        //}
+
+        internal byte[] ReadBytes(Action readCompleteAction = null)
         {
-            _buffer = new Buffer((uint) count);
+            _buffer = new Buffer(_serialPort.BytesReceived);
 
             Task.Factory.StartNew(async () =>
             {
-                while (_buffer.Length < count)
-                {
-                    var ra = await _serialPort.InputStream.ReadAsync(_buffer, (uint) count, InputStreamOptions.Partial);
-                }
+                var r = await _serialPort.InputStream.ReadAsync(_buffer, _buffer.Length, InputStreamOptions.Partial).AsTask();
             }).Wait();
 
             readCompleteAction?.Invoke();
@@ -133,10 +140,7 @@ namespace HexapiBackground
 
             Task.Factory.StartNew(async () =>
             {
-                while (_buffer.Length < characterCount)
-                {
-                    var ra = await _serialPort.InputStream.ReadAsync(_buffer, (uint)characterCount, InputStreamOptions.Partial);
-                }
+                var r = await _serialPort.InputStream.ReadAsync(_buffer, (uint)characterCount, InputStreamOptions.Partial).AsTask();
             }).Wait();
 
             readCompleteAction?.Invoke();
@@ -153,7 +157,7 @@ namespace HexapiBackground
             {
                 while (true)
                 {
-                    var ra = await _serialPort.InputStream.ReadAsync(_singleByteBuffer, 1, InputStreamOptions.Partial);
+                    _singleByteBuffer = await _serialPort.InputStream.ReadAsync(_singleByteBuffer, 1, InputStreamOptions.Partial).AsTask();
 
                     var c = AsciiEncoding.GetString(_singleByteBuffer.ToArray());
 

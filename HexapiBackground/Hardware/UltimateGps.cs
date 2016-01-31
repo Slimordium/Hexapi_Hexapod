@@ -310,10 +310,9 @@ namespace HexapiBackground
 
             while (!r.Equals("$"))
             {
-                var b = _serialPort.ReadBytes(1);
+                var b = _serialPort.ReadByte();
 
-                if (b != null && b.Length >= 1)
-                    r = _asciiEncoding.GetString(b, 0, 1);
+                r = _asciiEncoding.GetString(new byte[] { b }, 0, 1);
             }
 
             return _serialPort.ReadUntil("\r");

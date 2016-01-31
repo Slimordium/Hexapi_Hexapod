@@ -10,16 +10,16 @@ namespace HexapiBackground
 {
     internal sealed class XboxController
     {
-        public delegate void ButtonChangedHandler(int button);
-        public delegate void DirectionChangedHandler(ControllerVector sender);
-        public delegate void TriggerChangedHandler(int trigger);
-        public event ButtonChangedHandler FunctionButtonChanged;
-        public event ButtonChangedHandler BumperButtonChanged;
-        public event DirectionChangedHandler LeftDirectionChanged;
-        public event DirectionChangedHandler RightDirectionChanged;
-        public event DirectionChangedHandler DpadDirectionChanged;
-        public event TriggerChangedHandler LeftTriggerChanged;
-        public event TriggerChangedHandler RightTriggerChanged;
+        internal delegate void ButtonChangedHandler(int button);
+        internal delegate void DirectionChangedHandler(ControllerVector sender);
+        internal delegate void TriggerChangedHandler(int trigger);
+        internal event ButtonChangedHandler FunctionButtonChanged;
+        internal event ButtonChangedHandler BumperButtonChanged;
+        internal event DirectionChangedHandler LeftDirectionChanged;
+        internal event DirectionChangedHandler RightDirectionChanged;
+        internal event DirectionChangedHandler DpadDirectionChanged;
+        internal event TriggerChangedHandler LeftTriggerChanged;
+        internal event TriggerChangedHandler RightTriggerChanged;
         private static double _deadzoneTolerance = 6000;
         private HidDevice _deviceHandle;
         private ControllerVector _dpadDirectionVector = new ControllerVector();

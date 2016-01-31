@@ -1310,18 +1310,6 @@ namespace HexapiBackground
             q[3] = q4*norm;
         }
 
-
-        // Using the GY-9150 breakout board, ADO is set to 0 
-        // Seven-bit device address is 110100 for ADO = 0 and 110101 for ADO = 1
-        // mbed uses the eight-bit device address, so shift seven-bit addresses left by one!
-        // const byte ADO 0
-        // #if ADO
-        // const byte MPU9150_ADDRESS 0x69<<1  // Device address when ADO = 1
-        // #else
-        // const byte MPU9150_ADDRESS 0x68<<1  // Device address when ADO = 0
-        // #endif  
-
-        // Set initial input parameters
         private enum Ascale
         {
             AFS_2G = 0,

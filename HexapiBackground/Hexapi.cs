@@ -24,7 +24,7 @@ namespace HexapiBackground
 
         internal Hexapi()
         {
-            _serialPort = new SerialPort("UART0", 115200, 500, 500);
+            _serialPort = new SerialPort("UART0", 38400, 100, 100);
 
             _xboxController = new XboxController();
             _xboxController.Open();
@@ -50,8 +50,7 @@ namespace HexapiBackground
         public bool Start()
         {
             LoadLegDefaults();
-
-            _bodyPosY = 70;
+            
             _gaitStep = 0;
             _nomGaitSpeed = 30;
             _legLiftHeight = 25;
@@ -118,26 +117,23 @@ namespace HexapiBackground
                         legIndex);
                 }
 
-                _serialPort.Write(UpdateServoDriver(), () =>
-                {
-                    byte b = 0x00;
+                _serialPort.Write(UpdateServoDriver(), () => { MreNextStep.Set(); });
 
-                    while (b != 0x2e)
-                    {
-                        _serialPort.Write("Q" + "\r");
-                        b = _serialPort.ReadByte();
-                    }
-
-                    MreNextStep.Set();
-                });
-
-
-                MreNextStep.Wait(_nomGaitSpeed + 30); //Timeout is needed as sometimes the read throws some sort of silent exception and gets stuck. 
+                MreNextStep.Wait(300);
                 MreNextStep.Reset();
+
+                byte rByte = 0x00;
+                while (rByte != 0x2e)
+                {
+                    _serialPort.Write("Q" + "\r");
+                    rByte = _serialPort.ReadByte();
+                }
             }
 
             return true;
         }
+
+        Stopwatch _sw = new Stopwatch();
 
         #endregion
 
@@ -316,7 +312,7 @@ namespace HexapiBackground
 
         private int _gaitStep;
         private int _gaitType;
-        private int _nomGaitSpeed = 30; //Nominal speed of the gait, equates to MS between servo commands
+        private int _nomGaitSpeed = 60; //Nominal speed of the gait, equates to MS between servo commands
 
         private double _travelLengthX; //Current Travel length X
         private double _travelLengthZ; //Current Travel length Z
@@ -391,7 +387,10 @@ namespace HexapiBackground
                         TurnOffServos();
                     }
                     else
+                    {
                         _isMovementStarted = true;
+                        _sw.Start();
+                    }
 
                     Debug.WriteLine("setting movement to  " + _isMovementStarted);
                     break;
@@ -582,6 +581,22 @@ namespace HexapiBackground
         #endregion
 
         #region Gait calculations and logic
+
+        private void StandUp()
+        {
+            _isMovementStarted = true;
+
+            _legLiftHeight = 25;
+            _bodyPosY = 0;
+            _travelLengthZ = 1;
+
+            for (; _bodyPosY < 75; _bodyPosY++)
+            {
+                Task.Delay(10).Wait();
+            }
+            
+            _bodyPosY = 70;
+        }
 
         public void GaitSelect()
         {
