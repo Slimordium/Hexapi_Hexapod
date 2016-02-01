@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Windows.Storage;
@@ -21,7 +20,6 @@ namespace HexapiBackground
         private readonly List<LatLon> _latLonsAvg = new List<LatLon>();
         private readonly Stopwatch _sw = new Stopwatch();
         private SerialPort _serialPort;
-        readonly ASCIIEncoding _asciiEncoding = new ASCIIEncoding();
 
         internal UltimateGps()
         {

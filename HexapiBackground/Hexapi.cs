@@ -16,7 +16,6 @@ namespace HexapiBackground
 {
     internal sealed class Hexapi
     {
-        private static readonly ManualResetEventSlim MreNextStep = new ManualResetEventSlim(false);
         private bool _isMovementStarted;
         private SelectedFunction _selectedFunction;
         private readonly SerialPort _serialPort;
@@ -134,8 +133,6 @@ namespace HexapiBackground
 
             return true;
         }
-
-        Stopwatch _sw = new Stopwatch();
 
         #endregion
 
@@ -302,7 +299,7 @@ namespace HexapiBackground
         private double _tlDivFactor; //Number of steps that a leg is on the floor while walking
         private bool _travelRequest; //Temp to check if the gait is in motion
         private double _bodyPosX; //Global Input for the position of the body
-        private double _bodyPosY; //Controls height of the body from the ground
+        private double _bodyPosY = 60; //Controls height of the body from the ground
         private double _bodyPosZ;
 
         private double _bodyRotX1; //Global Input pitch of the body
@@ -395,7 +392,6 @@ namespace HexapiBackground
                     else
                     {
                         _isMovementStarted = true;
-                        _sw.Start();
                     }
 
                     Debug.WriteLine("setting movement to  " + _isMovementStarted);
@@ -444,7 +440,7 @@ namespace HexapiBackground
                     }
                     break;
                 case ControllerDirection.Down:
-                    if (_bodyPosY > 25)
+                    if (_bodyPosY > 35)
                         _bodyPosY = _bodyPosY - 5;
                     break;
             }
@@ -587,22 +583,6 @@ namespace HexapiBackground
         #endregion
 
         #region Gait calculations and logic
-
-        private void StandUp()
-        {
-            _isMovementStarted = true;
-
-            _legLiftHeight = 25;
-            _bodyPosY = 0;
-            _travelLengthZ = 1;
-
-            for (; _bodyPosY < 75; _bodyPosY++)
-            {
-                Task.Delay(10).Wait();
-            }
-            
-            _bodyPosY = 70;
-        }
 
         public void GaitSelect()
         {
@@ -1113,5 +1093,10 @@ namespace HexapiBackground
         }
 
         #endregion
+
+        public void PingData(int[] obj)
+        {
+            Debug.WriteLine($"L {obj[0]} C {obj[1]} R {obj[2]}");
+        }
     }
 }

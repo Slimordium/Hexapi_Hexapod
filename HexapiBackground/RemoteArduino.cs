@@ -1,5 +1,9 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Linq;
+using Windows.Devices.Enumeration;
 using Windows.Devices.I2c;
+using Windows.Devices.SerialCommunication;
 using Microsoft.Maker.RemoteWiring;
 using Microsoft.Maker.Serial;
 
@@ -13,13 +17,20 @@ namespace HexapiBackground
         RemoteDevice _arduino;
         private bool _isInitialized;
 
-        internal void Initialize()
+        internal Action<int[]> PingData { get; set; }
+
+        internal void Start()
         {
             if (_isInitialized) return;
 
             _isInitialized = true;
 
-            _connection = new UsbSerial("VID_2341", "PID_0042"); //Arduino MEGA is VID_2341 and PID_0042
+            var deviceInformationCollection = DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()).GetAwaiter().GetResult();
+            var selectedPort = deviceInformationCollection.FirstOrDefault(d => d.Id.Contains("AI041V40A"));
+
+            Debug.WriteLine($"Found - Arduino UNO at {selectedPort.Id}");
+
+            _connection = new UsbSerial(selectedPort); //Arduino MEGA is VID_2341 and PID_0042
             _connection.ConnectionEstablished += _connection_ConnectionEstablished;
             _connection.ConnectionFailed += _connection_ConnectionFailed;
             _connection.begin(57600, SerialConfig.SERIAL_8N1);
@@ -47,13 +58,17 @@ namespace HexapiBackground
         {
             Debug.WriteLine("Arduino connection established");
 
-            _arduino.DigitalPinUpdated += _arduino_DigitalPinUpdated;
+            //_arduino.DigitalPinUpdated += _arduino_DigitalPinUpdated;
             _arduino.StringMessageReceived += _arduino_StringMessageReceived;
         }
 
         private void _arduino_StringMessageReceived(string message)
         {
-            Debug.WriteLine($"Message from the Arduino : {message}");
+            var array = (message.Split(',').Select(int.Parse).ToArray());
+
+            PingData?.Invoke(array);
+
+            //Debug.WriteLine($"{message}");
         }
 
         private void _arduino_DigitalPinUpdated(byte pin, PinState state)

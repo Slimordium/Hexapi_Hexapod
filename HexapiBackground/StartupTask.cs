@@ -1,4 +1,5 @@
-﻿using Windows.ApplicationModel.Background;
+﻿using System.Threading.Tasks;
+using Windows.ApplicationModel.Background;
 
 namespace HexapiBackground
 {
@@ -10,21 +11,22 @@ namespace HexapiBackground
             taskInstance.GetDeferral();
 
             SerialPort.ListAvailablePorts();
-
-            var gps = new UltimateGps();
-           
-            //Task.Factory.StartNew(() =>
-            //{
-            //    var arduino = new Arduino();
-            //    arduino.Initialize();
-            //}, TaskCreationOptions.LongRunning);
-
+            
             var hexapi = new Hexapi();
 
-            //gps.GpsData = hexapi.GpsData;
-            gps.Start();
+            Task.Factory.StartNew(() =>
+            {
+                var arduino = new RemoteArduino {PingData = hexapi.PingData};
+                arduino.Start();
+            }, TaskCreationOptions.LongRunning);
 
-            var r = hexapi.Start(); //Always started last
+            Task.Factory.StartNew(() =>
+            {
+                var gps = new UltimateGps {GpsData = hexapi.GpsData};
+                gps.Start();
+            }, TaskCreationOptions.LongRunning);
+
+            var thisIsTheOnlyWayThatWasReliableInKeepingTheTaskRunning = hexapi.Start(); //Always started last
         }
     }
 }
