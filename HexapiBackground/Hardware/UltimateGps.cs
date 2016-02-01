@@ -12,7 +12,7 @@ using HexapiBackground.Gps;
 namespace HexapiBackground
 {
     //Tested as 100% working with the Adafruit Ultimate GPS
-    //Completely custom code for parsing the basic GPS data that we need for navigation. Calculates drift/accuracy over time. Seems to work fairly well
+    //Parses the basic GPS data that is needed for navigation. Calculates drift/accuracy over time. Seems to work fairly well
 
     internal sealed class UltimateGps
     {
@@ -156,8 +156,7 @@ namespace HexapiBackground
         /// <param name="destinationLat"></param>
         /// <param name="destinationLon"></param>
         /// <returns>distance to waypoint, and heading to waypoint</returns>
-        public static double[] GetDistanceAndHeadingToDestination(double currentLat, double currentLon,
-            double destinationLat, double destinationLon)
+        public static double[] GetDistanceAndHeadingToDestination(double currentLat, double currentLon, double destinationLat, double destinationLon)
         {
             try
             {
@@ -289,10 +288,13 @@ namespace HexapiBackground
 
                 while (true)
                 {
-                    var sentence = ReadSentence();
+                    var sentences = _serialPort.ReadString();
 
-                    if (sentence.Length > 15)
-                        Parse(sentence);
+                    foreach (var s in sentences.Split('$'))
+                    {
+                        if (s.Length > 15)
+                            Parse(s);
+                    }
 
                     if (_sw.ElapsedMilliseconds <= 2000)
                         continue;
@@ -301,21 +303,6 @@ namespace HexapiBackground
                     _sw.Restart();
                 }
             }, TaskCreationOptions.LongRunning);
-        }
-
-        //Only read complete sentences
-        private string ReadSentence()
-        {
-            var r = string.Empty;
-
-            while (!r.Equals("$"))
-            {
-                var b = _serialPort.ReadByte();
-
-                r = _asciiEncoding.GetString(new byte[] { b }, 0, 1);
-            }
-
-            return _serialPort.ReadUntil("\r");
         }
 
         #endregion

@@ -9,9 +9,9 @@ namespace HexapiBackground
         {
             taskInstance.GetDeferral();
 
-            //SerialPort.ListAvailablePorts();
+            SerialPort.ListAvailablePorts();
 
-            //var gps = new UltimateGps();
+            var gps = new UltimateGps();
            
             //Task.Factory.StartNew(() =>
             //{
@@ -22,7 +22,7 @@ namespace HexapiBackground
             var hexapi = new Hexapi();
 
             //gps.GpsData = hexapi.GpsData;
-            //gps.Start();
+            gps.Start();
 
             var r = hexapi.Start(); //Always started last
         }

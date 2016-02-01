@@ -24,7 +24,7 @@ namespace HexapiBackground
 
         internal Hexapi()
         {
-            _serialPort = new SerialPort("UART0", 38400, 100, 100);
+            _serialPort = new SerialPort("UART0", 38400, 200, 200);
 
             _xboxController = new XboxController();
             _xboxController.Open();
@@ -52,7 +52,7 @@ namespace HexapiBackground
             LoadLegDefaults();
             
             _gaitStep = 0;
-            _nomGaitSpeed = 30;
+            _nomGaitSpeed = 40;
             _legLiftHeight = 25;
             _gaitType = 1;
 
@@ -117,16 +117,18 @@ namespace HexapiBackground
                         legIndex);
                 }
 
-                _serialPort.Write(UpdateServoDriver(), () => { MreNextStep.Set(); });
+                _serialPort.Write(UpdateServoDriver());
 
-                MreNextStep.Wait(300);
-                MreNextStep.Reset();
+                byte rb = 0x00;
 
-                byte rByte = 0x00;
-                while (rByte != 0x2e)
+                while (rb != 0x2e)
                 {
-                    _serialPort.Write("Q" + "\r");
-                    rByte = _serialPort.ReadByte();
+                    Task.Factory.StartNew(async () =>
+                    {
+                        rb = await _serialPort.ReadByte();
+                    }).Wait();
+
+                    _serialPort.Write("Q\r");
                 }
             }
 
@@ -176,8 +178,8 @@ namespace HexapiBackground
 
         #region Inverse Kinematics setup
 
-        private const int CPfConst = 592; //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500
-        private const int CPwmDiv = 991; //old 1059, new 991;
+        private const double CPfConst = 592; //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500
+        private const double CPwmDiv = 991; //old 1059, new 991;
 
         private const double CTravelDeadZone = 1;
 
@@ -193,12 +195,12 @@ namespace HexapiBackground
         private const int CRr = 0;
 
         //All legs being equal, all legs will have the same values
-        private const int CoxaMin = -610; //-650 
-        private const int CoxaMax = 610; //650
-        private const int FemurMin = -2900; //-1050
-        private const int FemurMax = 2900; //150
-        private const int TibiaMin = -2900; //-450
-        private const int TibiaMax = 2900; //350
+        private const double CoxaMin = -610; //-650 
+        private const double CoxaMax = 610; //650
+        private const double FemurMin = -2900; //-1050
+        private const double FemurMax = 2900; //150
+        private const double TibiaMin = -2900; //-450
+        private const double TibiaMax = 2900; //350
 
         private const double CRrCoxaAngle1 = -450;
         private const double CRmCoxaAngle1 = 0;
@@ -310,9 +312,9 @@ namespace HexapiBackground
         private int _halfLiftHeight; //If TRUE the outer positions of the ligted legs will be half height    
         private double _legLiftHeight; //Current Travel height
 
-        private int _gaitStep;
+        private double _gaitStep;
         private int _gaitType;
-        private int _nomGaitSpeed = 60; //Nominal speed of the gait, equates to MS between servo commands
+        private double _nomGaitSpeed = 40; //Nominal speed of the gait, equates to MS between servo commands
 
         private double _travelLengthX; //Current Travel length X
         private double _travelLengthZ; //Current Travel length Z
@@ -339,18 +341,22 @@ namespace HexapiBackground
                     if (button == 5)
                     {
                         if (_nomGaitSpeed < 200)
+                        {
                             _nomGaitSpeed = _nomGaitSpeed + 2;
+                        }
                     }
                     else
                     {
                         if (_nomGaitSpeed > 20)
+                        {
                             _nomGaitSpeed = _nomGaitSpeed - 2;
+                        }
                     }
                     break;
                 case SelectedFunction.LegHeight: //B
                     if (button == 5)
                     {
-                        if (_legLiftHeight < 130)
+                        if (_legLiftHeight < 160)
                             _legLiftHeight = _legLiftHeight + 2;
                     }
                     else
