@@ -28,23 +28,18 @@ namespace HexapiBackground
             Heading = 0.0f;
             Altitude = 0.0f;
             FeetPerSecond = 0.0f;
-
-            Waypoints = new List<LatLon>();
-
+            
             SetGpsBaudRate();
-
-            LoadWaypoints();
         }
 
-        internal DateTime Time { get; set; }
-        internal double Latitude { get; set; }
-        internal double Longitude { get; set; }
-        internal GpsFixQuality Quality { get; set; }
-        internal double Heading { get; set; }
-        internal float Altitude { get; set; }
-        internal double FeetPerSecond { get; set; }
-        public Action<LatLon> GpsData { get; set; }
-        public List<LatLon> Waypoints { get; set; }
+        internal static DateTime Time { get; set; }
+        internal static double Latitude { get; set; }
+        internal static double Longitude { get; set; }
+        internal static GpsFixQuality Quality { get; set; }
+        internal static double Heading { get; set; }
+        internal static float Altitude { get; set; }
+        internal static double FeetPerSecond { get; set; }
+        internal Action<LatLon> GpsData { get; set; }
 
         //http://www.x-io.co.uk/open-source-ahrs-with-x-imu/
         //https://electronics.stackexchange.com/questions/16707/imu-adxl345-itg3200-triple-axis-filter
@@ -147,14 +142,6 @@ namespace HexapiBackground
             Debug.WriteLine($"Lat, Lon avg {Math.Round(_latLonsAvg.Sum(l => l.Lat)/_latLonsAvg.Count, 7)}, {Math.Round(_latLonsAvg.Sum(l => l.Lon)/_latLonsAvg.Count, 7)} over {_latLonsAvg.Count}");
         }
 
-        internal static void SaveWaypointToFile(LatLon latLon)
-        {
-            if (latLon == null)
-                return;
-
-            Helpers.SaveStringToFile("waypoints.config", latLon.ToString());
-        }
-
         /// <summary>
         ///     Returns double[] [0] = distance to heading in inches. [1] = heading to destination waypoint
         /// </summary>
@@ -207,34 +194,6 @@ namespace HexapiBackground
             }
         }
 
-        public void LoadWaypoints()
-        {
-            Waypoints = new List<LatLon>();
-
-            var config = Helpers.ReadStringFromFile("waypoints.config");
-
-            if (string.IsNullOrEmpty(config))
-            {
-                Debug.WriteLine("Empty waypoints.config file");
-                return;
-            }
-
-            var wps = config.Split(';');
-         
-            foreach (var wp in wps)
-            {
-                try
-                {
-                    Waypoints.Add(new LatLon(wp));
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine(e);
-                    //Partial string usually
-                }
-            }
-        }
-        
         private static double ToRadians(double conversionValue)
         {
             return conversionValue*Math.PI/180;

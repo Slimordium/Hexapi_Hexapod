@@ -26,6 +26,16 @@ namespace HexapiBackground.Gps
             if (aParsed.Length < 5)
             {
                 Debug.WriteLine($"Could not parse waypoint data - {rawData}");
+
+                Lat = 0;
+                Lon = 0;
+                DateTime = DateTime.UtcNow;
+                Quality = GpsFixQuality.NoFix;
+                Heading = 0;
+                Altitude = 0;
+                FeetPerSecond = 0;
+                DistanceToAvgCenter = 0;
+                CorrectedDistanceToCenter = 0;
                 return;
             }
 
@@ -49,11 +59,23 @@ namespace HexapiBackground.Gps
         internal double FeetPerSecond { get; set; }
         internal DateTime DateTime { get; set; }
         internal double DistanceToAvgCenter { get; set; }
+
+        internal double DistanceFromCurrent
+        {
+            get { return UltimateGps.GetDistanceAndHeadingToDestination(UltimateGps.Latitude, UltimateGps.Longitude, Lat, Lon)[0]; }
+        }
+
+        internal double HeadingFromCurrent
+        {
+            get { return UltimateGps.GetDistanceAndHeadingToDestination(UltimateGps.Latitude, UltimateGps.Longitude, Lat, Lon)[1]; }
+        }
+
         internal double CorrectedDistanceToCenter { get; set; }
+
 
         public override string ToString()
         {
-            return $"{DateTime},{Lat},{Lon},{Heading},{FeetPerSecond},{Quality};";
+            return $"{DateTime},{Lat},{Lon},{Heading},{FeetPerSecond},{Quality} " + '\n';
         }
     }
 }
