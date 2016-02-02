@@ -6,13 +6,14 @@ using System.Threading.Tasks;
 using HexapiBackground.Gps;
 
 namespace HexapiBackground{
-    internal sealed class AvController{
+    internal sealed class AvController
+    {
         private static LatLon _currentLatLon;
 
         private readonly Stopwatch _gpsStopwatch = new Stopwatch();
         private readonly Stopwatch _pingStopwatch = new Stopwatch();
-        private readonly List<int> _centerAvg = new List<int>();
 
+        private readonly List<int> _centerAvg = new List<int>();
         private readonly List<int> _leftAvg = new List<int>();
         private readonly List<int> _rightAvg = new List<int>();
 
