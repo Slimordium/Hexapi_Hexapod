@@ -13,16 +13,17 @@ namespace HexapiBackground
             SerialPort.ListAvailablePorts();
             
             var hexapi = new Hexapi();
+            var avc = new AvController();
 
             Task.Factory.StartNew(() =>
             {
-                var arduino = new RemoteArduino {PingData = hexapi.PingData};
+                var arduino = new RemoteArduino {PingData = avc.PingData};
                 arduino.Start();
             }, TaskCreationOptions.LongRunning);
 
             Task.Factory.StartNew(() =>
             {
-                var gps = new UltimateGps {GpsData = hexapi.GpsData};
+                var gps = new UltimateGps {GpsData = avc.GpsData};
                 gps.Start();
             }, TaskCreationOptions.LongRunning);
 

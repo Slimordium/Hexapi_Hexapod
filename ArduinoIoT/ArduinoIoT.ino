@@ -783,9 +783,6 @@ void setup()
 }
 
 
-
-
-
 /*==============================================================================
 * LOOP()
 *============================================================================*/
@@ -799,9 +796,9 @@ void loop()
 
 	String toSend = String(left + "," + center + "," + right);
 
-	char chars[16];
+	char chars[24];
 
-	toSend.toCharArray(chars, 16);
+	toSend.toCharArray(chars, 24);
 
 	Firmata.sendString(chars);
 	delay(30);
@@ -860,15 +857,14 @@ long Ping(int sensor)
 		echoPin = rightEchoPin;
 	}
 
-	digitalWrite(trigPin, LOW);  // Added this line
+	digitalWrite(trigPin, LOW);
 	delayMicroseconds(2);
 	digitalWrite(trigPin, HIGH);
-	delayMicroseconds(10); // Added this line
+	delayMicroseconds(10);
 	digitalWrite(trigPin, LOW);
 
 	long duration = pulseIn(echoPin, HIGH);
-	long distance = (duration) / 58.2;
 
-	return distance;
+	return duration;
 }
 

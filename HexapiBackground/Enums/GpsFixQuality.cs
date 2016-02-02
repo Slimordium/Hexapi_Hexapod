@@ -1,5 +1,8 @@
-﻿namespace HexapiBackground.Enums
+﻿using System;
+
+namespace HexapiBackground.Enums
 {
+    [Flags]
     internal enum GpsFixQuality
     {
         NoFix,

@@ -136,15 +136,6 @@ namespace HexapiBackground
 
         #endregion
 
-        /// <summary>
-        ///     This is called from the GPS class after data is received and then validated.
-        /// </summary>
-        /// <param name="latLon"></param>
-        public void GpsData(LatLon latLon)
-        {
-            //ToDo : Logic to steer mr hexapi
-        }
-
         private async void Speak(string text)
         {
             try
@@ -397,7 +388,7 @@ namespace HexapiBackground
                     Debug.WriteLine("setting movement to  " + _isMovementStarted);
                     break;
                 case 6: //back button
-                    //This will save the current lat/lon as a waypoint
+                    AvController.SaveWaypointToFile();
                     break;
                 default:
                     Debug.WriteLine("button? " + button);

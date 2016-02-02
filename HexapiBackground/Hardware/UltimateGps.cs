@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
@@ -31,7 +32,11 @@ namespace HexapiBackground
             Altitude = 0.0f;
             FeetPerSecond = 0.0f;
 
+            Waypoints = new List<LatLon>();
+
             SetGpsBaudRate();
+
+            LoadWaypoints();
         }
 
         internal DateTime Time { get; set; }
@@ -42,7 +47,7 @@ namespace HexapiBackground
         internal float Altitude { get; set; }
         internal double FeetPerSecond { get; set; }
         public Action<LatLon> GpsData { get; set; }
-        public LatLon Waypoints { get; set; }
+        public List<LatLon> Waypoints { get; set; }
 
         //http://www.x-io.co.uk/open-source-ahrs-with-x-imu/
         //https://electronics.stackexchange.com/questions/16707/imu-adxl345-itg3200-triple-axis-filter
@@ -140,10 +145,30 @@ namespace HexapiBackground
             _latLons.RemoveRange(0, _latLons.Count/2);
 
             var d = (_correctors.Sum()/Math.Round((double) _correctors.Count, 2));
-            Debug.WriteLine($"Average drift {Math.Round(d, 1)}in.");
 
-            Debug.WriteLine(
-                $"Lat, Lon avg {Math.Round(_latLonsAvg.Sum(l => l.Lat)/_latLonsAvg.Count, 7)}, {Math.Round(_latLonsAvg.Sum(l => l.Lon)/_latLonsAvg.Count, 7)} over {_latLonsAvg.Count}");
+            Debug.WriteLine($"Average drift {Math.Round(d, 1)}in.");
+            Debug.WriteLine($"Lat, Lon avg {Math.Round(_latLonsAvg.Sum(l => l.Lat)/_latLonsAvg.Count, 7)}, {Math.Round(_latLonsAvg.Sum(l => l.Lon)/_latLonsAvg.Count, 7)} over {_latLonsAvg.Count}");
+        }
+
+        internal static void SaveWaypointToFile(LatLon latLon)
+        {
+            if (latLon == null) return;
+
+            SaveStringToLocalFile("waypoints.config", latLon.ToString());
+        }
+
+        static void SaveStringToLocalFile(string filename, string content)
+        {
+            Task.Factory.StartNew(() =>
+            {
+                var bytesToAppend = System.Text.Encoding.UTF8.GetBytes(content.ToCharArray());
+                var file = ApplicationData.Current.LocalFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).AsTask().Result;
+                var stream = file.OpenStreamForWriteAsync().Result;
+
+                stream.Position = stream.Length;
+                stream.Write(bytesToAppend, 0, bytesToAppend.Length);
+                stream.Dispose();
+            });
         }
 
         /// <summary>
@@ -201,35 +226,42 @@ namespace HexapiBackground
         public async void LoadWaypoints()
         {
             var config = string.Empty;
+            Waypoints = new List<LatLon>();
 
             try
             {
                 var folder = Package.Current.InstalledLocation;
-                var file = await folder.GetFileAsync("waypoints.txt");
+                var file = await folder.GetFileAsync("waypoints.config");
                 config = await FileIO.ReadTextAsync(file);
             }
             catch (Exception e)
             {
-                Debug.WriteLine("Cannot read waypoints.txt" + e);
+                Debug.WriteLine("Cannot read waypoints.config" + e);
                 return;
             }
 
             if (string.IsNullOrEmpty(config))
             {
-                Debug.WriteLine("Empty waypoints.txt file");
+                Debug.WriteLine("Empty waypoints.config file");
                 return;
             }
 
-            try
+            var wps = config.Split(';');
+         
+            foreach (var wp in wps)
             {
-                //TODO : Waypoints.Add(new LatLon .... blah blah
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e);
+                try
+                {
+                    Waypoints.Add(new LatLon(wp));
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                    //Partial string usually
+                }
             }
         }
-
+        
         private static double ToRadians(double conversionValue)
         {
             return conversionValue*Math.PI/180;
@@ -282,7 +314,7 @@ namespace HexapiBackground
             Task.Factory.StartNew(() =>
             {
                 Debug.WriteLine("GPS Started...");
-                _sw.Start();
+                
 
                 while (true)
                 {
@@ -294,13 +326,8 @@ namespace HexapiBackground
                             Parse(s);
                     }
 
-                    if (_sw.ElapsedMilliseconds <= 2000)
-                        continue;
-
-                    Debug.WriteLine($"{DateTime.Now} - {Latitude}, {Longitude} Angle: {Heading} FPS: {FeetPerSecond} {Quality}");
-                    _sw.Restart();
                 }
-            }, TaskCreationOptions.LongRunning);
+            });
         }
 
         #endregion
@@ -361,7 +388,7 @@ namespace HexapiBackground
                         double fps = 0;
                         if (double.TryParse(tokens[7], out fps))
                             FeetPerSecond = Math.Round(fps*1.68781, 2);
-                                //Convert knots to feet per second or "Speed over ground"
+                        //Convert knots to feet per second or "Speed over ground"
 
                         double dir = 0;
                         if (double.TryParse(tokens[8], out dir))
@@ -379,6 +406,10 @@ namespace HexapiBackground
                 var newLatLon = new LatLon {Lat = lat, Lon = lon};
 
                 Add(newLatLon);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                //No fix yet
             }
             catch (Exception e)
             {

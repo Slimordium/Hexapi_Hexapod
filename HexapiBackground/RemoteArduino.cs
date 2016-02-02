@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.I2c;
 using Windows.Devices.SerialCommunication;
@@ -9,31 +10,38 @@ using Microsoft.Maker.Serial;
 
 namespace HexapiBackground
 {
-    //This works, not doing anything yet with it
-    //TODO : Add ping sensor events 
     sealed internal class RemoteArduino
     {
         IStream _connection;
         RemoteDevice _arduino;
         private bool _isInitialized;
 
-        internal Action<int[]> PingData { get; set; }
+        internal Action<int[]> PingData { private get; set; }
 
         internal void Start()
         {
             if (_isInitialized) return;
 
-            _isInitialized = true;
+            Task.Factory.StartNew(() =>
+            {
+                _isInitialized = true;
 
-            var deviceInformationCollection = DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()).GetAwaiter().GetResult();
-            var selectedPort = deviceInformationCollection.FirstOrDefault(d => d.Id.Contains("AI041V40A"));
+                var deviceInformationCollection = DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()).GetAwaiter().GetResult();
+                var selectedPort = deviceInformationCollection.FirstOrDefault(d => d.Id.Contains("AI041V40A"));
 
-            Debug.WriteLine($"Found - Arduino UNO at {selectedPort.Id}");
+                Debug.WriteLine($"Found - Arduino UNO at {selectedPort.Id}");
 
-            _connection = new UsbSerial(selectedPort); //Arduino MEGA is VID_2341 and PID_0042
-            _connection.ConnectionEstablished += _connection_ConnectionEstablished;
-            _connection.ConnectionFailed += _connection_ConnectionFailed;
-            _connection.begin(57600, SerialConfig.SERIAL_8N1);
+                _connection = new UsbSerial(selectedPort); //Arduino MEGA is VID_2341 and PID_0042
+                _connection.ConnectionEstablished += _connection_ConnectionEstablished;
+                _connection.ConnectionFailed += _connection_ConnectionFailed;
+                _connection.ConnectionLost += _connection_ConnectionLost;
+                _connection.begin(57600, SerialConfig.SERIAL_8N1);
+            });
+        }
+
+        private void _connection_ConnectionLost(string message)
+        {
+            Debug.WriteLine("Connection to the Arduino was lost : " + message);
         }
 
         private void _connection_ConnectionFailed(string message)
@@ -48,7 +56,7 @@ namespace HexapiBackground
 
         private void _connection_ConnectionEstablished()
         {
-            Debug.WriteLine("Serial connection to the Arduino established");
+            Debug.WriteLine("Serial connection for the Arduino UNO to the FTDI UART established");
             _arduino = new RemoteDevice(_connection);
             _arduino.DeviceConnectionFailed += _arduino_DeviceConnectionFailed;
             _arduino.DeviceReady += _arduino_DeviceReady;
@@ -56,7 +64,7 @@ namespace HexapiBackground
 
         private void _arduino_DeviceReady()
         {
-            Debug.WriteLine("Arduino connection established");
+            Debug.WriteLine("Arduino UNO communication successfully negotiated");
 
             //_arduino.DigitalPinUpdated += _arduino_DigitalPinUpdated;
             _arduino.StringMessageReceived += _arduino_StringMessageReceived;
