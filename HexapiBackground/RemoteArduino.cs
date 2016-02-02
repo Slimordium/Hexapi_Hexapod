@@ -16,7 +16,7 @@ namespace HexapiBackground
         RemoteDevice _arduino;
         private bool _isInitialized;
 
-        internal Action<int[]> PingData { private get; set; }
+        internal Action<int[]> RangeUpdate { private get; set; }
 
         internal void Start()
         {
@@ -74,7 +74,7 @@ namespace HexapiBackground
         {
             var array = (message.Split(',').Select(int.Parse).ToArray());
 
-            PingData?.Invoke(array);
+            RangeUpdate?.Invoke(array);
 
             //Debug.WriteLine($"{message}");
         }

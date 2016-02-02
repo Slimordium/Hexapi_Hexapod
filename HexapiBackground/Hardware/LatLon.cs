@@ -60,18 +60,9 @@ namespace HexapiBackground.Gps
         internal DateTime DateTime { get; set; }
         internal double DistanceToAvgCenter { get; set; }
 
-        internal double DistanceFromCurrent
-        {
-            get { return UltimateGps.GetDistanceAndHeadingToDestination(UltimateGps.Latitude, UltimateGps.Longitude, Lat, Lon)[0]; }
-        }
-
-        internal double HeadingFromCurrent
-        {
-            get { return UltimateGps.GetDistanceAndHeadingToDestination(UltimateGps.Latitude, UltimateGps.Longitude, Lat, Lon)[1]; }
-        }
+        internal double[] DistanceHeadingFromCurrent => UltimateGps.GetDistanceAndHeadingToDestination(UltimateGps.Latitude, UltimateGps.Longitude, Lat, Lon);
 
         internal double CorrectedDistanceToCenter { get; set; }
-
 
         public override string ToString()
         {

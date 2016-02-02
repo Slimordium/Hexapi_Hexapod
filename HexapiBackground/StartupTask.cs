@@ -17,13 +17,13 @@ namespace HexapiBackground
 
             Task.Factory.StartNew(() =>
             {
-                var arduino = new RemoteArduino {PingData = avc.PingData};
+                var arduino = new RemoteArduino {RangeUpdate = avc.RangUpdate};
                 arduino.Start();
             }, TaskCreationOptions.LongRunning);
 
             Task.Factory.StartNew(() =>
             {
-                var gps = new UltimateGps {GpsData = avc.GpsData};
+                var gps = new UltimateGps {LatLonUpdate = avc.LatLonUpdate};
                 gps.Start();
             }, TaskCreationOptions.LongRunning);
 

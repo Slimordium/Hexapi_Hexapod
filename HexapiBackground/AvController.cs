@@ -25,6 +25,8 @@ namespace HexapiBackground{
             RightInches = 0;
             CenterInches = 0;
 
+            Waypoints = new List<LatLon>();
+
             LoadWaypoints();
         }
 
@@ -32,8 +34,7 @@ namespace HexapiBackground{
         internal static double CenterInches { get; private set; }
         internal static double RightInches { get; private set; }
 
-
-        internal void PingData(int[] data)
+        internal void RangUpdate(int[] data)
         {
             if (data.Length < 3)
             {
@@ -56,24 +57,22 @@ namespace HexapiBackground{
 
             CenterInches = GetInchesFromDuration(_centerAvg.Sum()/_centerAvg.Count);
             _centerAvg.RemoveAt(0);
-
-            Debug.WriteLine($"{LeftInches}, {CenterInches}, {RightInches}");
         }
 
-        internal void FindNearestWaypoint()
+        internal void PrintDistanceHeadingToWaypoints()
         {
             foreach (var wp in Waypoints)
             {
-                Debug.WriteLine($"From current loacaion, Distance: {Math.Round(wp.DistanceFromCurrent, 1)}in., Heading: {Math.Round(wp.HeadingFromCurrent, 2)}");
+                Debug.WriteLine($"From current location, Distance: {wp.DistanceHeadingFromCurrent[0]}in. Heading: {wp.DistanceHeadingFromCurrent[1]}");
             }
         }
 
         private static double GetInchesFromDuration(int duration) //73.746 microseconds per inch
         {
-            return Math.Round((duration/73.746)/2, 2);
+            return Math.Round((duration/73.746)/2, 1);
         }
 
-        internal void GpsData(LatLon latLon)
+        internal void LatLonUpdate(LatLon latLon)
         {
             _currentLatLon = latLon;
 
@@ -82,14 +81,10 @@ namespace HexapiBackground{
 
             _gpsStopwatch.Restart();
 
-            FindNearestWaypoint();
-
-            Debug.WriteLine(latLon.ToString());
-
-            
+            PrintDistanceHeadingToWaypoints();
         }
 
-        internal static void SaveWaypointToFile()
+        internal static void SaveWaypoint()
         {
             if (_currentLatLon == null) return;
 
@@ -102,7 +97,7 @@ namespace HexapiBackground{
         {
             Waypoints = new List<LatLon>();
 
-            var config = Helpers.ReadStringFromFile("waypoints.config");
+            var config = Helpers.ReadStringFromFile("waypoints.config").Result;
 
             if (string.IsNullOrEmpty(config))
             {

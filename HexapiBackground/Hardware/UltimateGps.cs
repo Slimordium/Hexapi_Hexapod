@@ -39,7 +39,7 @@ namespace HexapiBackground
         internal static double Heading { get; set; }
         internal static float Altitude { get; set; }
         internal static double FeetPerSecond { get; set; }
-        internal Action<LatLon> GpsData { get; set; }
+        internal Action<LatLon> LatLonUpdate { get; set; }
 
         //http://www.x-io.co.uk/open-source-ahrs-with-x-imu/
         //https://electronics.stackexchange.com/questions/16707/imu-adxl345-itg3200-triple-axis-filter
@@ -84,7 +84,7 @@ namespace HexapiBackground
         {
             _latLons.Add(latLon);
 
-            Task.Factory.StartNew(() => GpsData?.Invoke(latLon));
+            Task.Factory.StartNew(() => LatLonUpdate?.Invoke(latLon));
 
             if (_latLons.Count <= 1000)
                 return;
@@ -185,7 +185,7 @@ namespace HexapiBackground
                 if (heading < 0)
                     heading += 360;
 
-                return new[] {distCalc, heading};
+                return new[] {Math.Round(distCalc, 1), Math.Round(heading, 1)};
             }
             catch (Exception e)
             {

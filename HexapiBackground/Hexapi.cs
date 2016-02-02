@@ -388,7 +388,7 @@ namespace HexapiBackground
                     Debug.WriteLine("setting movement to  " + _isMovementStarted);
                     break;
                 case 6: //back button
-                    AvController.SaveWaypointToFile();
+                    AvController.SaveWaypoint();
                     break;
                 default:
                     Debug.WriteLine("button? " + button);

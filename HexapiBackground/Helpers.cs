@@ -7,43 +7,43 @@ using Windows.Storage;
 namespace HexapiBackground{
     internal static class Helpers
     {
-        internal static string ReadStringFromFile(string filename)
+        internal static async Task<string> ReadStringFromFile(string filename)
         {
-            return Task.Factory.StartNew(() =>
+            var text = string.Empty;
+            try
             {
-                var text = string.Empty;
-                try
-                {
-                    var file = ApplicationData.Current.LocalFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).AsTask().Result;
-                    var stream = file.OpenStreamForReadAsync().Result;
+                var file = await ApplicationData.Current.LocalFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).AsTask();
 
+                using (var stream = await file.OpenStreamForReadAsync())
+                {
                     using (var reader = new StreamReader(stream))
                     {
                         text = reader.ReadToEnd();
                     }
                 }
-                catch (Exception e)
-                {
-                    Debug.WriteLine(e);
-                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+            }
 
-                return text;
-            }).Result;
+            return text;
         }
 
         internal static void SaveStringToFile(string filename, string content)
         {
-            Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(async () =>
             {
                 try
                 {
                     var bytesToAppend = System.Text.Encoding.UTF8.GetBytes(content.ToCharArray());
-                    var file = ApplicationData.Current.LocalFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).AsTask().Result;
-                    var stream = file.OpenStreamForWriteAsync().Result;
+                    var file = await ApplicationData.Current.LocalFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).AsTask();
 
-                    stream.Position = stream.Length;
-                    stream.Write(bytesToAppend, 0, bytesToAppend.Length);
-                    stream.Dispose();
+                    using (var stream = await file.OpenStreamForWriteAsync())
+                    {
+                        stream.Position = stream.Length;
+                        stream.Write(bytesToAppend, 0, bytesToAppend.Length);
+                    }
                 }
                 catch
                 {
