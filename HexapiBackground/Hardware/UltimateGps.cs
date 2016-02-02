@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Windows.ApplicationModel;
-using Windows.Storage;
 using HexapiBackground.Enums;
 using HexapiBackground.Gps;
 
@@ -152,23 +149,10 @@ namespace HexapiBackground
 
         internal static void SaveWaypointToFile(LatLon latLon)
         {
-            if (latLon == null) return;
+            if (latLon == null)
+                return;
 
-            SaveStringToLocalFile("waypoints.config", latLon.ToString());
-        }
-
-        static void SaveStringToLocalFile(string filename, string content)
-        {
-            Task.Factory.StartNew(() =>
-            {
-                var bytesToAppend = System.Text.Encoding.UTF8.GetBytes(content.ToCharArray());
-                var file = ApplicationData.Current.LocalFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).AsTask().Result;
-                var stream = file.OpenStreamForWriteAsync().Result;
-
-                stream.Position = stream.Length;
-                stream.Write(bytesToAppend, 0, bytesToAppend.Length);
-                stream.Dispose();
-            });
+            Helpers.SaveStringToFile("waypoints.config", latLon.ToString());
         }
 
         /// <summary>
@@ -223,22 +207,11 @@ namespace HexapiBackground
             }
         }
 
-        public async void LoadWaypoints()
+        public void LoadWaypoints()
         {
-            var config = string.Empty;
             Waypoints = new List<LatLon>();
 
-            try
-            {
-                var folder = Package.Current.InstalledLocation;
-                var file = await folder.GetFileAsync("waypoints.config");
-                config = await FileIO.ReadTextAsync(file);
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine("Cannot read waypoints.config" + e);
-                return;
-            }
+            var config = Helpers.ReadStringFromFile("waypoints.config");
 
             if (string.IsNullOrEmpty(config))
             {
@@ -315,17 +288,11 @@ namespace HexapiBackground
             {
                 Debug.WriteLine("GPS Started...");
                 
-
                 while (true)
                 {
                     var sentences = _serialPort.ReadString();
 
-                    foreach (var s in sentences.Split('$'))
-                    {
-                        if (s.Length > 15)
-                            Parse(s);
-                    }
-
+                    foreach (var s in sentences.Split('$').Where(s => s.Length > 15)) { Parse(s); }
                 }
             });
         }

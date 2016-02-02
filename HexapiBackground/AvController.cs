@@ -48,24 +48,22 @@ namespace HexapiBackground{
             if (_leftAvg.Count > 3)
             {
                 LeftInches = GetInchesFromDuration(_leftAvg.Sum()/_leftAvg.Count);
-                _leftAvg = new List<int>();
-
-                Debug.WriteLine($"{LeftInches}, {CenterInches}, {RightInches}");
+                _leftAvg.RemoveAt(0);
             }
 
             if (_rightAvg.Count > 3)
             {
                 RightInches = GetInchesFromDuration(_rightAvg.Sum()/_rightAvg.Count);
-                _rightAvg = new List<int>();
+                _rightAvg.RemoveAt(0);
             }
 
             if (_centerAvg.Count > 3)
             {
                 CenterInches = GetInchesFromDuration(_centerAvg.Sum()/_centerAvg.Count);
-                _centerAvg = new List<int>();
-            }
+                _centerAvg.RemoveAt(0);
 
-            
+                Debug.WriteLine($"{LeftInches}, {CenterInches}, {RightInches}");
+            }
         }
 
         private static double GetInchesFromDuration(int duration) //73.746 microseconds per inch
@@ -79,9 +77,9 @@ namespace HexapiBackground{
 
             if (_gpsStopwatch.ElapsedMilliseconds <= 2000)
                 return;
+            _gpsStopwatch.Restart();
 
             Debug.WriteLine(latLon.ToString());
-            _gpsStopwatch.Restart();
         }
 
         internal static void SaveWaypointToFile()
