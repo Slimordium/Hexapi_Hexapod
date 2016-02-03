@@ -228,23 +228,24 @@ namespace HexapiBackground
 
         internal void Start()
         {
-            _serialPort = new SerialPort("A104OHRXA", 115200, 2000, 2000);
-
-            Debug.WriteLine("Configuring GPS, please wait...");
-
-            _serialPort.Write(PmtkSetNmeaOutputRmcgga);
-            Task.Delay(1400).Wait();
-            _serialPort.Write(PmtkSetNmeaUpdate10Hz);
-            Task.Delay(1400).Wait();
-            _serialPort.Write(PmtkApiSetFixCtl10Hz);
-            Task.Delay(1400).Wait();
-            _serialPort.Write(EnableSbas);
-            Task.Delay(1400).Wait();
-            _serialPort.Write(SbasModeWaas);
-            Task.Delay(1400).Wait();
-
             Task.Factory.StartNew(() =>
             {
+                _serialPort = new SerialPort("A104OHRXA", 115200, 2000, 2000);
+
+                Debug.WriteLine("Configuring GPS, please wait...");
+
+                _serialPort.Write(PmtkSetNmeaOutputRmcgga);
+                Task.Delay(1400).Wait();
+                _serialPort.Write(PmtkSetNmeaUpdate10Hz);
+                Task.Delay(1400).Wait();
+                _serialPort.Write(PmtkApiSetFixCtl10Hz);
+                Task.Delay(1400).Wait();
+                _serialPort.Write(EnableSbas);
+                Task.Delay(1400).Wait();
+                _serialPort.Write(SbasModeWaas);
+                Task.Delay(1400).Wait();
+
+
                 Debug.WriteLine("GPS Started...");
                 
                 while (true)
@@ -253,7 +254,7 @@ namespace HexapiBackground
 
                     foreach (var s in sentences.Split('$').Where(s => s.Length > 15)) { Parse(s); }
                 }
-            });
+            }, TaskCreationOptions.LongRunning);
         }
 
         #endregion

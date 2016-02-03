@@ -17,6 +17,129 @@ namespace HexapiBackground{
         private readonly List<int> _leftAvg = new List<int>();
         private readonly List<int> _rightAvg = new List<int>();
 
+        private bool _obstacleAvoidanceEnabled;
+
+        internal void ObstacleAvoidance(bool enabled)
+        {
+            _obstacleAvoidanceEnabled = enabled;
+
+            if (!enabled)
+                return;
+
+            Task.Factory.StartNew(() =>
+            {
+                var sw = new Stopwatch();
+                sw.Start();
+
+                while (_obstacleAvoidanceEnabled)
+                {
+                    if (sw.ElapsedMilliseconds < 250)
+                        return;
+
+                    sw.Restart();
+
+                    if (OnNavRequest == null)
+                        return;
+
+                    if (LeftInches < 5 && RightInches < 5 && CenterInches < 5)
+                    {
+                        LookForOpenArea();
+                        return;
+                    }
+
+                    if (LeftInches < 5)
+                    {
+                        OnNavRequest?.Invoke(Direction.Right, 1000);
+                        return;
+                    }
+
+                    if (RightInches < 5)
+                    {
+                        OnNavRequest?.Invoke(Direction.Left, 1000);
+                        return;
+                    }
+
+                    if (LeftInches < 10)
+                        OnNavRequest?.Invoke(Direction.ForwardRight, 1000);
+
+                    if (RightInches < 10)
+                        OnNavRequest?.Invoke(Direction.ForwardLeft, 1000);
+
+                }
+            });
+        }
+
+        readonly Random _random = new Random(DateTime.Now.Millisecond);
+
+        private void LookForOpenArea()
+        {
+            var sw = new Stopwatch();
+            sw.Start();
+
+            var randomNumber = _random.Next(0, 10);
+
+            if (randomNumber < 5)
+            {
+                OnNavRequest?.Invoke(Direction.Right, 1000);
+            }
+            else if (randomNumber >= 5)
+            {
+                OnNavRequest?.Invoke(Direction.Left, 1000);
+            }
+
+            while (CenterInches < 15 )
+            {
+
+                if (sw.ElapsedMilliseconds > 5000)
+                    break;
+            }
+
+            if (sw.ElapsedMilliseconds > 5000)
+                while (CenterInches < 10)
+                {
+
+                    if (sw.ElapsedMilliseconds > 10000)
+                        break;
+                }
+
+            OnNavRequest?.Invoke(Direction.Forward, 1000);
+        }
+
+        private bool Reverse()
+        {
+            var sw = new Stopwatch();
+            sw.Start();
+
+            var randomNumber = _random.Next(0, 10);
+
+            if (randomNumber < 5)
+            {
+                OnNavRequest?.Invoke(Direction.ReverseRight, 1000);
+            }
+            else if (randomNumber >= 5)
+            {
+                OnNavRequest?.Invoke(Direction.ReverseLeft, 1000);
+            }
+            
+
+            while (sw.ElapsedMilliseconds < 2000)
+            {
+                
+            }
+
+            if (LeftInches < 5 && RightInches < 5 && CenterInches < 5)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        internal void EnableGpsNavigation()
+        {
+
+        }
+
         internal AvController()
         {
             _gpsStopwatch.Start();
@@ -31,11 +154,13 @@ namespace HexapiBackground{
             LoadWaypoints();
         }
 
-        internal static double LeftInches { get; private set; }
-        internal static double CenterInches { get; private set; }
-        internal static double RightInches { get; private set; }
+        internal static double LeftInches { get; set; }
 
-        internal void RangUpdate(int[] data)
+        internal static double CenterInches { get; set; }
+
+        internal static double RightInches { get; set; }
+
+        internal void RangeUpdate(int[] data)
         {
             if (data.Length < 3)
             {
@@ -50,13 +175,13 @@ namespace HexapiBackground{
             if (_leftAvg.Count <= 3)
                 return;
 
-            LeftInches = GetInchesFromDuration(_leftAvg.Sum()/_leftAvg.Count);
+            LeftInches = GetInchesFromPingDuration(_leftAvg.Sum()/_leftAvg.Count);
             _leftAvg.RemoveAt(0);
 
-            RightInches = GetInchesFromDuration(_rightAvg.Sum()/_rightAvg.Count);
+            RightInches = GetInchesFromPingDuration(_rightAvg.Sum()/_rightAvg.Count);
             _rightAvg.RemoveAt(0);
 
-            CenterInches = GetInchesFromDuration(_centerAvg.Sum()/_centerAvg.Count);
+            CenterInches = GetInchesFromPingDuration(_centerAvg.Sum()/_centerAvg.Count);
             _centerAvg.RemoveAt(0);
         }
 
@@ -68,7 +193,7 @@ namespace HexapiBackground{
             }
         }
 
-        private static double GetInchesFromDuration(int duration) //73.746 microseconds per inch
+        private static double GetInchesFromPingDuration(int duration) //73.746 microseconds per inch
         {
             return Math.Round((duration/73.746)/2, 1);
         }
@@ -123,9 +248,9 @@ namespace HexapiBackground{
             }
         }
 
-        internal event WarningHandler OnWarning;
+        internal static event NavRequestHandler OnNavRequest;
 
-        internal delegate void WarningHandler(Direction requestedDirection, int magnitude);
+        internal delegate void NavRequestHandler(Direction requestedDirection, int magnitude);
 
         public List<LatLon> Waypoints { get; set; }
 

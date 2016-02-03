@@ -7,6 +7,11 @@ using Windows.Storage;
 namespace HexapiBackground{
     internal static class Helpers
     {
+        internal static double Map(double x, double inMin, double inMax, double outMin, double outMax)
+        {
+            return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+        }
+
         internal static async Task<string> ReadStringFromFile(string filename)
         {
             var text = string.Empty;

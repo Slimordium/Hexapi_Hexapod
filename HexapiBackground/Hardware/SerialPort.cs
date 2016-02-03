@@ -85,28 +85,16 @@ namespace HexapiBackground
                  _serialPort.OutputStream.WriteAsync(buffer).AsTask().Wait();
             }).Wait();
 
-            return r;
+            return buffer.Length;
         }
 
         internal async Task<byte> ReadByte()
         {
             _singleByteBuffer = new Buffer(1);
-            
+
             var r = await _serialPort.InputStream.ReadAsync(_singleByteBuffer, 1, InputStreamOptions.Partial).AsTask();
 
             return r.GetByte(0u);
-        }
-        
-        internal byte[] ReadBytes()
-        {
-            _buffer = new Buffer(_serialPort.BytesReceived);
-
-            Task.Factory.StartNew(async () =>
-            {
-                _serialPort.InputStream.ReadAsync(_buffer, _buffer.Length, InputStreamOptions.Partial).AsTask().Wait();
-            }).Wait();
-
-            return _buffer.ToArray();
         }
 
         internal string ReadString()
@@ -119,29 +107,6 @@ namespace HexapiBackground
             }).Wait();
 
             return AsciiEncoding.GetString(_buffer.ToArray());
-        }
-
-        internal string ReadUntil(string lastCharacter)
-        {
-            _singleByteBuffer = new Buffer(1);
-            var readString = string.Empty;
-
-            Task.Factory.StartNew(async () =>
-            {
-                while (true)
-                {
-                    _serialPort.InputStream.ReadAsync(_singleByteBuffer, 1, InputStreamOptions.Partial).AsTask().Wait();
-
-                    var c = AsciiEncoding.GetString(_singleByteBuffer.ToArray());
-
-                    readString += AsciiEncoding.GetString(_singleByteBuffer.ToArray());
-
-                    if (c.Equals(lastCharacter))
-                        break;
-                }
-            }).Wait();
-
-            return readString;
         }
     }
 }

@@ -115,6 +115,7 @@
     <Compile Include="Hexapi.cs" />
     <Compile Include="Hardware\I2CDevice.cs" />
     <Compile Include="Hardware\Mpu9150.cs" />
+    <Compile Include="InverseKinematics.cs" />
     <Compile Include="RemoteArduino.cs" />
     <Compile Include="Hardware\SerialPort.cs" />
     <Compile Include="StartupTask.cs" />

@@ -20,13 +20,13 @@ namespace HexapiBackground
 
         internal void Start()
         {
-            if (_isInitialized) return;
-
-            Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(async () =>
             {
+                if (_isInitialized) return;
+
                 _isInitialized = true;
 
-                var deviceInformationCollection = DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()).GetAwaiter().GetResult();
+                var deviceInformationCollection = await DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector());
                 var selectedPort = deviceInformationCollection.FirstOrDefault(d => d.Id.Contains("AI041V40A"));
 
                 Debug.WriteLine($"Found - Arduino UNO at {selectedPort.Id}");

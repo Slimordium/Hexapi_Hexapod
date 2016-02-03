@@ -5,29 +5,28 @@ namespace HexapiBackground
 {
     public sealed class StartupTask : IBackgroundTask
     {
+        private static BackgroundTaskDeferral _deferral;
+
         //TODO : Make the various devices that are enabled to be configurable in a settings file
         public void Run(IBackgroundTaskInstance taskInstance)
         {
-            taskInstance.GetDeferral();
+            _deferral = taskInstance.GetDeferral();
 
-            SerialPort.ListAvailablePorts();
+            //SerialPort.ListAvailablePorts();
             
-            var hexapi = new Hexapi();
             var avc = new AvController();
+            var arduino = new RemoteArduino { RangeUpdate = avc.RangeUpdate };
+            var gps = new UltimateGps { LatLonUpdate = avc.LatLonUpdate };
+            var hexapi = new Hexapi();
 
-            Task.Factory.StartNew(() =>
-            {
-                var arduino = new RemoteArduino {RangeUpdate = avc.RangUpdate};
-                arduino.Start();
-            }, TaskCreationOptions.LongRunning);
+            arduino.Start();
+            gps.Start();
+            hexapi.Start();
+        }
 
-            Task.Factory.StartNew(() =>
-            {
-                var gps = new UltimateGps {LatLonUpdate = avc.LatLonUpdate};
-                gps.Start();
-            }, TaskCreationOptions.LongRunning);
-
-            var thisIsTheOnlyWayThatWasReliableInKeepingTheTaskRunning = hexapi.Start(); //Always started last
+        internal static void Complete()
+        {
+            _deferral.Complete();
         }
     }
 }
