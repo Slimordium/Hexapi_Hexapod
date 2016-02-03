@@ -3,11 +3,8 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.ApplicationModel;
 using Windows.Media.SpeechSynthesis;
-using Windows.Storage;
 using Windows.UI.Xaml.Controls;
-using HexapiBackground.Enums;
 
 namespace HexapiBackground{
     sealed class InverseKinematics
@@ -15,6 +12,7 @@ namespace HexapiBackground{
         private bool _movementStarted;
         private readonly SerialPort _serialPort;
         private static SpinLock _spinLock = new SpinLock();
+        private readonly Stopwatch _sw = new Stopwatch();
 
         internal void RequestMovement(double nominalGaitSpeed, double travelLengthX, double travelLengthZ, double travelRotationY)
         {
@@ -24,7 +22,7 @@ namespace HexapiBackground{
             {
                 _spinLock.TryEnter(ref acquiredNavLock);
 
-                _nominalGaitSpeed = nominalGaitSpeed;
+                _nominalGaitSpeed = nominalGaitSpeed; 
                 _travelLengthX = travelLengthX;
                 _travelLengthZ = travelLengthZ;
                 _travelRotationY = travelRotationY;
@@ -34,7 +32,6 @@ namespace HexapiBackground{
                 if (acquiredNavLock)
                     _spinLock.Exit();
             }
-            
         }
 
         internal void RequestBodyPosition(double bodyRotX1, double bodyRotZ1, double bodyPosX, double bodyPosZ, double bodyPosY)
@@ -103,7 +100,8 @@ namespace HexapiBackground{
             {
                 _spinLock.TryEnter(ref acquiredNavLock);
 
-                TurnOffServos();
+                if (!enabled)
+                    TurnOffServos();
 
                 _movementStarted = enabled;
             }
@@ -117,9 +115,7 @@ namespace HexapiBackground{
         internal InverseKinematics()
         {
             for (var i = 0; i < 6; i++)
-            {
                 _legServos[i] = new int[3];
-            }
 
             _movementStarted = false;
 
@@ -133,8 +129,6 @@ namespace HexapiBackground{
             }
 
             LoadLegDefaults();
-
-
         }
 
         #region Main logic loop 
@@ -148,6 +142,7 @@ namespace HexapiBackground{
             _bodyPosY = 65;
 
             GaitSelect();
+            _sw.Start();
 
             while (true)
             {
@@ -227,7 +222,6 @@ namespace HexapiBackground{
                     }
 
                     _serialPort.Write(UpdateServoDriver());
-
                 }
                 finally
                 {
@@ -235,17 +229,19 @@ namespace HexapiBackground{
                         _spinLock.Exit();
                 }
 
-                byte rb = 0x00;
+                //No matter which way I spin the task stuff, it is never fast enough to make this work properly
+                //byte rb = 0x00;
+                //while (rb != 0x2e)
+                //{
+                //    Task.Factory.StartNew(async () =>
+                //    {
+                //        rb = await _serialPort.ReadByte();
+                //    }).Wait();
+                //    var r = _serialPort.Write("Q\r");
+                //}
 
-                while (rb != 0x2e)
-                {
-                    Task.Factory.StartNew(async () =>
-                    {
-                        rb = await _serialPort.ReadByte();
-                    }).Wait();
-
-                    var r = _serialPort.Write("Q\r");
-                }
+                while (_sw.ElapsedMilliseconds < _nominalGaitSpeed) {  }
+                _sw.Restart();
             }
         }
 
@@ -300,10 +296,10 @@ namespace HexapiBackground{
         //All legs being equal, all legs will have the same values
         private const double CoxaMin = -600; //-650 
         private const double CoxaMax = 600; //650
-        private const double FemurMin = -800; //-1050
-        private const double FemurMax = 800; //150
-        private const double TibiaMin = -800; //-450
-        private const double TibiaMax = 800; //350
+        private const double FemurMin = -500; //-1050
+        private const double FemurMax = 500; //150
+        private const double TibiaMin = -500; //-450
+        private const double TibiaMax = 500; //350
 
         private const double CRrCoxaAngle1 = -450;
         private const double CRmCoxaAngle1 = 0;
@@ -418,27 +414,17 @@ namespace HexapiBackground{
 
         private int _gaitStep;
         private GaitType _gaitType;
-        private double _nominalGaitSpeed = 40; //Nominal speed of the gait, equates to MS between servo commands
+        private double _nominalGaitSpeed = 40; //Nominal speed of the gait, equates to timer ticks between servo commands. One MS is about 10,000 timer ticks.
 
         private double _travelLengthX; //Current Travel length X
         private double _travelLengthZ; //Current Travel length Z
         private double _travelRotationY; //Current Travel Rotation Y
-
-        //private readonly int[] _legOneServos = new int[3]; //coxa, femur, tibia
-        //private readonly int[] _legTwoServos = new int[3];
-        //private readonly int[] _legThreeServos = new int[3];
-        //private readonly int[] _legFourServos = new int[3];
-        //private readonly int[] _legFiveServos = new int[3];
-        //private readonly int[] _legSixServos = new int[3];
 
         readonly int[][] _legServos = new int[6][];
 
         #endregion
 
         #region Gait calculations and logic
-
-
-
         public void GaitSelect()
         {
             switch (_gaitType)
@@ -732,7 +718,7 @@ namespace HexapiBackground{
                 stringBuilder.Append($"#{_legServos[legIndex][2]}P{tibiaPosition}");
             }
 
-            stringBuilder.Append($"T{_nominalGaitSpeed}\r");
+            stringBuilder.Append($"T{_nominalGaitSpeed + 5}\r");
 
             return stringBuilder.ToString();
         }

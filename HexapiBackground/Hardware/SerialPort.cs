@@ -74,18 +74,10 @@ namespace HexapiBackground
             _serialPort = null;
         }
 
-        internal uint Write(string data)
+        internal async void Write(string data)
         {
             var buffer = AsciiEncoding.GetBytes(data).AsBuffer();
-
-            var r = 0u;
-
-            Task.Factory.StartNew(() =>
-            {
-                 _serialPort.OutputStream.WriteAsync(buffer).AsTask().Wait();
-            }).Wait();
-
-            return buffer.Length;
+            await _serialPort.OutputStream.WriteAsync(buffer).AsTask();
         }
 
         internal async Task<byte> ReadByte()
@@ -99,11 +91,11 @@ namespace HexapiBackground
 
         internal string ReadString()
         {
-            _buffer = new Buffer(256);
+            _buffer = new Buffer(64);
 
             Task.Factory.StartNew(() =>
             {
-                _serialPort.InputStream.ReadAsync(_buffer, 256, InputStreamOptions.None).AsTask().Wait();
+                _serialPort.InputStream.ReadAsync(_buffer, 64, InputStreamOptions.None).AsTask().Wait();
             }).Wait();
 
             return AsciiEncoding.GetString(_buffer.ToArray());

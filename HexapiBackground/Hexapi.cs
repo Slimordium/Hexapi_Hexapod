@@ -65,14 +65,14 @@ namespace HexapiBackground{
                 case SelectedFunction.GaitSpeed: //A
                     if (button == 5)
                     {
-                        if (_nomGaitSpeed < 200)
+                        if (_nomGaitSpeed < 120)
                         {
                             _nomGaitSpeed = _nomGaitSpeed + 5;
                         }
                     }
                     else
                     {
-                        if (_nomGaitSpeed > 20)
+                        if (_nomGaitSpeed > 40)
                         {
                             _nomGaitSpeed = _nomGaitSpeed - 5;
                         }
