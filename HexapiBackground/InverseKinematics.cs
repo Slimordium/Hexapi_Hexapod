@@ -11,7 +11,6 @@ namespace HexapiBackground{
     {
         private bool _movementStarted;
         private readonly SerialPort _serialPort;
-        private static SpinLock _spinLock = new SpinLock();
         private readonly Stopwatch _sw = new Stopwatch();
 
         internal InverseKinematics()
@@ -36,100 +35,43 @@ namespace HexapiBackground{
         #region Request movement
         internal void RequestMovement(double nominalGaitSpeed, double travelLengthX, double travelLengthZ, double travelRotationY)
         {
-            var acquiredNavLock = false;
-
-            try
-            {
-                _spinLock.TryEnter(ref acquiredNavLock);
-
-                _nominalGaitSpeed = nominalGaitSpeed; 
-                _travelLengthX = travelLengthX;
-                _travelLengthZ = travelLengthZ;
-                _travelRotationY = travelRotationY;
-            }
-            finally
-            {
-                if (acquiredNavLock)
-                    _spinLock.Exit();
-            }
+            _nominalGaitSpeed = nominalGaitSpeed; 
+            _travelLengthX = travelLengthX;
+            _travelLengthZ = travelLengthZ;
+            _travelRotationY = travelRotationY;
+           
         }
 
         internal void RequestBodyPosition(double bodyRotX1, double bodyRotZ1, double bodyPosX, double bodyPosZ, double bodyPosY)
         {
-            var acquiredNavLock = false;
+            _bodyRotX1 = bodyRotX1;
+            _bodyRotZ1 = bodyRotZ1;
 
-            try
-            {
-                _spinLock.TryEnter(ref acquiredNavLock);
-
-                _bodyRotX1 = bodyRotX1;
-                _bodyRotZ1 = bodyRotZ1;
-
-                _bodyPosX = bodyPosX;
-                _bodyPosZ = bodyPosZ;
-                _bodyPosY = bodyPosY;
-            }
-            finally
-            {
-                if (acquiredNavLock)
-                    _spinLock.Exit();
-            }
+            _bodyPosX = bodyPosX;
+            _bodyPosZ = bodyPosZ;
+            _bodyPosY = bodyPosY;
         }
 
         internal void RequestSetGaitOptions(double nominalGaitSpeed, double legLiftHeight)
         {
-            var acquiredNavLock = false;
-
-            try
-            {
-                _spinLock.TryEnter(ref acquiredNavLock);
-
-                _nominalGaitSpeed = nominalGaitSpeed;
-                _legLiftHeight = legLiftHeight;
-            }
-            finally
-            {
-                if (acquiredNavLock)
-                    _spinLock.Exit();
-            }
+            _nominalGaitSpeed = nominalGaitSpeed;
+            _legLiftHeight = legLiftHeight;
+ 
         }
 
         internal void RequestSetGaitType(GaitType gaitType)
         {
-            var acquiredNavLock = false;
-
-            try
-            {
-                _spinLock.TryEnter(ref acquiredNavLock);
-
-                _gaitType = gaitType;
-                GaitSelect();
-            }
-            finally
-            {
-                if (acquiredNavLock)
-                    _spinLock.Exit();
-            }
+            _gaitType = gaitType;
+            GaitSelect();
         }
 
         internal void RequestSetMovement(bool enabled)
         {
-            var acquiredNavLock = false;
+            if (!enabled)
+                TurnOffServos();
 
-            try
-            {
-                _spinLock.TryEnter(ref acquiredNavLock);
-
-                if (!enabled)
-                    TurnOffServos();
-
-                _movementStarted = enabled;
-            }
-            finally
-            {
-                if (acquiredNavLock)
-                    _spinLock.Exit();
-            }
+            _movementStarted = enabled;
+ 
         }
         #endregion
 
@@ -153,26 +95,11 @@ namespace HexapiBackground{
                     continue;
                 }
 
-                var acquiredNavLock = false;
+                _travelRequest = (Math.Abs(_travelLengthX) > CTravelDeadZone) || 
+                                 (Math.Abs(_travelLengthZ) > CTravelDeadZone) ||
+                                 (Math.Abs(_travelRotationY) > CTravelDeadZone);
 
-                try
-                {
-                    _spinLock.TryEnter(ref acquiredNavLock);
-
-                    _travelRequest = (Math.Abs(_travelLengthX) > CTravelDeadZone) || 
-                                     (Math.Abs(_travelLengthZ) > CTravelDeadZone) ||
-                                     (Math.Abs(_travelRotationY) > CTravelDeadZone);
-                }
-                finally
-                {
-                    if (acquiredNavLock)
-                        _spinLock.Exit();
-                }
-
-                if (_numberOfLiftedPositions == 5)
-                    _liftDivFactor = 4;
-                else
-                    _liftDivFactor = 2;
+                _liftDivFactor = _numberOfLiftedPositions == 5 ? 4 : 2;
 
                 _lastLeg = 0;
 
@@ -181,20 +108,21 @@ namespace HexapiBackground{
                     if (legIndex == 5)
                         _lastLeg = 1;
 
-                    var gaitPosXyZrotY = Gait(_travelRequest, _travelLengthX,
+                    var gaitPosXyZrotY = Gait(legIndex, _travelRequest, _travelLengthX,
                                          _travelLengthZ, _travelRotationY,
+                                         _gaitPosX, _gaitPosY, _gaitPosZ, _gaitRotY,
                                          _numberOfLiftedPositions, _gaitLegNr[legIndex],
                                          _legLiftHeight, _liftDivFactor, _halfLiftHeight, _stepsInGait, _tlDivFactor);
 
-                    var gaitPosX = gaitPosXyZrotY[0];
-                    var gaitPosY = gaitPosXyZrotY[1];
-                    var gaitPosZ = gaitPosXyZrotY[2];
-                    var gaitRotY = gaitPosXyZrotY[3];
+                    _gaitPosX = gaitPosXyZrotY[0];
+                    _gaitPosY = gaitPosXyZrotY[1];
+                    _gaitPosZ = gaitPosXyZrotY[2];
+                    _gaitRotY = gaitPosXyZrotY[3];
 
                     var angles = BodyLegIk(legIndex,
                                         _legPosX[legIndex], _legPosY[legIndex], _legPosZ[legIndex],
                                         _bodyPosX, _bodyPosY, _bodyPosZ,
-                                        gaitPosX, gaitPosY, gaitPosZ, gaitRotY,
+                                        _gaitPosX[legIndex], _gaitPosY[legIndex], _gaitPosZ[legIndex], _gaitRotY[legIndex],
                                         _cOffsetX[legIndex], _cOffsetZ[legIndex],
                                         _bodyRotX1, _bodyRotZ1, _bodyRotY1, _cCoxaAngle1[legIndex]);
 
@@ -242,10 +170,10 @@ namespace HexapiBackground{
         //All legs being equal, all legs will have the same values
         private const double CoxaMin = -600; //-650 
         private const double CoxaMax = 600; //650
-        private const double FemurMin = -500; //-1050
-        private const double FemurMax = 500; //150
-        private const double TibiaMin = -500; //-450
-        private const double TibiaMax = 500; //350
+        private const double FemurMin = -600; //-1050
+        private const double FemurMax = 100; //150
+        private const double TibiaMin = -600; //-450
+        private const double TibiaMax = 300; //350
 
         private const double CRrCoxaAngle1 = -450;
         private const double CRmCoxaAngle1 = 0;
@@ -324,10 +252,10 @@ namespace HexapiBackground{
 
         private readonly int[] _gaitLegNr = new int[6]; //Init position of the leg
 
-        //private readonly double[] _gaitPosX = new double[6];//Array containing Relative X position corresponding to the Gait
-        //private readonly double[] _gaitPosY = new double[6];//Array containing Relative Y position corresponding to the Gait
-        //private readonly double[] _gaitPosZ = new double[6];//Array containing Relative Z position corresponding to the Gait
-        //private readonly double[] _gaitRotY = new double[6];//Array containing Relative Y rotation corresponding to the Gait
+        private double[] _gaitPosX = new double[6];//Array containing Relative X position corresponding to the Gait
+        private double[] _gaitPosY = new double[6];//Array containing Relative Y position corresponding to the Gait
+        private double[] _gaitPosZ = new double[6];//Array containing Relative Z position corresponding to the Gait
+        private double[] _gaitRotY = new double[6];//Array containing Relative Y rotation corresponding to the Gait
 
         private readonly double[] _legPosX = new double[6]; //Actual X Position of the Leg should be length of 6
         private readonly double[] _legPosY = new double[6]; //Actual Y Position of the Leg
@@ -448,40 +376,23 @@ namespace HexapiBackground{
             }
         }
 
-        private static double[] Gait(bool travelRequest, double travelLengthX, double travelLengthZ, double travelRotationY,
-                                    //double gaitPosX, double gaitPosY, double gaitPosZ, double gaitRotY,
+        private static double[][] Gait(int legIndex, bool travelRequest, double travelLengthX, double travelLengthZ, double travelRotationY,
+                                    double[] gaitPosX, double[] gaitPosY, double[] gaitPosZ, double[] gaitRotY,
                                     int numberOfLiftedPositions, int gaitLegNr, 
                                     double legLiftHeight, int liftDivFactor, double halfLiftHeight, int stepsInGait, int tlDivFactor)
         {
-            var gaitXyZrotY = new double[4];
+            var gaitXyZrotY = new double[4][];
 
-            var gaitPosX = 0d;
-            var gaitPosY = 0d;
-            var gaitPosZ = 0d;
-            var gaitRotY = 0d;
-
-            //Clear values under the cTravelDeadZone
-            if (!travelRequest)
-            {
-                travelLengthX = 0;
-                travelLengthZ = 0;
-                travelRotationY = 0;
-            }
             //Leg middle up position
             //Gait in motion														  									
             //Gait NOT in motion, return to home position
-            if ((travelRequest &&
-                 (numberOfLiftedPositions == 1 || numberOfLiftedPositions == 3 || numberOfLiftedPositions == 5) &&
-                 _gaitStep == gaitLegNr) ||
-                (!travelRequest && _gaitStep == gaitLegNr &&
-                 ((Math.Abs(gaitPosX) > 2) || (Math.Abs(gaitPosZ) > 2) ||
-                  (Math.Abs(gaitRotY) > 2))))
+            if ((travelRequest && (numberOfLiftedPositions == 1 || numberOfLiftedPositions == 3 || numberOfLiftedPositions == 5) && _gaitStep == gaitLegNr) || (!travelRequest && _gaitStep == gaitLegNr && ((Math.Abs(gaitPosX[legIndex]) > 2) || (Math.Abs(gaitPosZ[legIndex]) > 2) || (Math.Abs(gaitRotY[legIndex]) > 2))))
             {
                 //Up
-                gaitPosX = 0;
-                gaitPosY = -legLiftHeight;
-                gaitPosZ = 0;
-                gaitRotY = 0;
+                gaitPosX[legIndex] = 0;
+                gaitPosY[legIndex] = -legLiftHeight;
+                gaitPosZ[legIndex] = 0;
+                gaitRotY[legIndex] = 0;
             }
             //Optional Half height Rear (2, 3, 5 lifted positions)
             else if (((numberOfLiftedPositions == 2 && _gaitStep == gaitLegNr) ||
@@ -489,11 +400,11 @@ namespace HexapiBackground{
                        (_gaitStep == gaitLegNr - 1 || _gaitStep == gaitLegNr + (stepsInGait - 1)))) &&
                      travelRequest)
             {
-                gaitPosX = -travelLengthX / liftDivFactor;
-                gaitPosY = -3 * legLiftHeight / (3 + halfLiftHeight);
+                gaitPosX[legIndex] = -travelLengthX / liftDivFactor;
+                gaitPosY[legIndex] = -3 * legLiftHeight / (3 + halfLiftHeight);
                 //Easier to shift between div factor: /1 (3/3), /2 (3/6) and 3/4
-                gaitPosZ = -travelLengthZ / liftDivFactor;
-                gaitRotY = -travelRotationY / liftDivFactor;
+                gaitPosZ[legIndex] = -travelLengthZ / liftDivFactor;
+                gaitRotY[legIndex] = -travelRotationY / liftDivFactor;
             }
 
             // Optional Half height front (2, 3, 5 lifted positions)
@@ -501,20 +412,20 @@ namespace HexapiBackground{
                      (_gaitStep == gaitLegNr + 1 || _gaitStep == gaitLegNr - (stepsInGait - 1)) &&
                      travelRequest)
             {
-                gaitPosX = travelLengthX / liftDivFactor;
-                gaitPosY = -3 * legLiftHeight / (3 + halfLiftHeight);
+                gaitPosX[legIndex] = travelLengthX / liftDivFactor;
+                gaitPosY[legIndex] = -3 * legLiftHeight / (3 + halfLiftHeight);
                 // Easier to shift between div factor: /1 (3/3), /2 (3/6) and 3/4
-                gaitPosZ = travelLengthZ / liftDivFactor;
-                gaitRotY = travelRotationY / liftDivFactor;
+                gaitPosZ[legIndex] = travelLengthZ / liftDivFactor;
+                gaitRotY[legIndex] = travelRotationY / liftDivFactor;
             }
 
             //Optional Half heigth Rear 5 LiftedPos (5 lifted positions)
             else if (((numberOfLiftedPositions == 5 && (_gaitStep == gaitLegNr - 2))) && travelRequest)
             {
-                gaitPosX = -travelLengthX / 2;
-                gaitPosY = -legLiftHeight / 2;
-                gaitPosZ = -travelLengthZ / 2;
-                gaitRotY = -travelRotationY / 2;
+                gaitPosX[legIndex] = -travelLengthX / 2;
+                gaitPosY[legIndex] = -legLiftHeight / 2;
+                gaitPosZ[legIndex] = -travelLengthZ / 2;
+                gaitRotY[legIndex] = -travelRotationY / 2;
             }
 
             //Optional Half heigth Front 5 LiftedPos (5 lifted positions)
@@ -522,31 +433,31 @@ namespace HexapiBackground{
                      (_gaitStep == gaitLegNr + 2 || _gaitStep == gaitLegNr - (stepsInGait - 2)) &&
                      travelRequest)
             {
-                gaitPosX = travelLengthX / 2;
-                gaitPosY = -legLiftHeight / 2;
-                gaitPosZ = travelLengthZ / 2;
-                gaitRotY = travelRotationY / 2;
+                gaitPosX[legIndex] = travelLengthX / 2;
+                gaitPosY[legIndex] = -legLiftHeight / 2;
+                gaitPosZ[legIndex] = travelLengthZ / 2;
+                gaitRotY[legIndex] = travelRotationY / 2;
             }
 
             //Leg front down position
             else if ((_gaitStep == gaitLegNr + numberOfLiftedPositions ||
                       _gaitStep == gaitLegNr - (stepsInGait - numberOfLiftedPositions)) &&
-                     gaitPosY < 0)
+                     gaitPosY[legIndex] < 0)
             {
-                gaitPosX = travelLengthX / 2;
-                gaitPosZ = travelLengthZ / 2;
-                gaitRotY = travelRotationY / 2;
-                gaitPosY = 0;
+                gaitPosX[legIndex] = travelLengthX / 2;
+                gaitPosZ[legIndex] = travelLengthZ / 2;
+                gaitRotY[legIndex] = travelRotationY / 2;
+                gaitPosY[legIndex] = 0;
                 //Only move leg down at once if terrain adaption is turned off
             }
 
             //Move body forward      
             else
             {
-                gaitPosX = gaitPosX - (travelLengthX / tlDivFactor);
-                gaitPosY = 0;
-                gaitPosZ = gaitPosZ - (travelLengthZ / tlDivFactor);
-                gaitRotY = gaitRotY - (travelRotationY / tlDivFactor);
+                gaitPosX[legIndex] = gaitPosX[legIndex] - (travelLengthX / tlDivFactor);
+                gaitPosY[legIndex] = 0;
+                gaitPosZ[legIndex] = gaitPosZ[legIndex] - (travelLengthZ / tlDivFactor);
+                gaitRotY[legIndex] = gaitRotY[legIndex] - (travelRotationY / tlDivFactor);
             }
 
             gaitXyZrotY[0] = gaitPosX;
