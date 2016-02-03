@@ -116,6 +116,11 @@ namespace HexapiBackground{
 
         internal InverseKinematics()
         {
+            for (var i = 0; i < 6; i++)
+            {
+                _legServos[i] = new int[3];
+            }
+
             _movementStarted = false;
 
             _serialPort = new SerialPort("UART0", 38400, 200, 200);
@@ -295,10 +300,10 @@ namespace HexapiBackground{
         //All legs being equal, all legs will have the same values
         private const double CoxaMin = -600; //-650 
         private const double CoxaMax = 600; //650
-        private const double FemurMin = -2000; //-1050
-        private const double FemurMax = 2000; //150
-        private const double TibiaMin = -2000; //-450
-        private const double TibiaMax = 2000; //350
+        private const double FemurMin = -800; //-1050
+        private const double FemurMax = 800; //150
+        private const double TibiaMin = -800; //-450
+        private const double TibiaMax = 800; //350
 
         private const double CRrCoxaAngle1 = -450;
         private const double CRmCoxaAngle1 = 0;
@@ -754,7 +759,7 @@ namespace HexapiBackground{
             
             if (string.IsNullOrEmpty(config))
             {
-                Debug.WriteLine("Empty config file. walkerDefaults.config");
+                Debug.WriteLine("Empty config file. hexapod.config");
                 return;
             }
 
