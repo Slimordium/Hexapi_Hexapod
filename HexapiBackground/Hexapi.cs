@@ -34,12 +34,12 @@ namespace HexapiBackground{
             _xboxController = new XboxController();
             _xboxController.Open();
 
-            _xboxController.LeftDirectionChanged += XboxControllerLeftDirectionChanged;
-            _xboxController.RightDirectionChanged += XboxControllerRightDirectionChanged;
+            _xboxController.LeftDirectionChanged += XboxController_LeftDirectionChanged;
+            _xboxController.RightDirectionChanged += XboxController_RightDirectionChanged;
             _xboxController.DpadDirectionChanged += XboxController_DpadDirectionChanged;
             _xboxController.LeftTriggerChanged += XboxController_LeftTriggerChanged;
             _xboxController.RightTriggerChanged += XboxController_RightTriggerChanged;
-            _xboxController.FunctionButtonChanged += XboxControllerFunctionButtonChanged;
+            _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
         }
 
@@ -96,7 +96,7 @@ namespace HexapiBackground{
         }
 
 
-        private void XboxControllerFunctionButtonChanged(int button)
+        private void XboxController_FunctionButtonChanged(int button)
         {
             switch (button)
             {
@@ -176,7 +176,7 @@ namespace HexapiBackground{
             }
         }
 
-        private void XboxControllerRightDirectionChanged(ControllerVector sender)
+        private void XboxController_RightDirectionChanged(ControllerVector sender)
         {
             switch (sender.Direction)
             {
@@ -300,7 +300,7 @@ namespace HexapiBackground{
             _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);
         }
 
-        private void XboxControllerLeftDirectionChanged(ControllerVector sender)
+        private void XboxController_LeftDirectionChanged(ControllerVector sender)
         {
             switch (_selectedFunction)
             {

@@ -56,11 +56,12 @@ namespace HexapiBackground
 
         internal static void ListAvailablePorts()
         {
-            var deviceInformationCollection = DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()).GetAwaiter().GetResult();
-            foreach (var d in deviceInformationCollection)
+            Debug.WriteLine("Available Serial Ports------------------");
+            foreach (var d in DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()).GetAwaiter().GetResult())
             {
                 Debug.WriteLine($"Port - ID: {d.Id}");
             }
+            Debug.WriteLine("----------------------------------------");
         }
 
         private static void _serialPort_ErrorReceived(SerialDevice sender, ErrorReceivedEventArgs args)

@@ -11485,7 +11485,7 @@
       ]
     },
     "Microsoft.NETCore.Runtime.CoreCLR-arm/1.0.0": {
-      "sha512": "hoJfIl981eXwn9Tz8onO/J1xaYApIfp/YrhjSh9rRhml1U5Wj80LBgyp/6n+KI3VlvcAraThhnHnCTp+M3Uh+w==",
+      "sha512": "vUQyaKbHCa7BJAAzdfCP2FfBYOSt0YnDw7VMJLmD1/k68HIJgw1QO7GAfHhqoa39zkkvimC47QBH27wG4C5OGQ==",
       "type": "Package",
       "files": [
         "[Content_Types].xml",
@@ -14678,7 +14678,7 @@
       ]
     },
     "Windows-Remote-Arduino/1.3.0": {
-      "sha512": "jWMo12DJa3bJhWgxzV07z+Drrhm97RFuWJabPu/Z1AVEUuW+ugptVXB67UFhgJUl7RKI7H82PuXcQ971B0YB6A==",
+      "sha512": "FwXPfmTnjqWOuIEbi3TQve09k90+dVdd2Na/PfckcXoxYObR0X1stUMEKsMme1p2NcW03a8MUrc8VFY/d9ACIA==",
       "type": "Package",
       "files": [
         "[Content_Types].xml",

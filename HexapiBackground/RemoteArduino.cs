@@ -3,14 +3,13 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
-using Windows.Devices.I2c;
 using Windows.Devices.SerialCommunication;
 using Microsoft.Maker.RemoteWiring;
 using Microsoft.Maker.Serial;
 
 namespace HexapiBackground
 {
-    sealed internal class RemoteArduino
+    internal sealed class RemoteArduino
     {
         IStream _connection;
         RemoteDevice _arduino;
