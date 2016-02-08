@@ -92,11 +92,11 @@ namespace HexapiBackground
 
         internal string ReadString()
         {
-            _buffer = new Buffer(64);
+            _buffer = new Buffer(128);
 
             Task.Factory.StartNew(() =>
             {
-                _serialPort.InputStream.ReadAsync(_buffer, 64, InputStreamOptions.None).AsTask().Wait();
+                _serialPort.InputStream.ReadAsync(_buffer, 128, InputStreamOptions.None).AsTask().Wait();
             }).Wait();
 
             return AsciiEncoding.GetString(_buffer.ToArray());

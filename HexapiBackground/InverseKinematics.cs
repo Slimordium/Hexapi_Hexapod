@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using Windows.Media.SpeechSynthesis;
-using Windows.UI.Xaml.Controls;
 
 namespace HexapiBackground{
     internal sealed class InverseKinematics
@@ -24,9 +21,9 @@ namespace HexapiBackground{
 
             for (var legIndex = 0; legIndex <= 5; legIndex++)
             {
-                _legPosX[legIndex] = (_cInitPosX[legIndex]); //Set start positions for each leg
-                _legPosY[legIndex] = (_cInitPosY[legIndex]);
-                _legPosZ[legIndex] = (_cInitPosZ[legIndex]);
+                _legPosX[legIndex] = _cInitPosX[legIndex]; //Set start positions for each leg
+                _legPosY[legIndex] = _cInitPosY[legIndex];
+                _legPosZ[legIndex] = _cInitPosZ[legIndex];
             }
 
             LoadLegDefaults();
@@ -39,7 +36,6 @@ namespace HexapiBackground{
             _travelLengthX = travelLengthX;
             _travelLengthZ = travelLengthZ;
             _travelRotationY = travelRotationY;
-           
         }
 
         internal void RequestBodyPosition(double bodyRotX1, double bodyRotZ1, double bodyPosX, double bodyPosZ, double bodyPosY)
@@ -56,7 +52,6 @@ namespace HexapiBackground{
         {
             _nominalGaitSpeed = nominalGaitSpeed;
             _legLiftHeight = legLiftHeight;
- 
         }
 
         internal void RequestSetGaitType(GaitType gaitType)
@@ -79,16 +74,25 @@ namespace HexapiBackground{
         internal void Start()
         {
             _gaitStep = 0;
-            _nominalGaitSpeed = 40;
-            _legLiftHeight = 30;
+            _nominalGaitSpeed = 50;
+            _legLiftHeight = 40;
             _gaitType = GaitType.TripleTripod12Steps;
-            _bodyPosY = 65;
+            _bodyPosY = 75;
 
             GaitSelect();
             _sw.Start();
 
             while (true)
             {
+                if (AvController.CenterInches < 20 && _travelLengthZ < 0)
+                    _travelLengthZ = 0;
+
+                if (AvController.RightInches < 20 && _travelRotationY < 0)
+                    _travelRotationY = 0;
+
+                if (AvController.LeftInches < 20 && _travelRotationY > 0)
+                    _travelRotationY = 0;
+
                 if (!_movementStarted)
                 {
                     Task.Delay(500).Wait();
@@ -131,18 +135,7 @@ namespace HexapiBackground{
                     _tibiaAngle1[legIndex] = angles[2];
                 }
 
-                _serialPort.Write(UpdateServoDriver(_coxaAngle1, _femurAngle1, _tibiaAngle1));
-
-                //No matter which way I spin the task stuff, it is never fast enough to make this work properly
-                //byte rb = 0x00;
-                //while (rb != 0x2e)
-                //{
-                //    Task.Factory.StartNew(async () =>
-                //    {
-                //        rb = await _serialPort.ReadByte();
-                //    }).Wait();
-                //    var r = _serialPort.Write("Q\r");
-                //}
+                _serialPort.Write(UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1));
 
                 while (_sw.ElapsedMilliseconds < _nominalGaitSpeed) {  }
                 _sw.Restart();
@@ -171,16 +164,16 @@ namespace HexapiBackground{
         private const double CoxaMin = -600; //-650 
         private const double CoxaMax = 600; //650
         private const double FemurMin = -600; //-1050
-        private const double FemurMax = 100; //150
-        private const double TibiaMin = -600; //-450
-        private const double TibiaMax = 300; //350
+        private const double FemurMax = 600; //150
+        private const double TibiaMin = -400; //-450
+        private const double TibiaMax = 400; //350 I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
-        private const double CRrCoxaAngle1 = -450;
-        private const double CRmCoxaAngle1 = 0;
-        private const double CRfCoxaAngle1 = 450;
-        private const double CLrCoxaAngle1 = -450;
-        private const double CLmCoxaAngle1 = 0;
-        private const double CLfCoxaAngle1 = 450;
+        private const double CRrCoxaAngle = -450;
+        private const double CRmCoxaAngle = 0;
+        private const double CRfCoxaAngle = 450;
+        private const double CLrCoxaAngle = -450;
+        private const double CLmCoxaAngle = 0;
+        private const double CLfCoxaAngle = 450;
 
         private const double CRfOffsetX = -70;
         private const double CRfOffsetZ = -120;
@@ -201,7 +194,7 @@ namespace HexapiBackground{
 
         private const double CHexInitXz = 105;
         private const double CHexInitXzCos45 = 74; // COS(45) = .7071
-        private const double CHexInitXzSin45 = 94; // sin(45) = .7071
+        private const double CHexInitXzSin45 = 84; // sin(45) = .7071
         private const double CHexInitY = 36;
 
         private const double CRfInitPosX = CHexInitXzCos45;
@@ -223,28 +216,14 @@ namespace HexapiBackground{
         private const double CRrInitPosY = CHexInitY;
         private const double CRrInitPosZ = CHexInitXzSin45;
 
-        private readonly double[] _cCoxaAngle1 =
-        {
-            CRrCoxaAngle1, CRmCoxaAngle1, CRfCoxaAngle1, CLrCoxaAngle1, CLmCoxaAngle1, CLfCoxaAngle1
-        };
-
-        private readonly double[] _cInitPosX =
-        {
-            CRrInitPosX, CRmInitPosX, CRfInitPosX, CLrInitPosX, CLmInitPosX, CLfInitPosX
-        };
-
-        private readonly double[] _cInitPosY =
-        {
-            CRrInitPosY, CRmInitPosY, CRfInitPosY, CLrInitPosY, CLmInitPosY, CLfInitPosY
-        };
-
-        private readonly double[] _cInitPosZ =
-        {
-            CRrInitPosZ, CRmInitPosZ, CRfInitPosZ, CLrInitPosZ, CLmInitPosZ, CLfInitPosZ
-        };
+        private readonly double[] _cInitPosX = { CRrInitPosX, CRmInitPosX, CRfInitPosX, CLrInitPosX, CLmInitPosX, CLfInitPosX };
+        private readonly double[] _cInitPosY = { CRrInitPosY, CRmInitPosY, CRfInitPosY, CLrInitPosY, CLmInitPosY, CLfInitPosY };
+        private readonly double[] _cInitPosZ = { CRrInitPosZ, CRmInitPosZ, CRfInitPosZ, CLrInitPosZ, CLmInitPosZ, CLfInitPosZ };
 
         private readonly double[] _cOffsetX = { CRrOffsetX, CRmOffsetX, CRfOffsetX, CLrOffsetX, CLmOffsetX, CLfOffsetX };
         private readonly double[] _cOffsetZ = { CRrOffsetZ, CRmOffsetZ, CRfOffsetZ, CLrOffsetZ, CLmOffsetZ, CLfOffsetZ };
+
+        private readonly double[] _cCoxaAngle1 = { CRrCoxaAngle, CRmCoxaAngle, CRfCoxaAngle, CLrCoxaAngle, CLmCoxaAngle, CLfCoxaAngle };
 
         private readonly double[] _coxaAngle1 = new double[6];
         private readonly double[] _femurAngle1 = new double[6]; //Actual Angle of the vertical hip, decimals = 1
@@ -310,7 +289,7 @@ namespace HexapiBackground{
                     _halfLiftHeight = 3;
                     _tlDivFactor = 8;
                     _stepsInGait = 12;
-                    //NomGaitSpeed = 110;
+                    _nominalGaitSpeed = 110;
                     break;
                 case GaitType.Tripod8Steps:
                     //Tripod 8 steps
@@ -325,7 +304,7 @@ namespace HexapiBackground{
                     _halfLiftHeight = 3;
                     _tlDivFactor = 4;
                     _stepsInGait = 8;
-                    //NomGaitSpeed = 80;
+                    _nominalGaitSpeed = 80;
                     break;
                 case GaitType.TripleTripod12Steps:
                     //Triple Tripod 12 step
@@ -340,7 +319,7 @@ namespace HexapiBackground{
                     _halfLiftHeight = 3;
                     _tlDivFactor = 8;
                     _stepsInGait = 12;
-                    //NomGaitSpeed = 100;
+                    _nominalGaitSpeed = 100;
                     break;
                 case GaitType.TripleTripod16Steps:
                     // Triple Tripod 16 steps, use 5 lifted positions
@@ -355,7 +334,7 @@ namespace HexapiBackground{
                     _halfLiftHeight = 1;
                     _tlDivFactor = 10;
                     _stepsInGait = 16;
-                    //NomGaitSpeed = 100;
+                    _nominalGaitSpeed = 100;
                     break;
                 case GaitType.Wave24Steps:
                     //Wave 24 steps
@@ -371,7 +350,7 @@ namespace HexapiBackground{
                     _halfLiftHeight = 3;
                     _tlDivFactor = 20;
                     _stepsInGait = 24;
-                    //NomGaitSpeed = 110;
+                    _nominalGaitSpeed = 110;
                     break;
             }
         }
@@ -569,7 +548,7 @@ namespace HexapiBackground{
         #endregion
 
         #region Servo related, build various servo controller strings and read values
-        private static string UpdateServoDriver(double[] coxaAngles, double[] femurAngles, double[] tibiaAngles)
+        private static string UpdateServoPositions(double[] coxaAngles, double[] femurAngles, double[] tibiaAngles)
         {
             var stringBuilder = new StringBuilder();
 

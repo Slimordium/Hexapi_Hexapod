@@ -17,10 +17,11 @@ namespace HexapiBackground
             var avc = new AvController();
             var arduino = new RemoteArduino { RangeUpdate = avc.RangeUpdate };
             var gps = new UltimateGps { LatLonUpdate = avc.LatLonUpdate };
-            var hexapi = new Hexapi();
 
             arduino.Start();
             gps.Start();
+           
+            var hexapi = new Hexapi();
             hexapi.Start();
         }
 

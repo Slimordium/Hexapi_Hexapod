@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using HexapiBackground.Enums;
 using HexapiBackground.Gps;
 
 namespace HexapiBackground{
@@ -10,14 +11,38 @@ namespace HexapiBackground{
     {
         private static LatLon _currentLatLon;
 
+        private readonly List<int> _centerAvg = new List<int>();
+
         private readonly Stopwatch _gpsStopwatch = new Stopwatch();
+        private readonly List<int> _leftAvg = new List<int>();
         private readonly Stopwatch _pingStopwatch = new Stopwatch();
 
-        private readonly List<int> _centerAvg = new List<int>();
-        private readonly List<int> _leftAvg = new List<int>();
+        private readonly Random _random = new Random(DateTime.Now.Millisecond);
         private readonly List<int> _rightAvg = new List<int>();
 
         private bool _obstacleAvoidanceEnabled;
+
+        internal AvController()
+        {
+            _gpsStopwatch.Start();
+            _pingStopwatch.Start();
+
+            LeftInches = 0;
+            RightInches = 0;
+            CenterInches = 0;
+
+            Waypoints = new List<LatLon>();
+
+            LoadWaypoints();
+        }
+
+        internal static double LeftInches { get; set; }
+
+        internal static double CenterInches { get; set; }
+
+        internal static double RightInches { get; set; }
+
+        internal List<LatLon> Waypoints { get; set; }
 
         internal void ObstacleAvoidance(bool enabled)
         {
@@ -64,12 +89,9 @@ namespace HexapiBackground{
 
                     if (RightInches < 10)
                         OnNavRequest?.Invoke(Direction.ForwardLeft, 1000);
-
                 }
             });
         }
-
-        readonly Random _random = new Random(DateTime.Now.Millisecond);
 
         private void LookForOpenArea()
         {
@@ -87,9 +109,8 @@ namespace HexapiBackground{
                 OnNavRequest?.Invoke(Direction.Left, 1000);
             }
 
-            while (CenterInches < 15 )
+            while (CenterInches < 15)
             {
-
                 if (sw.ElapsedMilliseconds > 5000)
                     break;
             }
@@ -97,7 +118,6 @@ namespace HexapiBackground{
             if (sw.ElapsedMilliseconds > 5000)
                 while (CenterInches < 10)
                 {
-
                     if (sw.ElapsedMilliseconds > 10000)
                         break;
                 }
@@ -120,11 +140,10 @@ namespace HexapiBackground{
             {
                 OnNavRequest?.Invoke(Direction.ReverseLeft, 1000);
             }
-            
+
 
             while (sw.ElapsedMilliseconds < 2000)
             {
-                
             }
 
             if (LeftInches < 5 && RightInches < 5 && CenterInches < 5)
@@ -137,28 +156,7 @@ namespace HexapiBackground{
 
         internal void EnableGpsNavigation()
         {
-
         }
-
-        internal AvController()
-        {
-            _gpsStopwatch.Start();
-            _pingStopwatch.Start();
-
-            LeftInches = 0;
-            RightInches = 0;
-            CenterInches = 0;
-
-            Waypoints = new List<LatLon>();
-
-            LoadWaypoints();
-        }
-
-        internal static double LeftInches { get; set; }
-
-        internal static double CenterInches { get; set; }
-
-        internal static double RightInches { get; set; }
 
         internal void RangeUpdate(int[] data)
         {
@@ -183,6 +181,12 @@ namespace HexapiBackground{
 
             CenterInches = GetInchesFromPingDuration(_centerAvg.Sum()/_centerAvg.Count);
             _centerAvg.RemoveAt(0);
+
+            //if (_pingStopwatch.ElapsedMilliseconds > 500)
+            //{
+            //    Debug.WriteLine($"Range: {RightInches}, {CenterInches}, {LeftInches}");
+            //    _pingStopwatch.Restart();
+            //}
         }
 
         internal void PrintDistanceHeadingToWaypoints()
@@ -202,12 +206,11 @@ namespace HexapiBackground{
         {
             _currentLatLon = latLon;
 
-            if (_gpsStopwatch.ElapsedMilliseconds <= 4000)
-                return;
-
-            _gpsStopwatch.Restart();
-
-            PrintDistanceHeadingToWaypoints();
+            //if (_gpsStopwatch.ElapsedMilliseconds > 2000)
+            //{
+            //    Debug.WriteLine($"{latLon.Lat}, {latLon.Lon}, {latLon.Heading}");
+            //    _gpsStopwatch.Restart();
+            //}
         }
 
         internal static void SaveWaypoint()
@@ -251,21 +254,5 @@ namespace HexapiBackground{
         internal static event NavRequestHandler OnNavRequest;
 
         internal delegate void NavRequestHandler(Direction requestedDirection, int magnitude);
-
-        public List<LatLon> Waypoints { get; set; }
-
-        internal enum Direction
-        {
-            Unknown,
-            FullStop,
-            Forward,
-            ForwardLeft,
-            ForwardRight,
-            Left,
-            Right,
-            Reverse,
-            ReverseLeft,
-            ReverseRight
-        }
     }
 }

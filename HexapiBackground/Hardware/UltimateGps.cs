@@ -84,12 +84,12 @@ namespace HexapiBackground
         {
             _latLons.Add(latLon);
 
-            Task.Factory.StartNew(() => LatLonUpdate?.Invoke(latLon));
+            LatLonUpdate?.Invoke(latLon);
 
-            if (_latLons.Count <= 1000)
-                return;
+            //if (_latLons.Count <= 1000)
+            //    return;
 
-            CalculateDistancesFromAverage();
+            //CalculateDistancesFromAverage();
         }
 
         internal void CalculateDistancesFromAverage()
