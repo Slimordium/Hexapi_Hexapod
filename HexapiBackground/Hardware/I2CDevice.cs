@@ -29,7 +29,7 @@ namespace HexapiBackground
                 _i2CDevice = await I2cDevice.FromIdAsync(devices[0].Id, settings);
 
                 if (_i2CDevice == null)
-                    Debug.WriteLine($"Could not find I2C device at {baseAddress}");
+                    Debug.WriteLine($"Could not create I2C conection from device at {baseAddress}");
             }).Wait();
         }
 

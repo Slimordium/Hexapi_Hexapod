@@ -106,8 +106,10 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AvController.cs" />
+    <Compile Include="Avc.cs" />
+    <Compile Include="RouteFinder.cs" />
     <Compile Include="Enums\Direction.cs" />
+    <Compile Include="Enums\GaitType.cs" />
     <Compile Include="Enums\GpsFixQuality.cs" />
     <Compile Include="Enums\SelectedFunction.cs" />
     <Compile Include="Hardware\UltimateGps.cs" />
@@ -117,7 +119,7 @@
     <Compile Include="Hardware\I2CDevice.cs" />
     <Compile Include="Hardware\Mpu9150.cs" />
     <Compile Include="InverseKinematics.cs" />
-    <Compile Include="Hardware\RemoteArduino.cs" />
+    <Compile Include="Hardware\PingSensors.cs" />
     <Compile Include="Hardware\SerialPort.cs" />
     <Compile Include="StartupTask.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

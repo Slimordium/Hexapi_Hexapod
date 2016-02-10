@@ -13,15 +13,13 @@ namespace HexapiBackground
             _deferral = taskInstance.GetDeferral();
 
             //SerialPort.ListAvailablePorts();
-            
-            var avc = new AvController();
-            var arduino = new RemoteArduino { RangeUpdate = avc.RangeUpdate };
-            var gps = new UltimateGps { LatLonUpdate = avc.LatLonUpdate };
 
-            arduino.Start();
-            gps.Start();
-           
+            var gps = new UltimateGps();
+            var pingSensors = new PingSensors();
             var hexapi = new Hexapi();
+
+            gps.Start();
+            pingSensors.Start();
             hexapi.Start();
         }
 

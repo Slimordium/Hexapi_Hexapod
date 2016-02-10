@@ -26,13 +26,17 @@ namespace HexapiBackground{
         private double _bodyPosX;
         private double _bodyPosZ;
 
+        private RouteFinder _routeFinder;
+
         internal Hexapi()
         {
             _ik = new InverseKinematics();
 
+            _routeFinder = new RouteFinder(_ik);
+
             _xboxController = new XboxController();
             _xboxController.Open();
-
+            
             _xboxController.LeftDirectionChanged += XboxController_LeftDirectionChanged;
             _xboxController.RightDirectionChanged += XboxController_RightDirectionChanged;
             _xboxController.DpadDirectionChanged += XboxController_DpadDirectionChanged;
@@ -113,7 +117,7 @@ namespace HexapiBackground{
                     Debug.WriteLine("setting movement to  " + _isMovementStarted);
                     break;
                 case 6: //back button
-                    AvController.SaveWaypoint();
+                    Helpers.SaveWaypoint();
                     break;
                 default:
                     Debug.WriteLine("button? " + button);
@@ -168,10 +172,8 @@ namespace HexapiBackground{
             }
         }
 
-        private async void XboxController_RightDirectionChanged(ControllerVector sender)
+        private void XboxController_RightDirectionChanged(ControllerVector sender)
         {
-            await Task.Yield();
-
             switch (sender.Direction)
             {
                 case ControllerDirection.Left:
@@ -179,7 +181,6 @@ namespace HexapiBackground{
                     _travelLengthZ = 0;
                     break;
                 case ControllerDirection.UpLeft:
-                    if (AvController.LeftInches < 22)
                     _travelRotationY = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 2);
                     _travelLengthZ = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 80);
                     break;
@@ -235,7 +236,6 @@ namespace HexapiBackground{
                 case ControllerDirection.Up:
                     _bodyRotX1 = Helpers.Map(sender.Magnitude, 0, 10000, 0, 7);
                     _bodyRotZ1 = 0;
-
                     break;
                 case ControllerDirection.Down:
                     _bodyRotX1 = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 7);

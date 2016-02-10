@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.Devices.SerialCommunication;
 using HexapiBackground.Enums;
 using HexapiBackground.Gps;
 
@@ -21,25 +22,24 @@ namespace HexapiBackground
 
         internal UltimateGps()
         {
-            Time = DateTime.MinValue;
-            Latitude = 0.0f;
-            Longitude = 0.0f;
+            TimeFomGps = DateTime.MinValue;
+            CurrentLatitude = 0.0f;
+            CurrentLongitude = 0.0f;
             Quality = GpsFixQuality.NoFix;
-            Heading = 0.0f;
-            Altitude = 0.0f;
-            FeetPerSecond = 0.0f;
+            CurrentHeading = 0.0f;
+            CurrentAltitude = 0.0f;
+            CurrentFeetPerSecond = 0.0f;
             
             SetGpsBaudRate();
         }
 
-        internal static DateTime Time { get; set; }
-        internal static double Latitude { get; set; }
-        internal static double Longitude { get; set; }
-        internal static GpsFixQuality Quality { get; set; }
-        internal static double Heading { get; set; }
-        internal static float Altitude { get; set; }
-        internal static double FeetPerSecond { get; set; }
-        internal Action<LatLon> LatLonUpdate { get; set; }
+        internal static DateTime TimeFomGps { get; private set; }
+        internal static double CurrentLatitude { get; private set; }
+        internal static double CurrentLongitude { get; private set; }
+        internal static GpsFixQuality Quality { get; private set; }
+        internal static double CurrentHeading { get; private set; }
+        internal static float CurrentAltitude { get; private set; }
+        internal static double CurrentFeetPerSecond { get; private set; }
 
         //http://www.x-io.co.uk/open-source-ahrs-with-x-imu/
         //https://electronics.stackexchange.com/questions/16707/imu-adxl345-itg3200-triple-axis-filter
@@ -47,19 +47,28 @@ namespace HexapiBackground
         //http://diydrones.com/forum/topics/using-the-mpu6050-for-quadcopter-orientation-control
         //http://www.nuclearprojects.com/ins/gps.shtml
 
-        internal double DeviationLon { get; set; }
-        internal double DeviationLat { get; set; }
-        public double DriftCutoff { get; set; }
+        internal double DeviationLon { get; private set; }
+        internal double DeviationLat { get; private set; }
+        internal double DriftCutoff { get; private set; }
 
         #region Configure GPS
 
         //Sets up GPS to opperate at 115200
-        public void SetGpsBaudRate()
+        internal void SetGpsBaudRate()
         {
-            _serialPort = new SerialPort("A104OHRXA", 9600, 5000, 5000);
+            _serialPort = new SerialPort("A104OHRXA", 115200, 2000, 2000);
+
+            Task.Delay(200).Wait();
+
+            if (_serialPort.LastError != SerialError.Frame)
+            {
+                Debug.WriteLine("GPS Serial port already setup for 115,200");
+                return;
+            }
+
+            _serialPort = new SerialPort("A104OHRXA", 9600, 5000, 5000);//A104OHRXA is the serial number of the FTDI chip on the SparkFun USB/ Serial adapter
 
             _serialPort.Write(PmtkSetBaud115200);
-
             Task.Delay(1000).Wait();
 
             _serialPort.Close();
@@ -78,18 +87,6 @@ namespace HexapiBackground
         private double AverageLon()
         {
             return _latLons.Select(lon => lon.Lon).Sum()/_latLons.Count;
-        }
-
-        internal void Add(LatLon latLon)
-        {
-            _latLons.Add(latLon);
-
-            LatLonUpdate?.Invoke(latLon);
-
-            //if (_latLons.Count <= 1000)
-            //    return;
-
-            //CalculateDistancesFromAverage();
         }
 
         internal void CalculateDistancesFromAverage()
@@ -133,9 +130,7 @@ namespace HexapiBackground
                 }
             }
             Debug.WriteLine($"Corrector / accuracy {Math.Round(DriftCutoff, 1)}in.");
-
-            _latLons.RemoveRange(0, _latLons.Count/2);
-
+            
             var d = (_correctors.Sum()/Math.Round((double) _correctors.Count, 2));
 
             Debug.WriteLine($"Average drift {Math.Round(d, 1)}in.");
@@ -230,7 +225,8 @@ namespace HexapiBackground
         {
             Task.Factory.StartNew(() =>
             {
-                _serialPort = new SerialPort("A104OHRXA", 115200, 2000, 2000);
+                if (_serialPort == null)
+                    _serialPort = new SerialPort("A104OHRXA", 115200, 2000, 2000);
 
                 Debug.WriteLine("Configuring GPS, please wait...");
 
@@ -283,10 +279,10 @@ namespace HexapiBackground
                         if (tokens.Length < 15)
                             return;
 
-                        if (Time == DateTime.MinValue)
+                        if (TimeFomGps == DateTime.MinValue)
                         {
                             var st = tokens[1];
-                            Time = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
+                            TimeFomGps = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
                                 Convert.ToInt32(st.Substring(0, 2)), Convert.ToInt32(st.Substring(2, 2)),
                                 Convert.ToInt32(st.Substring(4, 2)), DateTimeKind.Local);
                         }
@@ -302,7 +298,7 @@ namespace HexapiBackground
 
                         float altitude = 0;
                         if (float.TryParse(tokens[9], out altitude))
-                            Altitude = altitude*3.28084f;
+                            CurrentAltitude = altitude*3.28084f;
 
                         break;
                     case "GPRMC": //Recommended minimum specific GPS/Transit data
@@ -314,12 +310,12 @@ namespace HexapiBackground
 
                         double fps = 0;
                         if (double.TryParse(tokens[7], out fps))
-                            FeetPerSecond = Math.Round(fps*1.68781, 2);
+                            CurrentFeetPerSecond = Math.Round(fps*1.68781, 2);
                         //Convert knots to feet per second or "Speed over ground"
 
                         double dir = 0;
                         if (double.TryParse(tokens[8], out dir))
-                            Heading = dir; //angle from true north that you are traveling or "Course made good"
+                            CurrentHeading = dir; //angle from true north that you are traveling or "Course made good"
 
                         break;
                 }
@@ -327,12 +323,13 @@ namespace HexapiBackground
                 if (!(lat > 0) || !(Math.Abs(lon) > .01))
                     return;
 
-                Latitude = lat;
-                Longitude = lon;
+                CurrentLatitude = lat;
+                CurrentLongitude = lon;
 
-                var newLatLon = new LatLon {Lat = lat, Lon = lon};
+                _latLons.Add(new LatLon { Lat = lat, Lon = lon, FeetPerSecond = CurrentFeetPerSecond, Altitude = CurrentAltitude});
 
-                Add(newLatLon);
+                if (_latLons.Count > 30000)
+                    _latLons.RemoveAt(0);
             }
             catch (ArgumentOutOfRangeException)
             {

@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
+using HexapiBackground.Enums;
 
 namespace HexapiBackground{
     internal sealed class InverseKinematics
@@ -84,14 +85,7 @@ namespace HexapiBackground{
 
             while (true)
             {
-                if (AvController.CenterInches < 20 && _travelLengthZ < 0)
-                    _travelLengthZ = 0;
-
-                if (AvController.RightInches < 20 && _travelRotationY < 0)
-                    _travelRotationY = 0;
-
-                if (AvController.LeftInches < 20 && _travelRotationY > 0)
-                    _travelRotationY = 0;
+                Avc.CheckForObstructions(ref _travelLengthX, ref _travelRotationY, ref _travelLengthZ, ref _nominalGaitSpeed);
 
                 if (!_movementStarted)
                 {
@@ -580,7 +574,7 @@ namespace HexapiBackground{
                 stringBuilder.Append($"#{LegServos[legIndex][2]}P{tibiaPosition}");
             }
 
-            stringBuilder.Append($"T{_nominalGaitSpeed + 5}\r");
+            stringBuilder.Append($"T{_nominalGaitSpeed + 3}\r");
 
             return stringBuilder.ToString();
         }
@@ -636,6 +630,7 @@ namespace HexapiBackground{
 
         #region Helpers, and static methods
 
+
         private static void GetSinCos(double angleDeg, out double sin, out double cos)
         {
             var angle = Math.PI * angleDeg / 180.0;
@@ -670,13 +665,4 @@ namespace HexapiBackground{
 
         #endregion
     }
-    internal enum GaitType
-    {
-        RippleGait12Steps,
-        Tripod8Steps,
-        TripleTripod12Steps,
-        TripleTripod16Steps,
-        Wave24Steps,
-    }
-
 }

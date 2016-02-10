@@ -17,41 +17,47 @@ namespace HexapiBackground
         private static readonly ASCIIEncoding AsciiEncoding = new ASCIIEncoding();
         private static IBuffer _buffer;
         private SerialDevice _serialPort;
+        internal SerialError LastError { get; private set; }
 
         internal SerialPort(string identifier, int baudRate, int readTimeoutMs, int writeTimeoutMs)
         {
-            if (_serialPort != null)
+            Task.Factory.StartNew(async () =>
             {
-                Debug.WriteLine($"SerialPort is already opened for {identifier}");
-                return;
-            }
-
-            while (_serialPort == null)
-            {
-                var deviceInformationCollection = DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()).GetAwaiter().GetResult();
-                var selectedPort = deviceInformationCollection.FirstOrDefault(d => d.Id.Contains(identifier) || d.Name.Equals(identifier)); //Onboard is "UART0"
-
-                if (selectedPort == null)
+                while (_serialPort == null)
                 {
-                    Debug.WriteLine($"Could not find {identifier}. Retrying in 2 seconds... ");
+                    var deviceInformationCollection = await DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector());
+                    var selectedPort = deviceInformationCollection.FirstOrDefault(d => d.Id.Contains(identifier) || d.Name.Equals(identifier)); //Onboard is "UART0"
 
-                    Task.Delay(2000).Wait();
-                    return;
+                    if (selectedPort == null)
+                    {
+                        Debug.WriteLine($"Could not find device information for {identifier}. Retrying in 2 seconds... ");
+
+                        await Task.Delay(2000);
+                        continue;
+                    }
+
+                    _serialPort = await SerialDevice.FromIdAsync(selectedPort.Id);
+
+                    if (_serialPort == null)
+                    {
+                        Debug.WriteLine($"Could not open serial port at {identifier}. Usually an app manifest issue. Retrying in 2 seconds...  ");
+
+                        await Task.Delay(2000);
+                        continue;
+                    }
+
+                    Debug.WriteLine($"Found - {identifier} as {selectedPort.Id}");
+
+                    _serialPort.ReadTimeout = TimeSpan.FromMilliseconds(readTimeoutMs);
+                    _serialPort.WriteTimeout = TimeSpan.FromMilliseconds(writeTimeoutMs);
+                    _serialPort.BaudRate = (uint) baudRate;
+                    _serialPort.Parity = SerialParity.None;
+                    _serialPort.StopBits = SerialStopBitCount.One;
+                    _serialPort.DataBits = 8;
+                    _serialPort.Handshake = SerialHandshake.None;
+                    _serialPort.ErrorReceived += _serialPort_ErrorReceived;
                 }
-
-                _serialPort = SerialDevice.FromIdAsync(selectedPort.Id).GetAwaiter().GetResult();
-
-                Debug.WriteLine($"Found - {identifier} as {selectedPort.Id}");
-
-                _serialPort.ReadTimeout = TimeSpan.FromMilliseconds(readTimeoutMs);
-                _serialPort.WriteTimeout = TimeSpan.FromMilliseconds(writeTimeoutMs);
-                _serialPort.BaudRate = (uint) baudRate;
-                _serialPort.Parity = SerialParity.None;
-                _serialPort.StopBits = SerialStopBitCount.One;
-                _serialPort.DataBits = 8;
-                _serialPort.Handshake = SerialHandshake.None;
-                //_serialPort.ErrorReceived += _serialPort_ErrorReceived;
-            }
+            });
         }
 
         internal static void ListAvailablePorts()
@@ -64,9 +70,12 @@ namespace HexapiBackground
             Debug.WriteLine("----------------------------------------");
         }
 
-        private static void _serialPort_ErrorReceived(SerialDevice sender, ErrorReceivedEventArgs args)
+        private void _serialPort_ErrorReceived(SerialDevice sender, ErrorReceivedEventArgs args)
         {
-            Debug.WriteLine($"SerialPort Error on {sender.PortName}, {args.Error}");
+            if (LastError != args.Error)
+                LastError = args.Error;   
+
+            //Debug.WriteLine($"SerialPort Error on {sender.PortName}, {args.Error}");
         }
 
         internal void Close()
@@ -77,12 +86,18 @@ namespace HexapiBackground
 
         internal async void Write(string data)
         {
+            if (_serialPort == null)
+                return;
+
             var buffer = AsciiEncoding.GetBytes(data).AsBuffer();
             await _serialPort.OutputStream.WriteAsync(buffer).AsTask();
         }
 
         internal async Task<byte> ReadByte()
         {
+            if (_serialPort == null)
+                return new byte();
+
             _singleByteBuffer = new Buffer(1);
 
             var r = await _serialPort.InputStream.ReadAsync(_singleByteBuffer, 1, InputStreamOptions.Partial).AsTask();
@@ -92,6 +107,9 @@ namespace HexapiBackground
 
         internal string ReadString()
         {
+            if (_serialPort == null)
+                return string.Empty;
+
             _buffer = new Buffer(128);
 
             Task.Factory.StartNew(() =>
