@@ -108,7 +108,6 @@
   <ItemGroup>
     <Compile Include="Avc.cs" />
     <Compile Include="RouteFinder.cs" />
-    <Compile Include="Enums\Direction.cs" />
     <Compile Include="Enums\GaitType.cs" />
     <Compile Include="Enums\GpsFixQuality.cs" />
     <Compile Include="Enums\SelectedFunction.cs" />

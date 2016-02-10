@@ -48,7 +48,8 @@ namespace HexapiBackground
         {
             foreach (var wp in _waypoints)
             {
-                Debug.WriteLine($"From current location, Distance: {wp.DistanceHeadingFromCurrent[0]}in. Heading: {wp.DistanceHeadingFromCurrent[1]}");
+                var dh = wp.DistanceHeadingFromCurrent;
+                Debug.WriteLine($"From current location, Distance: {dh[0]}in. Heading: {dh[1]}");
             }
         }
 

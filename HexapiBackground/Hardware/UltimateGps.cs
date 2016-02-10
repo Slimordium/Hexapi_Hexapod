@@ -145,7 +145,7 @@ namespace HexapiBackground
         /// <param name="destinationLat"></param>
         /// <param name="destinationLon"></param>
         /// <returns>distance to waypoint, and heading to waypoint</returns>
-        public static double[] GetDistanceAndHeadingToDestination(double currentLat, double currentLon, double destinationLat, double destinationLon)
+        internal static double[] GetDistanceAndHeadingToDestination(double currentLat, double currentLon, double destinationLat, double destinationLon)
         {
             try
             {

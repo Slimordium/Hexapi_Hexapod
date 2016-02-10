@@ -4,13 +4,12 @@ using System.Diagnostics;
 namespace HexapiBackground{
     internal static class Avc
     {
-        private static readonly Random RandomNumber = new Random(DateTime.Now.Millisecond);
-
         internal static void CheckForObstructions(ref double travelLengthX, ref double travelRotationY, ref double travelLengthZ, ref double nominalGaitSpeed)
         {
-            var turnDirection = RandomNumber.Next(0, 10);
-            var turnDuration = RandomNumber.Next(1000, 2500);
-            var reverseDuration = RandomNumber.Next(1000, 2500);
+            var randomNumber = new Random(DateTime.Now.Millisecond);
+            var turnDirection = randomNumber.Next(0, 10);
+            var turnDuration = randomNumber.Next(1000, 2500);
+            var reverseDuration = randomNumber.Next(1000, 2500);
             var sw = new Stopwatch();
             sw.Start();
 
@@ -37,7 +36,7 @@ namespace HexapiBackground{
                 if (travelLengthZ < 0)
                     travelLengthZ = 0;
 
-                travelRotationY = 2;
+                travelRotationY = -2;
             }
             else if (PingSensors.CenterInches < 15 && PingSensors.RightInches > 17)
             {
@@ -46,7 +45,7 @@ namespace HexapiBackground{
                 if (travelLengthZ < 0)
                     travelLengthZ = 0;
 
-                travelRotationY = -2;
+                travelRotationY = 2;
             }
             else if (PingSensors.CenterInches > 15 && PingSensors.RightInches > 15 && PingSensors.LeftInches > 15)
             {
