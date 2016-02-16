@@ -55,7 +55,7 @@ namespace HexapiBackground
                     _serialPort.StopBits = SerialStopBitCount.One;
                     _serialPort.DataBits = 8;
                     _serialPort.Handshake = SerialHandshake.None;
-                    _serialPort.ErrorReceived += _serialPort_ErrorReceived;
+                    //_serialPort.ErrorReceived += _serialPort_ErrorReceived;
                 }
             });
         }

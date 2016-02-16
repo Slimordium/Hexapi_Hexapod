@@ -75,17 +75,17 @@ namespace HexapiBackground{
         internal void Start()
         {
             _gaitStep = 0;
-            _nominalGaitSpeed = 50;
-            _legLiftHeight = 40;
+            _nominalGaitSpeed = 60;
+            _legLiftHeight = 30;
             _gaitType = GaitType.TripleTripod12Steps;
-            _bodyPosY = 75;
+            _bodyPosY = 70;
 
             GaitSelect();
             _sw.Start();
 
             while (true)
             {
-                Avc.CheckForObstructions(ref _travelLengthX, ref _travelRotationY, ref _travelLengthZ, ref _nominalGaitSpeed);
+                //Avc.CheckForObstructions(ref _travelLengthX, ref _travelRotationY, ref _travelLengthZ, ref _nominalGaitSpeed);
 
                 if (!_movementStarted)
                 {
@@ -255,10 +255,10 @@ namespace HexapiBackground{
 
         private static volatile int _gaitStep;
         private GaitType _gaitType;
-        private static double _nominalGaitSpeed = 40; //Nominal speed of the gait, equates to timer ticks between servo commands. One MS is about 10,000 timer ticks.
+        private static double _nominalGaitSpeed = 40; //Nominal speed of the gait in MS
 
         private double _travelLengthX; //Current Travel length X
-        private double _travelLengthZ; //Current Travel length Z
+        private double _travelLengthZ; //Current Travel length Z - Negative numbers = "forward" movement.
         private double _travelRotationY; //Current Travel Rotation Y
 
         private static readonly int[][] LegServos = new int[6][];
@@ -283,7 +283,7 @@ namespace HexapiBackground{
                     _halfLiftHeight = 3;
                     _tlDivFactor = 8;
                     _stepsInGait = 12;
-                    _nominalGaitSpeed = 110;
+                    //_nominalGaitSpeed = 110;
                     break;
                 case GaitType.Tripod8Steps:
                     //Tripod 8 steps
@@ -298,7 +298,7 @@ namespace HexapiBackground{
                     _halfLiftHeight = 3;
                     _tlDivFactor = 4;
                     _stepsInGait = 8;
-                    _nominalGaitSpeed = 80;
+                    //_nominalGaitSpeed = 80;
                     break;
                 case GaitType.TripleTripod12Steps:
                     //Triple Tripod 12 step
@@ -313,7 +313,7 @@ namespace HexapiBackground{
                     _halfLiftHeight = 3;
                     _tlDivFactor = 8;
                     _stepsInGait = 12;
-                    _nominalGaitSpeed = 100;
+                    //_nominalGaitSpeed = 100;
                     break;
                 case GaitType.TripleTripod16Steps:
                     // Triple Tripod 16 steps, use 5 lifted positions
@@ -328,7 +328,7 @@ namespace HexapiBackground{
                     _halfLiftHeight = 1;
                     _tlDivFactor = 10;
                     _stepsInGait = 16;
-                    _nominalGaitSpeed = 100;
+                    //_nominalGaitSpeed = 100;
                     break;
                 case GaitType.Wave24Steps:
                     //Wave 24 steps
@@ -344,7 +344,7 @@ namespace HexapiBackground{
                     _halfLiftHeight = 3;
                     _tlDivFactor = 20;
                     _stepsInGait = 24;
-                    _nominalGaitSpeed = 110;
+                    //_nominalGaitSpeed = 110;
                     break;
             }
         }
@@ -574,7 +574,7 @@ namespace HexapiBackground{
                 stringBuilder.Append($"#{LegServos[legIndex][2]}P{tibiaPosition}");
             }
 
-            stringBuilder.Append($"T{_nominalGaitSpeed + 3}\r");
+            stringBuilder.Append($"T{_nominalGaitSpeed}\r");
 
             return stringBuilder.ToString();
         }

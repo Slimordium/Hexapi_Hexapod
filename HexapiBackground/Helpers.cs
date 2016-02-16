@@ -21,6 +21,8 @@ namespace HexapiBackground{
             {
                 var file = await ApplicationData.Current.LocalFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).AsTask();
 
+                Debug.WriteLine($"Reading {file.Path}");
+
                 using (var stream = await file.OpenStreamForReadAsync())
                 {
                     using (var reader = new StreamReader(stream))
@@ -45,6 +47,8 @@ namespace HexapiBackground{
                 {
                     var bytesToAppend = System.Text.Encoding.UTF8.GetBytes(content.ToCharArray());
                     var file = await ApplicationData.Current.LocalFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).AsTask();
+
+                    Debug.WriteLine($"Writing {file.Path}");
 
                     using (var stream = await file.OpenStreamForWriteAsync())
                     {

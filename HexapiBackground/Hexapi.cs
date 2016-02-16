@@ -11,7 +11,7 @@ namespace HexapiBackground{
 
         private bool _isMovementStarted = false;
 
-        private double _legLiftHeight = 40;
+        private double _legLiftHeight = 30;
         private double _nomGaitSpeed = 50;
         private SelectedFunction _selectedFunction = SelectedFunction.GaitSpeed;
 
@@ -127,13 +127,13 @@ namespace HexapiBackground{
 
         private void XboxController_RightTriggerChanged(int trigger)
         {
-            _travelLengthX = Helpers.Map(trigger, 0, 10000, 0, 70);
+            _travelLengthX = Helpers.Map(trigger, 0, 10000, 0, 90);
             _ik.RequestMovement(_nomGaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
         }
 
         private void XboxController_LeftTriggerChanged(int trigger)
         {
-            _travelLengthX = -Helpers.Map(trigger, 0, 10000, 0, 70);
+            _travelLengthX = -Helpers.Map(trigger, 0, 10000, 0, 90);
             _ik.RequestMovement(_nomGaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
         }
 
@@ -182,11 +182,11 @@ namespace HexapiBackground{
                     break;
                 case ControllerDirection.UpLeft:
                     _travelRotationY = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 80);
+                    _travelLengthZ = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 90);
                     break;
                 case ControllerDirection.DownLeft:
                     _travelRotationY = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = Helpers.Map(sender.Magnitude, 0, 10000, 0, 80);
+                    _travelLengthZ = Helpers.Map(sender.Magnitude, 0, 10000, 0, 90);
                     break;
                 case ControllerDirection.Right:
                     _travelRotationY = Helpers.Map(sender.Magnitude, 0, 10000, 0, 3);
@@ -194,18 +194,18 @@ namespace HexapiBackground{
                     break;
                 case ControllerDirection.UpRight:
                     _travelRotationY = Helpers.Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 80);
+                    _travelLengthZ = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 90);
                     break;
                 case ControllerDirection.DownRight:
                     _travelRotationY = Helpers.Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = Helpers.Map(sender.Magnitude, 0, 10000, 0, 80);
+                    _travelLengthZ = Helpers.Map(sender.Magnitude, 0, 10000, 0, 90);
                     break;
                 case ControllerDirection.Up:
-                    _travelLengthZ = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 110);
+                    _travelLengthZ = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 120);
                     _travelRotationY = 0;
                     break;
                 case ControllerDirection.Down:
-                    _travelLengthZ = Helpers.Map(sender.Magnitude, 0, 10000, 0, 110);
+                    _travelLengthZ = Helpers.Map(sender.Magnitude, 0, 10000, 0, 120);
                     _travelRotationY = 0;
                     break;
             }

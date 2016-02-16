@@ -58,23 +58,23 @@ namespace HexapiBackground
         {
             _serialPort = new SerialPort("A104OHRXA", 115200, 2000, 2000);
 
-            Task.Delay(200).Wait();
+            //Task.Delay(500).Wait();
 
-            if (_serialPort.LastError != SerialError.Frame)
-            {
-                Debug.WriteLine("GPS Serial port already setup for 115,200");
-                return;
-            }
+            //if (_serialPort.LastError != SerialError.Frame)
+            //{
+            //    Debug.WriteLine("GPS Serial port already setup for 115,200");
+            //    return;
+            //}
 
-            _serialPort = new SerialPort("A104OHRXA", 9600, 5000, 5000);//A104OHRXA is the serial number of the FTDI chip on the SparkFun USB/ Serial adapter
+            //_serialPort = new SerialPort("A104OHRXA", 9600, 5000, 5000);//A104OHRXA is the serial number of the FTDI chip on the SparkFun USB/ Serial adapter
 
-            _serialPort.Write(PmtkSetBaud115200);
-            Task.Delay(1000).Wait();
+            //_serialPort.Write(PmtkSetBaud115200);
+            //Task.Delay(1000).Wait();
 
-            _serialPort.Close();
-            _serialPort = null;
+            //_serialPort.Close();
+            //_serialPort = null;
 
-            Task.Delay(500).Wait();
+            //Task.Delay(500).Wait();
         }
 
         #endregion
