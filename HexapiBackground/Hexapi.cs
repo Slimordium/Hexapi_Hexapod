@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Threading.Tasks;
 using HexapiBackground.Enums;
-
 // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
 
 namespace HexapiBackground{
@@ -13,27 +12,31 @@ namespace HexapiBackground{
         private bool _isMovementStarted = false;
 
         private double _legLiftHeight = 30;
-        private double _nomGaitSpeed = 60;
+        private double _nomGaitSpeed = 50;
         private SelectedFunction _selectedFunction = SelectedFunction.GaitSpeed;
 
-        private double _travelLengthX; //Current Travel length X
-        private double _travelLengthZ; //Current Travel length Z
-        private double _travelRotationY; //Current Travel Rotation Y
+        private double _travelLengthX; 
+        private double _travelLengthZ; 
+        private double _travelRotationY;
 
         private GaitType _gaitType = GaitType.TripleTripod12Steps;
-        private double _bodyPosY = 65;
+        private double _bodyPosY = 75;
         private double _bodyRotX1;
         private double _bodyRotZ1;
         private double _bodyPosX;
         private double _bodyPosZ;
 
+        private RouteFinder _routeFinder;
+
         internal Hexapi()
         {
             _ik = new InverseKinematics();
 
+            _routeFinder = new RouteFinder(_ik);
+
             _xboxController = new XboxController();
             _xboxController.Open();
-
+            
             _xboxController.LeftDirectionChanged += XboxController_LeftDirectionChanged;
             _xboxController.RightDirectionChanged += XboxController_RightDirectionChanged;
             _xboxController.DpadDirectionChanged += XboxController_DpadDirectionChanged;
@@ -43,18 +46,13 @@ namespace HexapiBackground{
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
         }
 
-        #region Main logic loop 
-
         public void Start()
         {
             Task.Factory.StartNew(() =>
             { _ik.Start(); }, TaskCreationOptions.LongRunning);
         }
 
-        #endregion
-
         #region XBox 360 Controller related...
-
         //4 = Left bumper, 5 = Right bumper
         private void XboxController_BumperButtonChanged(int button)
         {
@@ -65,14 +63,14 @@ namespace HexapiBackground{
                 case SelectedFunction.GaitSpeed: //A
                     if (button == 5)
                     {
-                        if (_nomGaitSpeed < 120)
+                        if (_nomGaitSpeed < 110)
                         {
                             _nomGaitSpeed = _nomGaitSpeed + 5;
                         }
                     }
                     else
                     {
-                        if (_nomGaitSpeed > 40)
+                        if (_nomGaitSpeed > 45)
                         {
                             _nomGaitSpeed = _nomGaitSpeed - 5;
                         }
@@ -81,12 +79,12 @@ namespace HexapiBackground{
                 case SelectedFunction.LegHeight: //B
                     if (button == 5)
                     {
-                        if (_legLiftHeight < 160)
+                        if (_legLiftHeight < 100)
                             _legLiftHeight = _legLiftHeight + 5;
                     }
                     else
                     {
-                        if (_legLiftHeight > 30)
+                        if (_legLiftHeight > 25)
                             _legLiftHeight = _legLiftHeight - 5;
                     }
                     break;
@@ -94,7 +92,6 @@ namespace HexapiBackground{
 
             _ik.RequestSetGaitOptions(_nomGaitSpeed, _legLiftHeight);
         }
-
 
         private void XboxController_FunctionButtonChanged(int button)
         {
@@ -120,7 +117,7 @@ namespace HexapiBackground{
                     Debug.WriteLine("setting movement to  " + _isMovementStarted);
                     break;
                 case 6: //back button
-                    AvController.SaveWaypoint();
+                    Helpers.SaveWaypoint();
                     break;
                 default:
                     Debug.WriteLine("button? " + button);
@@ -130,16 +127,15 @@ namespace HexapiBackground{
 
         private void XboxController_RightTriggerChanged(int trigger)
         {
-            _travelLengthX = Helpers.Map(trigger, 0, 10000, 0, 70);
+            _travelLengthX = Helpers.Map(trigger, 0, 10000, 0, 90);
             _ik.RequestMovement(_nomGaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
         }
 
         private void XboxController_LeftTriggerChanged(int trigger)
         {
-            _travelLengthX = -Helpers.Map(trigger, 0, 10000, 0, 70);
+            _travelLengthX = -Helpers.Map(trigger, 0, 10000, 0, 90);
             _ik.RequestMovement(_nomGaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
         }
-
 
         private void XboxController_DpadDirectionChanged(ControllerVector sender)
         {
@@ -167,7 +163,7 @@ namespace HexapiBackground{
                     }
                     break;
                 case ControllerDirection.Down:
-                    if (_bodyPosY > 35)
+                    if (_bodyPosY > 40)
                     {
                         _bodyPosY = _bodyPosY - 5;
                         _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);
@@ -185,11 +181,11 @@ namespace HexapiBackground{
                     _travelLengthZ = 0;
                     break;
                 case ControllerDirection.UpLeft:
-                    _travelRotationY = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 3);
+                    _travelRotationY = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 2);
                     _travelLengthZ = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 90);
                     break;
                 case ControllerDirection.DownLeft:
-                    _travelRotationY = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 3);
+                    _travelRotationY = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 2);
                     _travelLengthZ = Helpers.Map(sender.Magnitude, 0, 10000, 0, 90);
                     break;
                 case ControllerDirection.Right:
@@ -197,19 +193,19 @@ namespace HexapiBackground{
                     _travelLengthZ = 0;
                     break;
                 case ControllerDirection.UpRight:
-                    _travelRotationY = Helpers.Map(sender.Magnitude, 0, 10000, 0, 3);
+                    _travelRotationY = Helpers.Map(sender.Magnitude, 0, 10000, 0, 2);
                     _travelLengthZ = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 90);
                     break;
                 case ControllerDirection.DownRight:
-                    _travelRotationY = Helpers.Map(sender.Magnitude, 0, 10000, 0, 3);
+                    _travelRotationY = Helpers.Map(sender.Magnitude, 0, 10000, 0, 2);
                     _travelLengthZ = Helpers.Map(sender.Magnitude, 0, 10000, 0, 90);
                     break;
                 case ControllerDirection.Up:
-                    _travelLengthZ = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 160);
+                    _travelLengthZ = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 120);
                     _travelRotationY = 0;
                     break;
                 case ControllerDirection.Down:
-                    _travelLengthZ = Helpers.Map(sender.Magnitude, 0, 10000, 0, 160);
+                    _travelLengthZ = Helpers.Map(sender.Magnitude, 0, 10000, 0, 120);
                     _travelRotationY = 0;
                     break;
             }
@@ -240,7 +236,6 @@ namespace HexapiBackground{
                 case ControllerDirection.Up:
                     _bodyRotX1 = Helpers.Map(sender.Magnitude, 0, 10000, 0, 7);
                     _bodyRotZ1 = 0;
-
                     break;
                 case ControllerDirection.Down:
                     _bodyRotX1 = -Helpers.Map(sender.Magnitude, 0, 10000, 0, 7);
@@ -259,7 +254,7 @@ namespace HexapiBackground{
             _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);
         }
 
-        private void SetBodyRotOffset(ControllerVector sender)
+        private void SetBodyHorizontalOffset(ControllerVector sender)
         {
             switch (sender.Direction)
             {
@@ -305,7 +300,7 @@ namespace HexapiBackground{
             switch (_selectedFunction)
             {
                 case SelectedFunction.TranslateHorizontal:
-                    SetBodyRotOffset(sender);
+                    SetBodyHorizontalOffset(sender);
                     break;
                 case SelectedFunction.Translate3D:
                     SetBodyRot(sender);

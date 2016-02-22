@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.HumanInterfaceDevice;
 using Windows.Storage;
+using HexapiBackground.Enums;
+
 // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
 
 namespace HexapiBackground
@@ -33,13 +35,13 @@ namespace HexapiBackground
         /// </summary>
         /// <param name="deadZoneTolerance">The amount the stick needs to be moved before movement is registered</param>
         /// <returns></returns>
-        internal bool Open(int deadZoneTolerance = 6000)
+        internal void Open(int deadZoneTolerance = 6000)
         {
             _deadzoneTolerance = deadZoneTolerance;
 
-            while (_deviceHandle == null)
+            Task.Factory.StartNew(async () =>
             {
-                Task.Factory.StartNew(async () =>
+                while (_deviceHandle == null)
                 {
                     //USB\VID_045E&PID_0719\E02F1950 - receiver
                     //USB\VID_045E & PID_02A1 & IG_00\6 & F079888 & 0 & 00  - XboxController
@@ -50,7 +52,8 @@ namespace HexapiBackground
                     if (deviceInformationCollection.Count == 0)
                     {
                         Debug.WriteLine("No Xbox360 XboxController found! Perhaps an appx.manifest issue?");
-                        return;
+                        await Task.Delay(2000);
+                        continue;
                     }
 
                     foreach (var d in deviceInformationCollection)
@@ -62,7 +65,8 @@ namespace HexapiBackground
                         if (_deviceHandle == null)
                         {
                             Debug.WriteLine("Failed to connect to the XboxController");
-                            break;
+                            await Task.Delay(2000);
+                            continue;
                         }
 
                         _deviceHandle.InputReportReceived += InputReportReceived;
@@ -70,15 +74,9 @@ namespace HexapiBackground
                     }
 
                     Debug.WriteLine("Waiting 2 seconds and trying again...");
-                }).Wait();
-
-                Task.Delay(2000).Wait();
-            }
-
-            if (_deviceHandle != null)
-                return true;
-
-            return false;
+                    await Task.Delay(2000);
+                }
+            });
         }
 
         private void InputReportReceived(HidDevice sender, HidInputReportReceivedEventArgs args)
@@ -234,18 +232,5 @@ namespace HexapiBackground
 
             return otherVector != null && Magnitude == otherVector.Magnitude && Direction == otherVector.Direction;
         }
-    }
-
-    public enum ControllerDirection
-    {
-        None = 0,
-        Up,
-        UpRight,
-        Right,
-        DownRight,
-        Down,
-        DownLeft,
-        Left,
-        UpLeft
     }
 }

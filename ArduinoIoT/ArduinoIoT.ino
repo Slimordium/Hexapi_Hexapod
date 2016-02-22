@@ -738,11 +738,11 @@ void systemResetCallback()
 #define leftTrigPin 9
 #define leftEchoPin 8
 
-#define centerTrigPin 6
-#define centerEchoPin 7
+#define centerTrigPin 10
+#define centerEchoPin 11
 
-#define rightTrigPin 5
-#define rightEchoPin 4
+#define rightTrigPin 12
+#define rightEchoPin 13
 
 void setup()
 {
