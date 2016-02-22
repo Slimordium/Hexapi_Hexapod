@@ -3,8 +3,6 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Media.SpeechSynthesis;
-using Windows.UI.Xaml.Controls;
 
 namespace HexapiBackground{
     internal sealed class InverseKinematics
