@@ -597,7 +597,7 @@ namespace HexapiBackground{
 
         public async void LoadLegDefaults()
         {
-            var config = await Helpers.ReadStringFromFile("hexapod.config");
+            var config = await FileHelpers.ReadStringFromFile("hexapod.config");
             
             if (string.IsNullOrEmpty(config))
             {
@@ -628,7 +628,7 @@ namespace HexapiBackground{
 
         #endregion
 
-        #region Helpers, and static methods
+        #region MathHelpers, and static methods
 
 
         private static void GetSinCos(double angleDeg, out double sin, out double cos)

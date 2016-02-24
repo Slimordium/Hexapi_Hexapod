@@ -8,6 +8,7 @@ namespace HexapiBackground
     internal sealed class RouteFinder
     {
         private readonly InverseKinematics _inverseKinematics;
+        private readonly IGps _gps;
         private bool _gpsNavigationEnabled;
         private List<LatLon> _waypoints;
 
@@ -16,14 +17,15 @@ namespace HexapiBackground
         private double _travelRotationY = 0;
         private double _nomGaitSpeed = 50;
 
-        internal RouteFinder(InverseKinematics inverseKinematics)
+        internal RouteFinder(InverseKinematics inverseKinematics, IGps gps)
         {
             _inverseKinematics = inverseKinematics;
+            _gps = gps;
         }
 
         internal void EnableGpsNavigation()
         {
-            _waypoints = Helpers.LoadWaypoints();
+            _waypoints = GpsHelpers.LoadWaypoints();
 
             _gpsNavigationEnabled = true;
 
@@ -41,18 +43,18 @@ namespace HexapiBackground
             _gpsNavigationEnabled = false;
         }
 
-        internal void PrintDistanceHeadingToWaypoints()
-        {
-            foreach (var wp in _waypoints)
-            {
-                var dh = wp.DistanceHeadingFromCurrent;
-                Debug.WriteLine($"From current location, Distance: {dh[0]}in. Heading: {dh[1]}");
-            }
-        }
+        //internal void PrintDistanceHeadingToWaypoints()
+        //{
+        //    foreach (var wp in _waypoints)
+        //    {
+        //        var dh = wp.DistanceHeadingFromCurrent;
+        //        Debug.WriteLine($"From current location, Distance: {dh[0]}in. Heading: {dh[1]}");
+        //    }
+        //}
 
         internal void NavigateToWaypoint(LatLon currentWaypoint)
         {
-            var distanceHeading = currentWaypoint.DistanceHeadingFromCurrent;
+            var distanceHeading = GpsHelpers.GetDistanceAndHeadingToDestination(_gps.CurrentLatLon.Lat, _gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
             var distanceToWaypoint = distanceHeading[0];
             var headingToWaypoint = distanceHeading[1];
 
@@ -61,13 +63,13 @@ namespace HexapiBackground
 
             while (distanceToWaypoint > 36) //Inches
             {
-                if (headingToWaypoint + 5 > 359 && Math.Abs(headingToWaypoint - UltimateGps.CurrentHeading) > 1)
+                if (headingToWaypoint + 5 > 359 && Math.Abs(headingToWaypoint - _gps.CurrentLatLon.Heading) > 1)
                 {
                     var tempHeading = (headingToWaypoint + 5) - 359;
 
                     //mode = "Greater than 359 TempHeading " + tempHeading;
 
-                    if (UltimateGps.CurrentHeading > tempHeading)
+                    if (_gps.CurrentLatLon.Heading > tempHeading)
                     {
                         _travelRotationY = -1;
                     }
@@ -76,13 +78,13 @@ namespace HexapiBackground
                         _travelRotationY = 1;
                     }
                 }
-                else if (headingToWaypoint - 5 < 1 && Math.Abs(headingToWaypoint - UltimateGps.CurrentHeading) > 1)
+                else if (headingToWaypoint - 5 < 1 && Math.Abs(headingToWaypoint - _gps.CurrentLatLon.Heading) > 1)
                 {
                     var tempHeading = (headingToWaypoint + 359) - 5;
 
                     //mode = "Less than 1 TempHeading " + tempHeading;
 
-                    if (UltimateGps.CurrentHeading < tempHeading)
+                    if (_gps.CurrentLatLon.Heading < tempHeading)
                     {
                         _travelRotationY = 1;
                     }
@@ -91,34 +93,34 @@ namespace HexapiBackground
                         _travelRotationY = -1;
                     }
                 }
-                else if (UltimateGps.CurrentHeading > headingToWaypoint - 5 && UltimateGps.CurrentHeading < headingToWaypoint + 5)
+                else if (_gps.CurrentLatLon.Heading > headingToWaypoint - 5 && _gps.CurrentLatLon.Heading < headingToWaypoint + 5)
                 {
                     _travelRotationY = 0;
                 }
-                else if (headingToWaypoint > UltimateGps.CurrentHeading + 20)
+                else if (headingToWaypoint > _gps.CurrentLatLon.Heading + 20)
                 {
-                    if (UltimateGps.CurrentHeading - headingToWaypoint > 180)
+                    if (_gps.CurrentLatLon.Heading - headingToWaypoint > 180)
                         _travelRotationY = -2;
                     else
                         _travelRotationY = 2;
                 }
-                else if (headingToWaypoint > UltimateGps.CurrentHeading)
+                else if (headingToWaypoint > _gps.CurrentLatLon.Heading)
                 {
-                    if (UltimateGps.CurrentHeading - headingToWaypoint > 180)
+                    if (_gps.CurrentLatLon.Heading - headingToWaypoint > 180)
                         _travelRotationY = -1;
                     else
                         _travelRotationY = 1;
                 }
-                else if (headingToWaypoint < UltimateGps.CurrentHeading - 20) //If it has a long ways to turn, go fast!
+                else if (headingToWaypoint < _gps.CurrentLatLon.Heading - 20) //If it has a long ways to turn, go fast!
                 {
-                    if (UltimateGps.CurrentHeading - headingToWaypoint < 180)
+                    if (_gps.CurrentLatLon.Heading - headingToWaypoint < 180)
                         _travelRotationY = -2;
                     else
                         _travelRotationY = 2; //Turn towards its right
                 }
-                else if (headingToWaypoint < UltimateGps.CurrentHeading)
+                else if (headingToWaypoint < _gps.CurrentLatLon.Heading)
                 {
-                    if (UltimateGps.CurrentHeading - headingToWaypoint < 180)
+                    if (_gps.CurrentLatLon.Heading - headingToWaypoint < 180)
                         _travelRotationY = -1;
                     else
                         _travelRotationY = 1;
@@ -129,7 +131,7 @@ namespace HexapiBackground
                 while (sw.ElapsedMilliseconds < 150) { } // only correct heading every 150ms. This may need to be shorter.
                 sw.Restart();
 
-                distanceHeading = currentWaypoint.DistanceHeadingFromCurrent;
+                distanceHeading = GpsHelpers.GetDistanceAndHeadingToDestination(_gps.CurrentLatLon.Lat, _gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
                 distanceToWaypoint = distanceHeading[0];
                 headingToWaypoint = distanceHeading[1];
             }

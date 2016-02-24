@@ -104,18 +104,25 @@
     <Content Include="hexapod.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="rtkGps.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Avc.cs" />
     <Compile Include="Enums\ControllerDirection.cs" />
-    <Compile Include="NtripClient.cs" />
+    <Compile Include="Gps\IGps.cs" />
+    <Compile Include="Gps\NavSparkRtkGps.cs" />
+    <Compile Include="Helpers\GpsHelpers.cs" />
+    <Compile Include="Helpers\FileHelpers.cs" />
+    <Compile Include="Gps\NtripClient.cs" />
     <Compile Include="RouteFinder.cs" />
     <Compile Include="Enums\GaitType.cs" />
     <Compile Include="Enums\GpsFixQuality.cs" />
     <Compile Include="Enums\SelectedFunction.cs" />
-    <Compile Include="Hardware\UltimateGps.cs" />
-    <Compile Include="Hardware\LatLon.cs" />
-    <Compile Include="Helpers.cs" />
+    <Compile Include="Gps\UltimateGps.cs" />
+    <Compile Include="Gps\LatLon.cs" />
+    <Compile Include="Helpers\MathHelpers.cs" />
     <Compile Include="Hexapi.cs" />
     <Compile Include="Hardware\I2CDevice.cs" />
     <Compile Include="Hardware\Mpu9150.cs" />
@@ -161,6 +168,7 @@
       <Name>Windows IoT Extensions for the UWP</Name>
     </SDKReference>
   </ItemGroup>
+  <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>

@@ -12,11 +12,11 @@ namespace HexapiBackground
         {
             _deferral = taskInstance.GetDeferral();
 
-            //SerialPort.ListAvailablePorts();
+            SerialPort.ListAvailablePorts();
 
-            var gps = new UltimateGps();
+            var gps = new NavSparkGps(true);
             var pingSensors = new PingSensors();
-            var hexapi = new Hexapi();
+            var hexapi = new Hexapi(gps);
 
             gps.Start();
             pingSensors.Start();

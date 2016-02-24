@@ -52,7 +52,7 @@ namespace HexapiBackground{
             //{
             //    Debug.WriteLine($"Path clear");
 
-            //    travelLengthZ = -Helpers.Map(PingSensors.CenterInches, 10, 300, 20, 100);
+            //    travelLengthZ = -MathHelpers.Map(PingSensors.CenterInches, 10, 300, 20, 100);
             //}
             else
             {

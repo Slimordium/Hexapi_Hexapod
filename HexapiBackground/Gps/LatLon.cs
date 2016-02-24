@@ -59,9 +59,6 @@ namespace HexapiBackground.Gps
         internal double FeetPerSecond { get; set; }
         internal DateTime DateTime { get; set; }
         internal double DistanceToAvgCenter { get; set; }
-
-        internal double[] DistanceHeadingFromCurrent => UltimateGps.GetDistanceAndHeadingToDestination(UltimateGps.CurrentLatitude, UltimateGps.CurrentLongitude, Lat, Lon);
-
         internal double CorrectedDistanceToCenter { get; set; }
 
         public override string ToString()
