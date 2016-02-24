@@ -63,13 +63,13 @@ namespace HexapiBackground
         {
             Task.Factory.StartNew(() =>
             {
-                Debug.WriteLine("RTK GPS Started...");
+                Debug.WriteLine("NavSpark RTK GPS Started...");
                 
                 while (true)
                 {
                     var sentences = _serialPort.ReadString();
 
-                    foreach (var s in sentences.Split('$').Where(s => s.Length > 15))
+                    foreach (var s in sentences.Split('$').Where(s => s.Length > 13))
                     {
                         var latLon = GpsHelpers.NmeaParse(s);
                         if (Math.Abs(latLon.Lon) < 1 || Math.Abs(latLon.Lat) < 1 || latLon.Quality == GpsFixQuality.NoFix)

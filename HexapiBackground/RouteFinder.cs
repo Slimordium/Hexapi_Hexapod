@@ -42,16 +42,7 @@ namespace HexapiBackground
         {
             _gpsNavigationEnabled = false;
         }
-
-        //internal void PrintDistanceHeadingToWaypoints()
-        //{
-        //    foreach (var wp in _waypoints)
-        //    {
-        //        var dh = wp.DistanceHeadingFromCurrent;
-        //        Debug.WriteLine($"From current location, Distance: {dh[0]}in. Heading: {dh[1]}");
-        //    }
-        //}
-
+        
         internal void NavigateToWaypoint(LatLon currentWaypoint)
         {
             var distanceHeading = GpsHelpers.GetDistanceAndHeadingToDestination(_gps.CurrentLatLon.Lat, _gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);

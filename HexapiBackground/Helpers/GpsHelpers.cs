@@ -4,20 +4,12 @@ using System.Diagnostics;
 using HexapiBackground.Enums;
 using HexapiBackground.Gps;
 
-namespace HexapiBackground{
+namespace HexapiBackground
+{
     internal static class GpsHelpers
     {
         internal static void SaveWaypoint(LatLon latLon)
         {
-            //var latLon = new LatLon
-            //{
-            //    Lat = UltimateGps.CurrentLatitude,
-            //    Lon = UltimateGps.CurrentLongitude,
-            //    FeetPerSecond = UltimateGps.CurrentFeetPerSecond,
-            //    Heading = UltimateGps.CurrentHeading,
-            //    Quality = UltimateGps.Quality
-            //};
-
             Debug.WriteLine($"Saving to file : {latLon}");
 
             FileHelpers.SaveStringToFile("waypoints.config", latLon.ToString());
@@ -61,7 +53,8 @@ namespace HexapiBackground{
         /// <param name="destinationLat"></param>
         /// <param name="destinationLon"></param>
         /// <returns>distance to waypoint, and heading to waypoint</returns>
-        internal static double[] GetDistanceAndHeadingToDestination(double currentLat, double currentLon, double destinationLat, double destinationLon)
+        internal static double[] GetDistanceAndHeadingToDestination(double currentLat, double currentLon,
+            double destinationLat, double destinationLon)
         {
             try
             {
@@ -70,38 +63,39 @@ namespace HexapiBackground{
                 currentLat = MathHelpers.ToRadians(currentLat); //convert current latitude to radians
                 destinationLat = MathHelpers.ToRadians(destinationLat); //convert waypoint latitude to radians
 
-                var diflon = MathHelpers.ToRadians((destinationLon) - (currentLon)); //subtract and convert longitude to radians
+                var diflon = MathHelpers.ToRadians(destinationLon - currentLon);
+                    //subtract and convert longitude to radians
 
-                var distCalc = (Math.Sin(diflat / 2.0) * Math.Sin(diflat / 2.0));
+                var distCalc = Math.Sin(diflat/2.0)*Math.Sin(diflat/2.0);
                 var distCalc2 = Math.Cos(currentLat);
 
-                distCalc2 = distCalc2 * Math.Cos(destinationLat);
-                distCalc2 = distCalc2 * Math.Sin(diflon / 2.0);
-                distCalc2 = distCalc2 * Math.Sin(diflon / 2.0); //and again, why?
+                distCalc2 = distCalc2*Math.Cos(destinationLat);
+                distCalc2 = distCalc2*Math.Sin(diflon/2.0);
+                distCalc2 = distCalc2*Math.Sin(diflon/2.0); //and again, why?
                 distCalc += distCalc2;
-                distCalc = (2 * Math.Atan2(Math.Sqrt(distCalc), Math.Sqrt(1.0 - distCalc)));
-                distCalc = distCalc * 6371000.0;
+                distCalc = 2*Math.Atan2(Math.Sqrt(distCalc), Math.Sqrt(1.0 - distCalc));
+                distCalc = distCalc*6371000.0;
                 //Converting to meters. 6371000 is the magic number,  3959 is average Earth radius in miles
-                distCalc = Math.Round(distCalc * 39.3701, 1); // and then to inches.
+                distCalc = Math.Round(distCalc*39.3701, 1); // and then to inches.
 
                 currentLon = MathHelpers.ToRadians(currentLon);
                 destinationLon = MathHelpers.ToRadians(destinationLon);
 
-                var heading = Math.Atan2(Math.Sin(destinationLon - currentLon) * Math.Cos(destinationLat),
-                    Math.Cos(currentLat) * Math.Sin(destinationLat) -
-                    Math.Sin(currentLat) * Math.Cos(destinationLat) * Math.Cos(destinationLon - currentLon));
+                var heading = Math.Atan2(Math.Sin(destinationLon - currentLon)*Math.Cos(destinationLat),
+                    Math.Cos(currentLat)*Math.Sin(destinationLat) -
+                    Math.Sin(currentLat)*Math.Cos(destinationLat)*Math.Cos(destinationLon - currentLon));
 
                 heading = MathHelpers.FromRadians(heading);
 
                 if (heading < 0)
                     heading += 360;
 
-                return new[] { Math.Round(distCalc, 1), Math.Round(heading, 1) };
+                return new[] {Math.Round(distCalc, 1), Math.Round(heading, 1)};
             }
             catch (Exception e)
             {
                 Debug.WriteLine(e);
-                return new double[] { 0, 0 };
+                return new double[] {0, 0};
             }
         }
 
@@ -109,14 +103,14 @@ namespace HexapiBackground{
         {
             var med = 0d;
 
-            if (!Double.TryParse(lat.Substring(2), out med))
+            if (!double.TryParse(lat.Substring(2), out med))
                 return 0d;
 
-            med = med / 60.0d;
+            med = med/60.0d;
 
             var temp = 0d;
 
-            if (!Double.TryParse(lat.Substring(0, 2), out temp))
+            if (!double.TryParse(lat.Substring(0, 2), out temp))
                 return 0d;
 
             med += temp;
@@ -133,14 +127,14 @@ namespace HexapiBackground{
         {
             var med = 0d;
 
-            if (!Double.TryParse(lon.Substring(3), out med))
+            if (!double.TryParse(lon.Substring(3), out med))
                 return 0;
 
-            med = med / 60.0d;
+            med = med/60.0d;
 
             var temp = 0d;
 
-            if (!Double.TryParse(lon.Substring(0, 3), out temp))
+            if (!double.TryParse(lon.Substring(0, 3), out temp))
                 return 0d;
 
             med += temp;
@@ -152,7 +146,6 @@ namespace HexapiBackground{
 
             return Math.Round(med, 7);
         }
-
 
         internal static LatLon NmeaParse(string data)
         {
@@ -183,12 +176,12 @@ namespace HexapiBackground{
                         var quality = 0;
                         if (int.TryParse(tokens[6], out quality))
                         {
-                            latLon.Quality = (GpsFixQuality)quality;
+                            latLon.Quality = (GpsFixQuality) quality;
                         }
 
                         float altitude = 0;
                         if (float.TryParse(tokens[9], out altitude))
-                            latLon.Altitude = altitude * 3.28084f;
+                            latLon.Altitude = altitude*3.28084f;
 
                         break;
                     case "GPRMC": //Recommended minimum specific GPS/Transit data
@@ -197,7 +190,7 @@ namespace HexapiBackground{
 
                         double fps = 0;
                         if (double.TryParse(tokens[7], out fps))
-                            latLon.FeetPerSecond = Math.Round(fps * 1.68781, 2);
+                            latLon.FeetPerSecond = Math.Round(fps*1.68781, 2);
                         //Convert knots to feet per second or "Speed over ground"
 
                         double dir = 0;
