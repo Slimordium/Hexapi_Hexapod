@@ -10,7 +10,7 @@ namespace HexapiBackground.Gps
         {
             Lat = 0;
             Lon = 0;
-            DateTime = DateTime.UtcNow;
+            DateTime = DateTime.MinValue;
             Quality = GpsFixQuality.NoFix;
             Heading = 0;
             Altitude = 0;
@@ -29,7 +29,7 @@ namespace HexapiBackground.Gps
 
                 Lat = 0;
                 Lon = 0;
-                DateTime = DateTime.UtcNow;
+                DateTime = DateTime.MinValue;
                 Quality = GpsFixQuality.NoFix;
                 Heading = 0;
                 Altitude = 0;
@@ -49,6 +49,7 @@ namespace HexapiBackground.Gps
             Altitude = 0;
             DistanceToAvgCenter = 0;
             CorrectedDistanceToCenter = 0;
+            SatellitesInView = 0;
         }
 
         internal double Lat { get; set; }
@@ -60,6 +61,8 @@ namespace HexapiBackground.Gps
         internal DateTime DateTime { get; set; }
         internal double DistanceToAvgCenter { get; set; }
         internal double CorrectedDistanceToCenter { get; set; }
+        internal int SatellitesInView { get; set; }
+        internal int SignalToNoiseRatio { get; set; }
 
         public override string ToString()
         {

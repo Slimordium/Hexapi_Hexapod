@@ -98,6 +98,8 @@ namespace HexapiBackground
             {
                 Debug.WriteLine($"NTRIP Authentication : {eventArgs.SocketError.ToString()}");
 
+                Task.Delay(1000).Wait();
+
                 _manualResetEventSlim.Set();
             };
 
@@ -106,7 +108,7 @@ namespace HexapiBackground
 
         private void ReadData()
         {
-            var buffer = new ArraySegment<byte>(new byte[4096]);
+            var buffer = new ArraySegment<byte>(new byte[512]);
 
             var args = new SocketAsyncEventArgs
             {
@@ -118,13 +120,17 @@ namespace HexapiBackground
 
             args.Completed += (sender, eventArgs) =>
             {
-                var data = Encoding.ASCII.GetString(eventArgs.BufferList[0].Array, eventArgs.Offset, eventArgs.BytesTransferred);
+                var data = new byte[eventArgs.BytesTransferred];
+
+                Array.Copy(eventArgs.BufferList[0].Array, data, eventArgs.BytesTransferred);
+
+                //var stringData = Encoding.ASCII.GetString(eventArgs.BufferList[0].Array, eventArgs.Offset, eventArgs.BytesTransferred);
 
                 SendToGps(data);
 
-                Debug.WriteLine(data);
+                //Debug.WriteLine(stringData);
 
-                Debug.WriteLine($"Bytes : {eventArgs.BytesTransferred} ---------------------------------------------------------------------------------------------------------------");
+                Debug.WriteLine($"Bytes : {eventArgs.BytesTransferred}");
 
                 _manualResetEventSlim.Set();
             };
@@ -148,10 +154,12 @@ namespace HexapiBackground
             }, TaskCreationOptions.LongRunning);
         }
 
-        private void SendToGps(string data)
+        private void SendToGps(byte[] data)
         {
-            if (_serialPort != null && !string.IsNullOrEmpty(data))
-                _serialPort.Write(data);
+            if (data.Length < 10)
+                return;
+
+            _serialPort.Write(data);
         }
 
         private string ToBase64(string str)

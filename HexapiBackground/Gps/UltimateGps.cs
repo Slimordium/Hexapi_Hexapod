@@ -110,7 +110,8 @@ namespace HexapiBackground
                     foreach (var s in sentences.Split('$').Where(s => s.Length > 15))
                     {
                         var latLon = GpsHelpers.NmeaParse(s);
-                        if (Math.Abs(latLon.Lon) < 1 || Math.Abs(latLon.Lat) < 1 || latLon.Quality == GpsFixQuality.NoFix)
+
+                        if (latLon == null)
                             continue;
 
                         CurrentLatLon = latLon;
