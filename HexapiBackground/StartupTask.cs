@@ -21,6 +21,8 @@ namespace HexapiBackground
             gps.Start();
             //pingSensors.Start();
             //hexapi.Start();
+
+            var p = new AdafruitFona();
         }
 
         internal static void Complete()

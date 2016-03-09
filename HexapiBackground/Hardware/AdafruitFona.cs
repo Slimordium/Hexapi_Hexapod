@@ -9,7 +9,18 @@ namespace HexapiBackground
 
         internal AdafruitFona()
         {
-            
+
+
+        }
+
+        internal void Start()
+        {
+            _serialPort = new SerialPort("AH03F3RYA", 115200, 500, 500); //FTDIBUS\VID_0403+PID_6001+AH03F3RYA\0000
+        
+            _serialPort.Write($"at+cstt=\"wholesale\",\"\",\"\"\r"); //Set APN
+            Task.Delay(500).Wait();
+            //_serialPort.Write($"at+ciicr\r"); //Connect
+            //Task.Delay(500).Wait();
         }
 
         internal string ReadSms()
@@ -20,12 +31,27 @@ namespace HexapiBackground
             return sms;
         }
 
+        internal int GetSignalStrength()
+        {
+            _serialPort.Write("at+csq\r");
+
+            var r = _serialPort.ReadString();
+            var n = r.Split(':')[1].Trim();
+
+            return int.Parse(n);
+        }
+
         internal void SendSms(string sms, string phoneNumber)
         {
             _serialPort.Write($"AT+CMGS={phoneNumber}\r");
-            _serialPort.Write(sms);
-            _serialPort.Write("\r");
             var r = _serialPort.ReadString();
+
+            _serialPort.Write(sms);
+            r = _serialPort.ReadString();
+
+            _serialPort.Write(char.ConvertFromUtf32(26)); //Ctrl+Z
+            r = _serialPort.ReadString();
+
             Debug.WriteLine($"SMS to {phoneNumber} response : {r}");
         }
 
@@ -38,18 +64,24 @@ namespace HexapiBackground
             Debug.WriteLine($"GSM/GPRS Status {r}");
 
             _serialPort.Write("AT+CIPMODE=1\r"); //Transparent mode
+            r = _serialPort.ReadString();
 
             //_serialPort.Write("AT+CIPCCFG=1\r");
 
-            _serialPort.Write("AT+CSTT=\"CMNET\"\r"); //Start task and set APN
+            _serialPort.Write("AT+CSTT=\"wholesale\"\r"); //Start task and set APN
+            r = _serialPort.ReadString();
 
             _serialPort.Write("AT+CIICR\r"); //Bring up wireless connection
+            r = _serialPort.ReadString();
+
             _serialPort.Write("AT+CIFSR\r"); //Get IP address
             r = _serialPort.ReadString();
+
             Debug.WriteLine($"GSM/GPRS IP Address {r}");
 
             _serialPort.Write($"AT+CIPSTART=\"TCP\",\"{ipAddress}\",\"{port}\"\r");
             r = _serialPort.ReadString();
+
             Debug.WriteLine($"TCP Connection status {r}");
 
             return true;
@@ -78,7 +110,7 @@ namespace HexapiBackground
 
             //_serialPort.Write("AT+CIPCCFG=1\r");
 
-            _serialPort.Write("AT+CSTT=\"CMNET\"\r"); //Start task and set APN
+            _serialPort.Write("AT+CSTT=\"wholesale\"\r"); //Start task and set APN
 
             _serialPort.Write("AT+CIICR\r"); //Bring up wireless connection
             _serialPort.Write("AT+CIFSR\r"); //Get IP address
