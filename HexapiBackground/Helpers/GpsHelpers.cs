@@ -8,6 +8,8 @@ namespace HexapiBackground
 {
     internal static class GpsHelpers
     {
+        private static DateTime _dateTime = DateTime.MinValue;
+
         internal static void SaveWaypoint(LatLon latLon)
         {
             Debug.WriteLine($"Saving to file : {latLon}");
@@ -101,6 +103,9 @@ namespace HexapiBackground
 
         internal static double Latitude2Double(string lat, string ns)
         {
+            if (lat.Length < 2 || string.IsNullOrEmpty(ns))
+                return 0;
+
             var med = 0d;
 
             if (!double.TryParse(lat.Substring(2), out med))
@@ -125,6 +130,9 @@ namespace HexapiBackground
 
         internal static double Longitude2Double(string lon, string we)
         {
+            if (lon.Length < 2 || string.IsNullOrEmpty(we))
+                return 0;
+
             var med = 0d;
 
             if (!double.TryParse(lon.Substring(3), out med))
@@ -151,6 +159,9 @@ namespace HexapiBackground
         {
             var latLon = new LatLon();
 
+            Debug.WriteLine(data);
+            Debug.WriteLine("-------------------------------");
+
             try
             {
                 var tokens = data.Split(',');
@@ -162,13 +173,19 @@ namespace HexapiBackground
                 switch (type)
                 {
                     case "GPGGA": //Global Positioning System Fix Data
-                        if (latLon.DateTime == DateTime.MinValue)
+                        if (tokens.Length < 10)
+                            return null;
+
+                        if (_dateTime == DateTime.MinValue)
                         {
                             var st = tokens[1];
-                            latLon.DateTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
-                                Convert.ToInt32(st.Substring(0, 2)), Convert.ToInt32(st.Substring(2, 2)),
-                                Convert.ToInt32(st.Substring(4, 2)), DateTimeKind.Local);
+
+                            _dateTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
+                                                Convert.ToInt32(st.Substring(0, 2)), Convert.ToInt32(st.Substring(2, 2)),
+                                                Convert.ToInt32(st.Substring(4, 2)), DateTimeKind.Local);
                         }
+
+                        latLon.DateTime = _dateTime;
 
                         lat = Latitude2Double(tokens[2], tokens[3]);
                         lon = Longitude2Double(tokens[4], tokens[5]);
@@ -185,6 +202,10 @@ namespace HexapiBackground
 
                         break;
                     case "GPRMC": //Recommended minimum specific GPS/Transit data
+
+                        if (tokens.Length < 9)
+                            return null;
+
                         lat = Latitude2Double(tokens[3], tokens[4]);
                         lon = Longitude2Double(tokens[5], tokens[6]);
 
@@ -198,30 +219,61 @@ namespace HexapiBackground
                             latLon.Heading = dir; //angle from true north that you are traveling or "Course made good"
 
                         break;
+                    case "GPGSV": //Satellites in View
+
+                        if (tokens.Length < 8)
+                            return null;
+
+                        int satellitesInView;
+
+                        if (int.TryParse(tokens[3], out satellitesInView))
+                            latLon.SatellitesInView = satellitesInView;
+
+                        int signalToNoiseRatio;
+
+                        if (int.TryParse(tokens[7], out signalToNoiseRatio))
+                            latLon.SignalToNoiseRatio = signalToNoiseRatio;
+
+                        break;
+                    case "GPGSA": //dilution of precision and active satellites
+
+                        var fix3d = tokens[2]; //1 no fix, 2 = 2d fix, 3 = 3d fix
+                                               //var PRNs OfSatsUsedForFix = tokens 3 + 11 total 12
+                                               //
+                        //                        GSA Satellite status
+                        //A        Auto selection of 2D or 3D fix(M = manual)
+                        //     3        3D fix - values include: 1 = no fix
+                        //                                       2 = 2D fix
+                        //                                       3 = 3D fix
+                        //     04,05...PRNs of satellites used for fix(space for 12)
+                        //                                2.5      PDOP(dilution of precision)
+                        //     1.3      Horizontal dilution of precision (HDOP)
+                        //     2.1      Vertical dilution of precision(VDOP)
+
+                        break;
+                    default:
+                        return null;
                 }
 
-                //if (!(lat > 0) || !(Math.Abs(lon) > .01))
-                //    return latLon;
+                if (Math.Abs(lat) < .1 || Math.Abs(lon) < .1 || latLon.Quality == GpsFixQuality.NoFix)
+                    return null;
 
                 latLon.Lat = lat;
                 latLon.Lon = lon;
 
                 //_latLons.Add(new LatLon { Lat = lat, Lon = lon, FeetPerSecond = CurrentFeetPerSecond, Altitude = CurrentAltitude });
-
-                //if (_latLons.Count > 30000)
-                //    _latLons.RemoveAt(0);
             }
             catch (ArgumentOutOfRangeException)
             {
                 //No fix yet
             }
+            catch (IndexOutOfRangeException)
+            {
+                //No fix yet
+            }
             catch (Exception e)
             {
-                if (latLon.Quality == GpsFixQuality.NoFix)
-                {
-                    Debug.WriteLine(data);
-                }
-                else
+                if (latLon.Quality != GpsFixQuality.NoFix)
                 {
                     Debug.WriteLine(e);
                     Debug.WriteLine(data);

@@ -93,6 +93,15 @@ namespace HexapiBackground
             await _serialPort.OutputStream.WriteAsync(buffer).AsTask();
         }
 
+        internal async void Write(byte[] data)
+        {
+            if (_serialPort == null)
+                return;
+
+            var buffer = data.AsBuffer();
+            await _serialPort.OutputStream.WriteAsync(buffer).AsTask();
+        }
+
         internal async Task<byte> ReadByte()
         {
             if (_serialPort == null)

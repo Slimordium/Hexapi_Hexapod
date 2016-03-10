@@ -33,7 +33,7 @@ namespace HexapiBackground
                     {
                         Debug.WriteLine("rtkGps.config file is empty. Trying defaults.");
 
-                        config = "69.44.86.36,2101,P041_RTCM,username,password";
+                        config = "69.44.86.36,2101,P041_RTCM,user,passw";
                     }
 
                     try
@@ -56,6 +56,8 @@ namespace HexapiBackground
         public double DeviationLon { get; private set; }
         public double DeviationLat { get; private set; }
         public double DriftCutoff { get; private set; }
+        internal int SatellitesInView { get; set; }
+        internal int SignalToNoiseRatio { get; set; }
 
         #region Serial Communication
 
@@ -72,9 +74,10 @@ namespace HexapiBackground
                     foreach (var s in sentences.Split('$').Where(s => s.Length > 13))
                     {
                         var latLon = GpsHelpers.NmeaParse(s);
-                        if (Math.Abs(latLon.Lon) < 1 || Math.Abs(latLon.Lat) < 1 || latLon.Quality == GpsFixQuality.NoFix)
-                            continue;
 
+                        if (latLon == null)
+                            continue;
+                        
                         CurrentLatLon = latLon;
                     }
                 }

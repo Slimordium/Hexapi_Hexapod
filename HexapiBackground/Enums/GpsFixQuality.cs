@@ -1,4 +1,5 @@
 ﻿using System;
+// ReSharper disable InconsistentNaming
 
 namespace HexapiBackground.Enums
 {
@@ -7,6 +8,12 @@ namespace HexapiBackground.Enums
     {
         NoFix,
         StandardGps,
-        DiffGps
+        DiffGps,
+        PPS,
+        RTK,
+        FloatRTK,
+        Estimated,
+        Manual,
+        Simulation
     }
 }

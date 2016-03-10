@@ -14,13 +14,15 @@ namespace HexapiBackground
 
             SerialPort.ListAvailablePorts();
 
-            //var gps = new NavSparkGps(true);
-            var pingSensors = new PingSensors();
-            var hexapi = new Hexapi();
+            var gps = new NavSparkGps(true);
+            //var pingSensors = new PingSensors();
+            //var hexapi = new Hexapi(gps);
 
-            //gps.Start();
-            pingSensors.Start();
-            hexapi.Start();
+            gps.Start();
+            //pingSensors.Start();
+            //hexapi.Start();
+
+            var p = new AdafruitFona();
         }
 
         internal static void Complete()
