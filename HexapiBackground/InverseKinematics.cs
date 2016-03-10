@@ -157,10 +157,10 @@ namespace HexapiBackground{
         //All legs being equal, all legs will have the same values
         private const double CoxaMin = -600; //-650 
         private const double CoxaMax = 600; //650
-        private const double FemurMin = -600; //-1050
-        private const double FemurMax = 600; //150
-        private const double TibiaMin = -400; //-450
-        private const double TibiaMax = 400; //350 I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double FemurMin = -900; //-1050
+        private const double FemurMax = 900; //150
+        private const double TibiaMin = -600; //-450
+        private const double TibiaMax = 600; //350 I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double CRrCoxaAngle = -450;
         private const double CRmCoxaAngle = 0;

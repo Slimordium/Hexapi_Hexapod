@@ -32,7 +32,7 @@ namespace HexapiBackground{
 
         private IGps _gps;
 
-        internal Hexapi(IGps gps)
+        internal Hexapi(IGps gps = null)
         {
             _gps = gps;
 
@@ -123,7 +123,9 @@ namespace HexapiBackground{
                     Debug.WriteLine("setting movement to  " + _isMovementStarted);
                     break;
                 case 6: //back button
-                    GpsHelpers.SaveWaypoint(_gps.CurrentLatLon);
+                    if (_gps != null)
+                        GpsHelpers.SaveWaypoint(_gps.CurrentLatLon);
+
                     break;
                 default:
                     Debug.WriteLine("button? " + button);
