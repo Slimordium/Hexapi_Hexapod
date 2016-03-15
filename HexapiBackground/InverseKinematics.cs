@@ -18,7 +18,7 @@ namespace HexapiBackground{
 
             _movementStarted = false;
 
-            _serialPort = new SerialPort("UART0", 38400, 200, 200);
+            _serialPort = new SerialPort("AI041V40", 38400, 200, 200); //UART0 Does not seem to be enabled for the PI 3 and Windows 10 IoT core
 
             for (var legIndex = 0; legIndex <= 5; legIndex++)
             {
@@ -155,12 +155,12 @@ namespace HexapiBackground{
         private const int CRr = 0;
 
         //All legs being equal, all legs will have the same values
-        private const double CoxaMin = -600; //-650 
-        private const double CoxaMax = 600; //650
-        private const double FemurMin = -900; //-1050
-        private const double FemurMax = 900; //150
-        private const double TibiaMin = -600; //-450
-        private const double TibiaMax = 600; //350 I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -620; //-650 
+        private const double CoxaMax = 620; //650
+        private const double FemurMin = -1000; //-1050
+        private const double FemurMax = 1000; //150
+        private const double TibiaMin = -800; //-450
+        private const double TibiaMax = 800; //350 I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double CRrCoxaAngle = -450;
         private const double CRmCoxaAngle = 0;

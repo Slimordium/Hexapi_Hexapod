@@ -16,13 +16,13 @@ namespace HexapiBackground
 
             var gps = new NavSparkGps(true);
             //var pingSensors = new PingSensors();
-            //var hexapi = new Hexapi(gps);
+            var hexapi = new Hexapi(gps);
 
             gps.Start();
             //pingSensors.Start();
-            //hexapi.Start();
+            hexapi.Start();
 
-            var p = new AdafruitFona();
+            //var p = new AdafruitFona();
         }
 
         internal static void Complete()

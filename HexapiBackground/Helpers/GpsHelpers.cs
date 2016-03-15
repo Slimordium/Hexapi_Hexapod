@@ -159,8 +159,8 @@ namespace HexapiBackground
         {
             var latLon = new LatLon();
 
-            Debug.WriteLine(data);
-            Debug.WriteLine("-------------------------------");
+            //Debug.WriteLine(data);
+            //Debug.WriteLine("-------------------------------");
 
             try
             {
