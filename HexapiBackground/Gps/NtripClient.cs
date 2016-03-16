@@ -24,6 +24,7 @@ namespace HexapiBackground
 
         //rtgpsout.unavco.org:2101
         //69.44.86.36
+
         /// <summary>
         /// </summary>
         /// <param name="ntripIpAddress"></param>
@@ -34,6 +35,8 @@ namespace HexapiBackground
         /// <param name="serialPort"></param>
         public NtripClient(string ntripIpAddress, int ntripPort, string ntripMountPoint, string userName, string password, SerialPort serialPort)
         {
+            Debug.WriteLine($"Using http:\\\\{ntripIpAddress}:{ntripPort}\\{ntripMountPoint}");
+
             _serialPort = serialPort;
 
             _username = userName;
@@ -41,9 +44,25 @@ namespace HexapiBackground
 
             _ntripMountPoint = ntripMountPoint;
 
-            _endPoint = new IPEndPoint(IPAddress.Parse(ntripIpAddress), ntripPort);
+            try
+            {
+                IPAddress ip;
+                IPAddress.TryParse(ntripIpAddress, out ip);
 
-            Connect();
+                if (ip == null)
+                {
+                    Debug.WriteLine("Ntrip IP was null?");
+                    return;
+                }
+
+                _endPoint = new IPEndPoint(IPAddress.Parse(ntripIpAddress), ntripPort);
+
+                Connect();
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+            }
         }
 
         private byte[] CreateAuthRequest()
