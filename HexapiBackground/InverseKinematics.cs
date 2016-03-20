@@ -78,10 +78,12 @@ namespace HexapiBackground{
             _nominalGaitSpeed = 60;
             _legLiftHeight = 30;
             _gaitType = GaitType.TripleTripod12Steps;
-            _bodyPosY = 70;
+            _bodyPosY = 60;
 
             GaitSelect();
             _sw.Start();
+
+            var startMs = _sw.ElapsedMilliseconds;
 
             while (true)
             {
@@ -93,9 +95,9 @@ namespace HexapiBackground{
                     continue;
                 }
 
-                _travelRequest = (Math.Abs(_travelLengthX) > CTravelDeadZone) || 
-                                 (Math.Abs(_travelLengthZ) > CTravelDeadZone) ||
-                                 (Math.Abs(_travelRotationY) > CTravelDeadZone);
+                _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) || 
+                                 (Math.Abs(_travelLengthZ) > TravelDeadZone) ||
+                                 (Math.Abs(_travelRotationY) > TravelDeadZone);
 
                 _liftDivFactor = _numberOfLiftedPositions == 5 ? 4 : 2;
 
@@ -129,23 +131,27 @@ namespace HexapiBackground{
                     _tibiaAngle1[legIndex] = angles[2];
                 }
 
-                _serialPort.Write(UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1));
+                var positions = UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1);
 
-                while (_sw.ElapsedMilliseconds < _nominalGaitSpeed) {  }
-                _sw.Restart();
+                _serialPort.Write(positions);
+
+                while (_sw.ElapsedMilliseconds < (startMs + _nominalGaitSpeed)) {  }
+                //_sw.Restart();
+                startMs = _sw.ElapsedMilliseconds;
             }
         }
         #endregion
 
         #region Inverse Kinematics setup
         private const double CPfConst = 592; //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500
-        private const double CPwmDiv = 991; //old 1059, new 991;
+        private const double PwmDiv = 991; //old 1059, new 991;
 
-        private const double CTravelDeadZone = 1;
+        private const double TravelDeadZone = 1;
 
-        private const double C2Dec = 100;
-        private const double C4Dec = 10000;
-        private const double C6Dec = 1000000;
+        private const double OneHundred = 100;
+        private const double OneThousand = 1000;
+        private const double TenThousand = 10000;
+        private const double OneMillion = 1000000;
 
         private const int CLf = 5;
         private const int CLm = 4;
@@ -155,12 +161,12 @@ namespace HexapiBackground{
         private const int CRr = 0;
 
         //All legs being equal, all legs will have the same values
-        private const double CoxaMin = -620; //-650 
-        private const double CoxaMax = 620; //650
-        private const double FemurMin = -1000; //-1050
-        private const double FemurMax = 1000; //150
-        private const double TibiaMin = -800; //-450
-        private const double TibiaMax = 800; //350 I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -640; //-650 
+        private const double CoxaMax = 640; //650
+        private const double FemurMin = -640; //-1050
+        private const double FemurMax = 640; //150
+        private const double TibiaMin = -640; //-450
+        private const double TibiaMax = 640; //350 I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double CRrCoxaAngle = -450;
         private const double CRmCoxaAngle = 0;
@@ -184,7 +190,7 @@ namespace HexapiBackground{
 
         private const double CoxaLength = 30; //30
         private const double FemurLength = 74; //60
-        private const double TibiaLength = 140; //70
+        private const double TibiaLength = 139; //70
 
         private const double CHexInitXz = 105;
         private const double CHexInitXzCos45 = 74; // COS(45) = .7071
@@ -493,17 +499,17 @@ namespace HexapiBackground{
             GetSinCos(bodyRotY1 + (gaitRotY * 10), out sinA4, out cosA4);
 
             //Calculation of rotation matrix: 
-            var bodyFkPosX = (cprX * C2Dec -
-                          ((cprX * C2Dec * cosA4 / C4Dec * cosB4 / C4Dec) - (cprZ * C2Dec * cosB4 / C4Dec * sinA4 / C4Dec) +
-                           (posY * C2Dec * sinB4 / C4Dec))) / C2Dec;
-            var bodyFkPosZ = (cprZ * C2Dec -
-                          ((cprX * C2Dec * cosG4 / C4Dec * sinA4 / C4Dec) + (cprX * C2Dec * cosA4 / C4Dec * sinB4 / C4Dec * sinG4 / C4Dec) +
-                           (cprZ * C2Dec * cosA4 / C4Dec * cosG4 / C4Dec) - (cprZ * C2Dec * sinA4 / C4Dec * sinB4 / C4Dec * sinG4 / C4Dec) -
-                           (posY * C2Dec * cosB4 / C4Dec * sinG4 / C4Dec))) / C2Dec;
-            var bodyFkPosY = (posY * C2Dec -
-                          ((cprX * C2Dec * sinA4 / C4Dec * sinG4 / C4Dec) - (cprX * C2Dec * cosA4 / C4Dec * cosG4 / C4Dec * sinB4 / C4Dec) +
-                           (cprZ * C2Dec * cosA4 / C4Dec * sinG4 / C4Dec) + (cprZ * C2Dec * cosG4 / C4Dec * sinA4 / C4Dec * sinB4 / C4Dec) +
-                           (posY * C2Dec * cosB4 / C4Dec * cosG4 / C4Dec))) / C2Dec;
+            var bodyFkPosX = (cprX * OneHundred -
+                          ((cprX * OneHundred * cosA4 / TenThousand * cosB4 / TenThousand) - (cprZ * OneHundred * cosB4 / TenThousand * sinA4 / TenThousand) +
+                           (posY * OneHundred * sinB4 / TenThousand))) / OneHundred;
+            var bodyFkPosZ = (cprZ * OneHundred -
+                          ((cprX * OneHundred * cosG4 / TenThousand * sinA4 / TenThousand) + (cprX * OneHundred * cosA4 / TenThousand * sinB4 / TenThousand * sinG4 / TenThousand) +
+                           (cprZ * OneHundred * cosA4 / TenThousand * cosG4 / TenThousand) - (cprZ * OneHundred * sinA4 / TenThousand * sinB4 / TenThousand * sinG4 / TenThousand) -
+                           (posY * OneHundred * cosB4 / TenThousand * sinG4 / TenThousand))) / OneHundred;
+            var bodyFkPosY = (posY * OneHundred -
+                          ((cprX * OneHundred * sinA4 / TenThousand * sinG4 / TenThousand) - (cprX * OneHundred * cosA4 / TenThousand * cosG4 / TenThousand * sinB4 / TenThousand) +
+                           (cprZ * OneHundred * cosA4 / TenThousand * sinG4 / TenThousand) + (cprZ * OneHundred * cosG4 / TenThousand * sinA4 / TenThousand * sinB4 / TenThousand) +
+                           (posY * OneHundred * cosB4 / TenThousand * cosG4 / TenThousand))) / OneHundred;
 
             var coxaFemurTibiaAngle = new double[3];
 
@@ -523,16 +529,16 @@ namespace HexapiBackground{
 
             coxaFemurTibiaAngle[0] = ((getatan * 180) / 3141) + cCoxaAngle1;
 
-            var ikFeetPosXz = xyhyp2 / C2Dec;
+            var ikFeetPosXz = xyhyp2 / OneHundred;
             var ika14 = GetATan2(ikFeetPosY, ikFeetPosXz - CoxaLength, out xyhyp2);
             var iksw2 = xyhyp2;
-            var temp1 = (((FemurLength * FemurLength) - (TibiaLength * TibiaLength)) * C4Dec + (iksw2 * iksw2));
-            var temp2 = 2 * FemurLength * C2Dec * iksw2;
-            var ika24 = GetArcCos(temp1 / (temp2 / C4Dec));
+            var temp1 = (((FemurLength * FemurLength) - (TibiaLength * TibiaLength)) * TenThousand + (iksw2 * iksw2));
+            var temp2 = 2 * FemurLength * OneHundred * iksw2;
+            var ika24 = GetArcCos(temp1 / (temp2 / TenThousand));
 
             coxaFemurTibiaAngle[1] = -(ika14 + ika24) * 180 / 3141 + 900;
 
-            temp1 = (((FemurLength * FemurLength) + (TibiaLength * TibiaLength)) * C4Dec - (iksw2 * iksw2));
+            temp1 = (((FemurLength * FemurLength) + (TibiaLength * TibiaLength)) * TenThousand - (iksw2 * iksw2));
             temp2 = (2 * FemurLength * TibiaLength);
 
             coxaFemurTibiaAngle[2] = -(900 - GetArcCos(temp1 / temp2) * 180 / 3141);
@@ -541,10 +547,12 @@ namespace HexapiBackground{
         }
         #endregion
 
+        private static readonly StringBuilder _stringBuilder = new StringBuilder();
+
         #region Servo related, build various servo controller strings and read values
         private static string UpdateServoPositions(double[] coxaAngles, double[] femurAngles, double[] tibiaAngles)
         {
-            var stringBuilder = new StringBuilder();
+            _stringBuilder.Clear();
 
             for (var legIndex = 0; legIndex <= 5; legIndex++)
             {
@@ -558,25 +566,25 @@ namespace HexapiBackground{
 
                 if (legIndex < 3)
                 {
-                    coxaPosition = Math.Round((-coxaAngles[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-                    femurPosition = Math.Round((-femurAngles[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-                    tibiaPosition = Math.Round((-tibiaAngles[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
+                    coxaPosition = Math.Round((-coxaAngles[legIndex] + 900) * 1000 / PwmDiv + CPfConst);
+                    femurPosition = Math.Round((-femurAngles[legIndex] + 900) * 1000 / PwmDiv + CPfConst);
+                    tibiaPosition = Math.Round((-tibiaAngles[legIndex] + 900) * 1000 / PwmDiv + CPfConst);
                 }
                 else
                 {
-                    coxaPosition = Math.Round((coxaAngles[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-                    femurPosition = Math.Round((femurAngles[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
-                    tibiaPosition = Math.Round((tibiaAngles[legIndex] + 900) * 1000 / CPwmDiv + CPfConst);
+                    coxaPosition = Math.Round((coxaAngles[legIndex] + 900) * 1000 / PwmDiv + CPfConst);
+                    femurPosition = Math.Round((femurAngles[legIndex] + 900) * 1000 / PwmDiv + CPfConst);
+                    tibiaPosition = Math.Round((tibiaAngles[legIndex] + 900) * 1000 / PwmDiv + CPfConst);
                 }
 
-                stringBuilder.Append($"#{LegServos[legIndex][0]}P{coxaPosition}");
-                stringBuilder.Append($"#{LegServos[legIndex][1]}P{femurPosition}");
-                stringBuilder.Append($"#{LegServos[legIndex][2]}P{tibiaPosition}");
+                _stringBuilder.Append($"#{LegServos[legIndex][0]}P{coxaPosition}");
+                _stringBuilder.Append($"#{LegServos[legIndex][1]}P{femurPosition}");
+                _stringBuilder.Append($"#{LegServos[legIndex][2]}P{tibiaPosition}");
             }
 
-            stringBuilder.Append($"T{_nominalGaitSpeed}\r");
+            _stringBuilder.Append($"T{_nominalGaitSpeed}\r");
 
-            return stringBuilder.ToString();
+            return _stringBuilder.ToString();
         }
 
         private void TurnOffServos()
@@ -635,25 +643,25 @@ namespace HexapiBackground{
         {
             var angle = Math.PI * angleDeg / 180.0;
 
-            sin = Math.Sin(angle) * C4Dec;
-            cos = Math.Cos(angle) * C4Dec;
+            sin = Math.Sin(angle) * TenThousand;
+            cos = Math.Cos(angle) * TenThousand;
         }
 
         private static double GetArcCos(double cos)
         {
-            var c = cos / C4Dec; //Wont work right unless you do / 10000 then * 10000
+            var c = cos / TenThousand; //Wont work right unless you do / 10000 then * 10000
             return (Math.Abs(Math.Abs(c) - 1.0) < .001
                 ? (1 - c) * Math.PI / 2.0
-                : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * C4Dec;
+                : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * TenThousand;
         }
 
         private static double GetATan2(double atanX, double atanY, out double xyhyp2)
         {
             double atan4;
 
-            xyhyp2 = Math.Sqrt((atanX * atanX * C4Dec) + (atanY * atanY * C4Dec));
+            xyhyp2 = Math.Sqrt((atanX * atanX * TenThousand) + (atanY * atanY * TenThousand));
 
-            var angleRad4 = GetArcCos((atanX * C6Dec) / xyhyp2);
+            var angleRad4 = GetArcCos((atanX * OneMillion) / xyhyp2);
 
             if (atanY < 0)
                 atan4 = -angleRad4;

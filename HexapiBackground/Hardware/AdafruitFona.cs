@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace HexapiBackground
@@ -9,18 +10,16 @@ namespace HexapiBackground
 
         internal AdafruitFona()
         {
-
-
+            _serialPort = new SerialPort("AH03F3RYA", 115200, 1000, 1000); //FTDIBUS\VID_0403+PID_6001+AH03F3RYA\0000
         }
 
         internal void Start()
         {
-            _serialPort = new SerialPort("AH03F3RYA", 115200, 500, 500); //FTDIBUS\VID_0403+PID_6001+AH03F3RYA\0000
-        
-            _serialPort.Write($"at+cstt=\"wholesale\",\"\",\"\"\r"); //Set APN
-            Task.Delay(500).Wait();
-            //_serialPort.Write($"at+ciicr\r"); //Connect
-            //Task.Delay(500).Wait();
+            _serialPort.Write($"ATE0\r");
+
+            Debug.WriteLine(_serialPort.ReadFonaLine());
+
+
         }
 
         internal string ReadSms()
@@ -37,6 +36,8 @@ namespace HexapiBackground
 
             var r = _serialPort.ReadString();
             var n = r.Split(':')[1].Trim();
+
+            Debug.WriteLine(n);
 
             return int.Parse(n);
         }
@@ -55,36 +56,54 @@ namespace HexapiBackground
             Debug.WriteLine($"SMS to {phoneNumber} response : {r}");
         }
 
-        internal bool OpenTcpTransparentConnection(string ipAddress, int port)
+        internal void OpenTcpTransparentConnection(string ipAddress, int port)
         {
             //Get GSM / GPRS connection status
 
             _serialPort.Write($"AT+CGATT?\r"); //Get GPRS Service status
-            var r = _serialPort.ReadString();
+            var r = _serialPort.ReadFonaLine();
             Debug.WriteLine($"GSM/GPRS Status {r}");
 
-            _serialPort.Write("AT+CIPMODE=1\r"); //Transparent mode
-            r = _serialPort.ReadString();
+            Debug.WriteLine($"{r}");
 
-            //_serialPort.Write("AT+CIPCCFG=1\r");
+            _serialPort.Write("AT+CIPMODE=0\r");
+            r = _serialPort.ReadFonaLine();
 
-            _serialPort.Write("AT+CSTT=\"wholesale\"\r"); //Start task and set APN
-            r = _serialPort.ReadString();
+            Debug.WriteLine($"{r}");
+
+            _serialPort.Write($"at+cstt=\"wholesale\",\"\",\"\"\r"); //Set APN and start task
+
+            Debug.WriteLine($"APN Command: {_serialPort.ReadFonaLine()}");
+
 
             _serialPort.Write("AT+CIICR\r"); //Bring up wireless connection
-            r = _serialPort.ReadString();
+
+            Task.Delay(250).Wait();
+
+            r = _serialPort.ReadFonaLine();
+
+            Debug.WriteLine($"{r}");
 
             _serialPort.Write("AT+CIFSR\r"); //Get IP address
-            r = _serialPort.ReadString();
+
+            Task.Delay(250).Wait();
+            r = _serialPort.ReadFonaLine();
 
             Debug.WriteLine($"GSM/GPRS IP Address {r}");
 
             _serialPort.Write($"AT+CIPSTART=\"TCP\",\"{ipAddress}\",\"{port}\"\r");
+
+            Task.Delay(1500).Wait();
+
             r = _serialPort.ReadString();
 
             Debug.WriteLine($"TCP Connection status {r}");
 
-            return true;
+            //r = _serialPort.ReadString();
+
+            //Debug.WriteLine($"{r}");
+
+            _tcpConnectionOpen = true;
         }
 
         internal bool CloseTcpTransparentConnection()
@@ -95,6 +114,20 @@ namespace HexapiBackground
 
             return true;
         }
+
+        internal byte[] CreateAuthRequest()
+        {
+            var msg = "GET /P041_RTCM HTTP/1.1\r\n"; //P041 is the mountpoint for the NTRIP station data
+            msg += "User-Agent: Hexapi\r\n";
+
+            var auth = NtripClient.ToBase64("lwatkins:D2q02425");
+            msg += "Authorization: Basic " + auth + "\r\n";
+            msg += "Accept: */*\r\nConnection: close\r\n";
+            msg += "\r\n";
+
+            return Encoding.ASCII.GetBytes(msg);
+        }
+
 
         private bool _tcpConnectionOpen;
 
@@ -124,17 +157,40 @@ namespace HexapiBackground
             _tcpConnectionOpen = true;
         }
 
-        internal void WriteTcpData(string data)
+        internal void WriteTcpData(byte[] data)
         {
             if (!_tcpConnectionOpen)
                 return;
 
-            _serialPort.Write("AT+CIPSEND\r");
+            _serialPort.Write($"AT+CIPSEND\r");
+            Debug.WriteLine(_serialPort.ReadString());
 
             //?
-            _serialPort.Write($"{data}\r");
+            _serialPort.Write($"{data}");
 
-            var r = _serialPort.ReadString();
+            //var q = _serialPort.ReadString();
+            //Debug.WriteLine(q);
+
+
+            _serialPort.Write(new byte[1] { 0x1a });
+
+            _serialPort.Write($"\r");
+
+            Debug.WriteLine(_serialPort.ReadString());
+
+
+            //var q = _serialPort.ReadString();
+            //Debug.WriteLine(q);
+
+
+
+
+
+            Task.Delay(1000).Wait();
+
+            var r = _serialPort.ReadBytes();
+
+            Debug.WriteLine($"{Encoding.ASCII.GetString(r)}");
         }
 
         internal string ReadTcpData(int length)

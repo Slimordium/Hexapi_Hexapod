@@ -11,7 +11,7 @@ namespace HexapiBackground
 {
     internal class NtripClient
     {
-        private readonly Encoding _encoding = new ASCIIEncoding();
+        private static readonly Encoding _encoding = new ASCIIEncoding();
         private readonly IPEndPoint _endPoint;
 
         private readonly ManualResetEventSlim _manualResetEventSlim = new ManualResetEventSlim(false);
@@ -65,7 +65,7 @@ namespace HexapiBackground
             }
         }
 
-        private byte[] CreateAuthRequest()
+        internal byte[] CreateAuthRequest()
         {
             var msg = "GET /" + _ntripMountPoint + " HTTP/1.1\r\n"; //P041 is the mountpoint for the NTRIP station data
             msg += "User-Agent: Hexapi\r\n";
@@ -78,7 +78,7 @@ namespace HexapiBackground
             return Encoding.ASCII.GetBytes(msg);
         }
 
-        private void Connect()
+        internal void Connect()
         {
             var args = new SocketAsyncEventArgs
             {
@@ -102,7 +102,7 @@ namespace HexapiBackground
             _socket.ConnectAsync(args);
         }
 
-        private void Authenticate()
+        internal void Authenticate()
         {
             var buffer = new ArraySegment<byte>(CreateAuthRequest());
 
@@ -125,7 +125,7 @@ namespace HexapiBackground
             _socket.SendAsync(args);
         }
 
-        private void ReadData()
+        internal void ReadData()
         {
             var buffer = new ArraySegment<byte>(new byte[512]);
 
@@ -134,7 +134,6 @@ namespace HexapiBackground
                 UserToken = _socket,
                 RemoteEndPoint = _endPoint,
                 BufferList = new List<ArraySegment<byte>> {buffer}
-
             };
 
             args.Completed += (sender, eventArgs) =>
@@ -181,7 +180,7 @@ namespace HexapiBackground
             _serialPort.Write(data);
         }
 
-        private string ToBase64(string str)
+        internal static string ToBase64(string str)
         {
             var byteArray = _encoding.GetBytes(str);
             return Convert.ToBase64String(byteArray, 0, byteArray.Length);

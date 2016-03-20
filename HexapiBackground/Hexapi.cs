@@ -38,7 +38,8 @@ namespace HexapiBackground{
 
             _ik = new InverseKinematics();
 
-            _routeFinder = new RouteFinder(_ik, gps);
+            if (_gps != null)
+                _routeFinder = new RouteFinder(_ik, gps);
 
             _xboxController = new XboxController();
             _xboxController.Open();
@@ -69,7 +70,7 @@ namespace HexapiBackground{
                 case SelectedFunction.GaitSpeed: //A
                     if (button == 5)
                     {
-                        if (_nomGaitSpeed < 110)
+                        if (_nomGaitSpeed < 140)
                         {
                             _nomGaitSpeed = _nomGaitSpeed + 5;
                         }
@@ -85,7 +86,7 @@ namespace HexapiBackground{
                 case SelectedFunction.LegHeight: //B
                     if (button == 5)
                     {
-                        if (_legLiftHeight < 100)
+                        if (_legLiftHeight < 80)
                             _legLiftHeight = _legLiftHeight + 5;
                     }
                     else
@@ -135,13 +136,13 @@ namespace HexapiBackground{
 
         private void XboxController_RightTriggerChanged(int trigger)
         {
-            _travelLengthX = MathHelpers.Map(trigger, 0, 10000, 0, 90);
+            _travelLengthX = MathHelpers.Map(trigger, 0, 10000, 0, 70);
             _ik.RequestMovement(_nomGaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
         }
 
         private void XboxController_LeftTriggerChanged(int trigger)
         {
-            _travelLengthX = -MathHelpers.Map(trigger, 0, 10000, 0, 90);
+            _travelLengthX = -MathHelpers.Map(trigger, 0, 10000, 0, 70);
             _ik.RequestMovement(_nomGaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
         }
 
@@ -164,14 +165,14 @@ namespace HexapiBackground{
                     }
                     break;
                 case ControllerDirection.Up:
-                    if (_bodyPosY < 120)
+                    if (_bodyPosY < 100)
                     {
                         _bodyPosY = _bodyPosY + 5;
                         _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);
                     }
                     break;
                 case ControllerDirection.Down:
-                    if (_bodyPosY > 40)
+                    if (_bodyPosY > 35)
                     {
                         _bodyPosY = _bodyPosY - 5;
                         _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);

@@ -114,6 +114,18 @@ namespace HexapiBackground
             return r.GetByte(0u);
         }
 
+        internal byte[] ReadBytes()
+        {
+            if (_serialPort == null)
+                return new byte[1];
+
+            var buffer = new Buffer(128);
+
+            _serialPort.InputStream.ReadAsync(buffer, 128, InputStreamOptions.Partial).AsTask().Wait();
+
+            return buffer.ToArray();
+        }
+
         internal string ReadString()
         {
             if (_serialPort == null)
@@ -123,10 +135,55 @@ namespace HexapiBackground
 
             Task.Factory.StartNew(() =>
             {
-                _serialPort.InputStream.ReadAsync(_buffer, 128, InputStreamOptions.None).AsTask().Wait();
+                try
+                {
+                    _serialPort.InputStream.ReadAsync(_buffer, 128, InputStreamOptions.Partial).AsTask().Wait();
+                }
+                catch (TimeoutException)
+                {
+                    
+                }
             }).Wait();
 
             return AsciiEncoding.GetString(_buffer.ToArray());
         }
+
+        internal string ReadFonaLine()
+        {
+            if (_serialPort == null)
+                return string.Empty;
+
+            var buffer = new Buffer(512);
+            var returnString = string.Empty;
+
+            Task.Factory.StartNew(() =>
+            {
+                while (true)
+                {
+                    try
+                    {
+                        Task.Delay(250).Wait();
+
+                        _serialPort.InputStream.ReadAsync(buffer, 512, InputStreamOptions.Partial).AsTask().Wait();
+                    }
+                    catch
+                    {
+                        break;
+                    }
+
+                    returnString += Encoding.UTF8.GetString(buffer.ToArray()).Trim();
+
+                    if (returnString.Contains("OK"))
+                        break;
+                    if (returnString.Contains("ERROR"))
+                        break;
+                    if (returnString.Count( x => x == '.') >= 3)
+                        break;
+                }
+            }).Wait();
+
+            return returnString;
+        }
+
     }
 }
