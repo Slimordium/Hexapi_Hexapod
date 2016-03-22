@@ -53,7 +53,7 @@ namespace HexapiBackground
                 {
                     var settings = config.Split(',');
 
-                    if (settings[5] != null && settings[5].Equals("serial", StringComparison.OrdinalIgnoreCase))
+                    if (settings[5] != null && settings[5].Equals("serial", StringComparison.CurrentCultureIgnoreCase))
                     {
                         var ntripClient = new NtripClientFona(settings[0], int.Parse(settings[1]), settings[2], settings[3], settings[4], _serialPort);
                         ntripClient.Start();
