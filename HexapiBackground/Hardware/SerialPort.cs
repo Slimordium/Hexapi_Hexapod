@@ -119,9 +119,9 @@ namespace HexapiBackground
             if (_serialPort == null)
                 return new byte[1];
 
-            var buffer = new Buffer(128);
+            var buffer = new Buffer(512);
 
-            _serialPort.InputStream.ReadAsync(buffer, 128, InputStreamOptions.Partial).AsTask().Wait();
+            _serialPort.InputStream.ReadAsync(buffer, 512, InputStreamOptions.Partial).AsTask().Wait();
 
             return buffer.ToArray();
         }
@@ -131,13 +131,13 @@ namespace HexapiBackground
             if (_serialPort == null)
                 return string.Empty;
 
-            _buffer = new Buffer(128);
+            _buffer = new Buffer(256);
 
             Task.Factory.StartNew(() =>
             {
                 try
                 {
-                    _serialPort.InputStream.ReadAsync(_buffer, 128, InputStreamOptions.Partial).AsTask().Wait();
+                    _serialPort.InputStream.ReadAsync(_buffer, 256, InputStreamOptions.Partial).AsTask().Wait();
                 }
                 catch (TimeoutException)
                 {
@@ -178,6 +178,8 @@ namespace HexapiBackground
                     if (returnString.Contains("ERROR"))
                         break;
                     if (returnString.Count( x => x == '.') >= 3)
+                        break;
+                    if (returnString.Count(x => x == '>') >= 1)
                         break;
                 }
             }).Wait();

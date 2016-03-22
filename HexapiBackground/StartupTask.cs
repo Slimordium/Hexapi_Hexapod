@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Windows.ApplicationModel.Background;
+using HexapiBackground.Gps;
 
 namespace HexapiBackground
 {
@@ -14,25 +15,14 @@ namespace HexapiBackground
 
             SerialPort.ListAvailablePorts();
 
-            //var gps = new NavSparkGps(true);
+            var gps = new NavSparkGps(true);
             //var pingSensors = new PingSensors();
-            var hexapi = new Hexapi(null);
+            //var hexapi = new Hexapi(gps);
 
-            //gps.Start();
+            gps.Start();
             //pingSensors.Start();
-            hexapi.Start();
-
-            //var p = new AdafruitFona();
-
-            //Task.Delay(5000).Wait();
-
-            //p.Start();
-
-            //p.OpenTcpTransparentConnection("69.44.86.36", 2101); //
-
-            //var auth = p.CreateAuthRequest();
-
-            //p.WriteTcpData(auth);
+            //hexapi.Start();
+             
         }
 
         internal static void Complete()

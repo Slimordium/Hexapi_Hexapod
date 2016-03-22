@@ -20,18 +20,26 @@
         </uap:DefaultTile>
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
-      <Extensions>
+      <!--<Extensions>
         <Extension Category="windows.backgroundTasks" EntryPoint="HexapiBackground.StartupTask">
           <BackgroundTasks>
             <iot:Task Type="startup" />
           </BackgroundTasks>
         </Extension>
-   </Extensions>
+      </Extensions>-->
+      <Extensions>
+        <Extension Category="windows.backgroundTasks" EntryPoint="HexapiBackground.StartupTask">
+          <BackgroundTasks>
+            <iot:Task Type="startup" />
+            <!--<uap:Task Type="mediaProcessing" />-->
+          </BackgroundTasks>
+        </Extension>
+      </Extensions>
     </Application>
   </Applications>
   <Capabilities>
     <Capability Name="internetClient" />
-    <DeviceCapability Name="webcam" />
+    <DeviceCapability Name="bluetooth" />
     <DeviceCapability Name="humaninterfacedevice">
       <Device Id="any">
         <Function Type="usage:0001 0004" />

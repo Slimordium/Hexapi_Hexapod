@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HexapiBackground
 {
-    internal class NtripClient
+    internal class NtripClientTcp
     {
         private static readonly Encoding _encoding = new ASCIIEncoding();
         private readonly IPEndPoint _endPoint;
@@ -23,7 +23,7 @@ namespace HexapiBackground
         private readonly string _username;
 
         //rtgpsout.unavco.org:2101
-        //69.44.86.36
+        //69.44.86.36 
 
         /// <summary>
         /// </summary>
@@ -33,7 +33,7 @@ namespace HexapiBackground
         /// <param name="userName"></param>
         /// <param name="password"></param>
         /// <param name="serialPort"></param>
-        public NtripClient(string ntripIpAddress, int ntripPort, string ntripMountPoint, string userName, string password, SerialPort serialPort)
+        public NtripClientTcp(string ntripIpAddress, int ntripPort, string ntripMountPoint, string userName, string password, SerialPort serialPort)
         {
             Debug.WriteLine($"Using http:\\\\{ntripIpAddress}:{ntripPort}\\{ntripMountPoint}");
 

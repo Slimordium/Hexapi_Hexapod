@@ -37,7 +37,7 @@ namespace HexapiBackground
         /// <returns></returns>
         internal void Open(int deadZoneTolerance = 6000)
         {
-            _deadzoneTolerance = deadZoneTolerance;
+            _deadzoneTolerance = deadZoneTolerance; 
 
             Task.Factory.StartNew(async () =>
             {

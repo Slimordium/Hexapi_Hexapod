@@ -98,6 +98,7 @@
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
     <Content Include="waypoints.config" />
+    <None Include="app.manifest" />
     <None Include="project.json" />
     <Content Include="hexapod.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -111,10 +112,11 @@
     <Compile Include="Enums\ControllerDirection.cs" />
     <Compile Include="Gps\IGps.cs" />
     <Compile Include="Gps\NavSparkRtkGps.cs" />
+    <Compile Include="Gps\NtripClient_Fona.cs" />
     <Compile Include="Hardware\AdafruitFona.cs" />
     <Compile Include="Helpers\GpsHelpers.cs" />
     <Compile Include="Helpers\FileHelpers.cs" />
-    <Compile Include="Gps\NtripClient.cs" />
+    <Compile Include="Gps\NtripClient_Tcp.cs" />
     <Compile Include="RouteFinder.cs" />
     <Compile Include="Enums\GaitType.cs" />
     <Compile Include="Enums\GpsFixQuality.cs" />
@@ -172,6 +174,9 @@
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
   <PropertyGroup />
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
