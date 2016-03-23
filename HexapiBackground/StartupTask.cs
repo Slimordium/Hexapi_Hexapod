@@ -15,13 +15,13 @@ namespace HexapiBackground
 
             SerialPort.ListAvailablePorts();
 
-            var gps = new NavSparkGps(true);
+            //var gps = new NavSparkGps(true);
             //var pingSensors = new PingSensors();
-            //var hexapi = new Hexapi(gps);
+            var hexapi = new Hexapi(null);
 
-            gps.Start();
+            //gps.Start();
             //pingSensors.Start();
-            //hexapi.Start();
+            hexapi.Start();
              
         }
 

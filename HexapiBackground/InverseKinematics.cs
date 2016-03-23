@@ -161,12 +161,12 @@ namespace HexapiBackground{
         private const int CRr = 0;
 
         //All legs being equal, all legs will have the same values
-        private const double CoxaMin = -640; //-650 
-        private const double CoxaMax = 640; //650
-        private const double FemurMin = -640; //-1050
-        private const double FemurMax = 640; //150
-        private const double TibiaMin = -640; //-450
-        private const double TibiaMax = 640; //350 I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -630; //-650 
+        private const double CoxaMax = 630; //650
+        private const double FemurMin = -870; //-1050
+        private const double FemurMax = 870; //150
+        private const double TibiaMin = -870; //-450
+        private const double TibiaMax = 870; //350 I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double CRrCoxaAngle = -450;
         private const double CRmCoxaAngle = 0;
@@ -175,22 +175,22 @@ namespace HexapiBackground{
         private const double CLmCoxaAngle = 0;
         private const double CLfCoxaAngle = 450;
 
-        private const double CRfOffsetX = -70;
-        private const double CRfOffsetZ = -120;
-        private const double CLfOffsetZ = -120;
-        private const double CLfOffsetX = 70;
-        private const double CRrOffsetZ = 120;
-        private const double CRrOffsetX = -70;
-        private const double CLrOffsetZ = 120;
-        private const double CLrOffsetX = 70;
-        private const double CRmOffsetX = -120;
+        private const double CRfOffsetX = -140;
+        private const double CRfOffsetZ = -140;
+        private const double CLfOffsetZ = -140;
+        private const double CLfOffsetX = 140;
+        private const double CRrOffsetZ = 140;
+        private const double CRrOffsetX = -140;
+        private const double CLrOffsetZ = 140;
+        private const double CLrOffsetX = 140;
+        private const double CRmOffsetX = -140;
         private const double CRmOffsetZ = 0;
-        private const double CLmOffsetX = 120;
+        private const double CLmOffsetX = 140;
         private const double CLmOffsetZ = 0;
 
-        private const double CoxaLength = 30; //30
-        private const double FemurLength = 74; //60
-        private const double TibiaLength = 139; //70
+        private const double CoxaLength = 40; //30 
+        private const double FemurLength = 70; //60
+        private const double TibiaLength = 120; //70
 
         private const double CHexInitXz = 105;
         private const double CHexInitXzCos45 = 74; // COS(45) = .7071
