@@ -161,19 +161,19 @@ namespace HexapiBackground{
         private const int CRr = 0;
 
         //All legs being equal, all legs will have the same values
-        private const double CoxaMin = -630; //-650 
-        private const double CoxaMax = 630; //650
-        private const double FemurMin = -870; //-1050
-        private const double FemurMax = 870; //150
-        private const double TibiaMin = -870; //-450
-        private const double TibiaMax = 870; //350 I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -610; //-650 
+        private const double CoxaMax = 610; //650
+        private const double FemurMin = -850; //
+        private const double FemurMax = 850; //
+        private const double TibiaMin = -850; //
+        private const double TibiaMax = 850; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
-        private const double CRrCoxaAngle = -450;
+        private const double CRrCoxaAngle = -600;
         private const double CRmCoxaAngle = 0;
-        private const double CRfCoxaAngle = 450;
-        private const double CLrCoxaAngle = -450;
+        private const double CRfCoxaAngle = 600;
+        private const double CLrCoxaAngle = -600;
         private const double CLmCoxaAngle = 0;
-        private const double CLfCoxaAngle = 450;
+        private const double CLfCoxaAngle = 600;
 
         private const double CRfOffsetX = -140;
         private const double CRfOffsetZ = -140;
@@ -193,9 +193,9 @@ namespace HexapiBackground{
         private const double TibiaLength = 120; //70
 
         private const double CHexInitXz = 105;
-        private const double CHexInitXzCos45 = 74; // COS(45) = .7071
-        private const double CHexInitXzSin45 = 84; // sin(45) = .7071
-        private const double CHexInitY = 36;
+        private const double CHexInitXzCos45 = 77.78; // COS(45) = .7071
+        private const double CHexInitXzSin45 = 77.78; // sin(45) = .7071
+        private const double CHexInitY = 40;
 
         private const double CRfInitPosX = CHexInitXzCos45;
         private const double CRfInitPosY = CHexInitY;

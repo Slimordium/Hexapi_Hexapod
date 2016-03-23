@@ -165,14 +165,14 @@ namespace HexapiBackground{
                     }
                     break;
                 case ControllerDirection.Up:
-                    if (_bodyPosY < 120)
+                    if (_bodyPosY < 110)
                     {
                         _bodyPosY = _bodyPosY + 5;
                         _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);
                     }
                     break;
                 case ControllerDirection.Down:
-                    if (_bodyPosY > 45)
+                    if (_bodyPosY > 35)
                     {
                         _bodyPosY = _bodyPosY - 5;
                         _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);
