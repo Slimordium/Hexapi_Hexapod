@@ -49,11 +49,13 @@ namespace HexapiBackground.Gps
 
                 while (true)
                 {
-                    await Task.Delay(1000);
+                    await Task.Delay(800);
                     var r = _adafruitFona.ReadTcpData();
-                    _serialPort.Write(r); //Write to GPS
+
+                    if (r.Length > 140)
+                        _serialPort.Write(r); //Write to GPS
                 }
-            });
+            }, TaskCreationOptions.LongRunning);
         }
 
         private string CreateAuthRequest()

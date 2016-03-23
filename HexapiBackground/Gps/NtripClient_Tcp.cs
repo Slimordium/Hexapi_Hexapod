@@ -91,6 +91,9 @@ namespace HexapiBackground
                 if (((Socket) sender).Connected)
                 {
                     Debug.WriteLine($"Connected to NTRIP feed at {_ntripMountPoint}");
+
+                    Task.Delay(500).Wait();
+
                     Authenticate();
                 }
                 else
@@ -117,7 +120,7 @@ namespace HexapiBackground
             {
                 Debug.WriteLine($"NTRIP Authentication : {eventArgs.SocketError.ToString()}");
 
-                Task.Delay(1000).Wait();
+                Task.Delay(1500).Wait();
 
                 _manualResetEventSlim.Set();
             };
@@ -141,6 +144,12 @@ namespace HexapiBackground
                 var data = new byte[eventArgs.BytesTransferred];
 
                 Array.Copy(eventArgs.BufferList[0].Array, data, eventArgs.BytesTransferred);
+
+                if (eventArgs.BytesTransferred == 0)
+                {
+                    _manualResetEventSlim.Set();
+                    return;
+                }
 
                 //var stringData = Encoding.ASCII.GetString(eventArgs.BufferList[0].Array, eventArgs.Offset, eventArgs.BytesTransferred);
 
@@ -174,7 +183,7 @@ namespace HexapiBackground
 
         private void SendToGps(byte[] data)
         {
-            if (data.Length < 10)
+            if (data.Length < 10 || _serialPort == null)
                 return;
 
             _serialPort.Write(data);

@@ -21,7 +21,7 @@ namespace HexapiBackground
 
         public NavSparkGps(bool useRtk)
         {
-            _serialPort = new SerialPort("AI041RYGA", 115200, 2000, 2000); //FTDIBUS\VID_0403+PID_6001+AI041RYGA\0000 --AH03F3RYA
+            _serialPort = new SerialPort("AI041RYGA", 57600, 2000, 2000); //FTDIBUS\VID_0403+PID_6001+AI041RYGA\0000 --AH03F3RYA
 
             _useRtk = useRtk;
 

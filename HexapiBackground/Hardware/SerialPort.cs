@@ -119,9 +119,9 @@ namespace HexapiBackground
             if (_serialPort == null)
                 return new byte[1];
 
-            var buffer = new Buffer(512);
+            var buffer = new Buffer(256);
 
-            _serialPort.InputStream.ReadAsync(buffer, 512, InputStreamOptions.Partial).AsTask().Wait();
+            _serialPort.InputStream.ReadAsync(buffer, 256, InputStreamOptions.Partial).AsTask().Wait();
 
             return buffer.ToArray();
         }

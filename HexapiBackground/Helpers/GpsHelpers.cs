@@ -170,6 +170,9 @@ namespace HexapiBackground
                 double lat = 0;
                 double lon = 0;
 
+                var quality = 0;
+                var altitude = 0f;
+
                 switch (type)
                 {
                     case "GPGGA": //Global Positioning System Fix Data
@@ -190,15 +193,24 @@ namespace HexapiBackground
                         lat = Latitude2Double(tokens[2], tokens[3]);
                         lon = Longitude2Double(tokens[4], tokens[5]);
 
-                        var quality = 0;
                         if (int.TryParse(tokens[6], out quality))
-                        {
                             latLon.Quality = (GpsFixQuality) quality;
-                        }
 
-                        float altitude = 0;
                         if (float.TryParse(tokens[9], out altitude))
                             latLon.Altitude = altitude*3.28084f;
+
+                        Debug.WriteLine($"Quality : {latLon.Quality}");
+                        Debug.WriteLine($"Lat, Lon : {lat},{lon}");
+
+                        break;
+                    case "GPGLL": //Global Positioning System Fix Data
+                        if (tokens.Length < 8)
+                            return null;
+
+                        latLon.DateTime = _dateTime;
+
+                        lat = Latitude2Double(tokens[1], tokens[2]);
+                        lon = Longitude2Double(tokens[3], tokens[4]);
 
                         break;
                     case "GPRMC": //Recommended minimum specific GPS/Transit data
@@ -255,7 +267,7 @@ namespace HexapiBackground
                         return null;
                 }
 
-                if (Math.Abs(lat) < .1 || Math.Abs(lon) < .1 || latLon.Quality == GpsFixQuality.NoFix)
+                if (Math.Abs(lat) < .1 || Math.Abs(lon) < .1)
                     return null;
 
                 latLon.Lat = lat;
