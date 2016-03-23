@@ -161,12 +161,12 @@ namespace HexapiBackground{
         private const int CRr = 0;
 
         //All legs being equal, all legs will have the same values
-        private const double CoxaMin = -610; //-650 
-        private const double CoxaMax = 610; //650
-        private const double FemurMin = -850; //
-        private const double FemurMax = 850; //
-        private const double TibiaMin = -850; //
-        private const double TibiaMax = 850; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -620; //-650 
+        private const double CoxaMax = 620; //650
+        private const double FemurMin = -890; //
+        private const double FemurMax = 890; //
+        private const double TibiaMin = -890; //
+        private const double TibiaMax = 890; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double CRrCoxaAngle = -600;
         private const double CRmCoxaAngle = 0;
@@ -195,7 +195,7 @@ namespace HexapiBackground{
         private const double CHexInitXz = 105;
         private const double CHexInitXzCos45 = 77.78; // COS(45) = .7071
         private const double CHexInitXzSin45 = 77.78; // sin(45) = .7071
-        private const double CHexInitY = 40;
+        private const double CHexInitY = 45; //40
 
         private const double CRfInitPosX = CHexInitXzCos45;
         private const double CRfInitPosY = CHexInitY;
