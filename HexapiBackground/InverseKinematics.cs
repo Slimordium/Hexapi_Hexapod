@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 using HexapiBackground.Enums;
 
 namespace HexapiBackground{
+    /// <summary>
+    /// This is a C# port of the "Phoenix" 3DOF Hexapod code
+    /// </summary>
     internal sealed class InverseKinematics
     {
         private bool _movementStarted;
@@ -175,24 +178,24 @@ namespace HexapiBackground{
         private const double CLmCoxaAngle = 0;
         private const double CLfCoxaAngle = 600;
 
-        private const double CRfOffsetX = -140;
-        private const double CRfOffsetZ = -140;
-        private const double CLfOffsetZ = -140;
-        private const double CLfOffsetX = 140;
-        private const double CRrOffsetZ = 140;
-        private const double CRrOffsetX = -140;
-        private const double CLrOffsetZ = 140;
-        private const double CLrOffsetX = 140;
-        private const double CRmOffsetX = -140;
+        private const double CRfOffsetX = -138;
+        private const double CRfOffsetZ = -138;
+        private const double CLfOffsetZ = -138;
+        private const double CLfOffsetX = 138;
+        private const double CRrOffsetZ = 138;
+        private const double CRrOffsetX = -138;
+        private const double CLrOffsetZ = 138;
+        private const double CLrOffsetX = 138;
+        private const double CRmOffsetX = -138;
         private const double CRmOffsetZ = 0;
-        private const double CLmOffsetX = 140;
+        private const double CLmOffsetX = 138;
         private const double CLmOffsetZ = 0;
 
-        private const double CoxaLength = 40; //30 
-        private const double FemurLength = 70; //60
+        private const double CoxaLength = 43; //30 
+        private const double FemurLength = 73; //60
         private const double TibiaLength = 120; //70
 
-        private const double CHexInitXz = 105;
+        private const double CHexInitXz = 110; //105
         private const double CHexInitXzCos45 = 77.78; // COS(45) = .7071
         private const double CHexInitXzSin45 = 77.78; // sin(45) = .7071
         private const double CHexInitY = 45; //40

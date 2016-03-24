@@ -70,7 +70,7 @@ namespace HexapiBackground{
                 case SelectedFunction.GaitSpeed: //A
                     if (button == 5)
                     {
-                        if (_nomGaitSpeed < 140)
+                        if (_nomGaitSpeed < 120)
                         {
                             _nomGaitSpeed = _nomGaitSpeed + 5;
                         }
@@ -86,12 +86,12 @@ namespace HexapiBackground{
                 case SelectedFunction.LegHeight: //B
                     if (button == 5)
                     {
-                        if (_legLiftHeight < 80)
+                        if (_legLiftHeight < 90)
                             _legLiftHeight = _legLiftHeight + 5;
                     }
                     else
                     {
-                        if (_legLiftHeight > 25)
+                        if (_legLiftHeight > 35)
                             _legLiftHeight = _legLiftHeight - 5;
                     }
                     break;
@@ -136,13 +136,13 @@ namespace HexapiBackground{
 
         private void XboxController_RightTriggerChanged(int trigger)
         {
-            _travelLengthX = MathHelpers.Map(trigger, 0, 10000, 0, 70);
+            _travelLengthX = MathHelpers.Map(trigger, 0, 10000, 0, 90);
             _ik.RequestMovement(_nomGaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
         }
 
         private void XboxController_LeftTriggerChanged(int trigger)
         {
-            _travelLengthX = -MathHelpers.Map(trigger, 0, 10000, 0, 70);
+            _travelLengthX = -MathHelpers.Map(trigger, 0, 10000, 0, 90);
             _ik.RequestMovement(_nomGaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
         }
 
@@ -165,14 +165,14 @@ namespace HexapiBackground{
                     }
                     break;
                 case ControllerDirection.Up:
-                    if (_bodyPosY < 110)
+                    if (_bodyPosY < 130)
                     {
                         _bodyPosY = _bodyPosY + 5;
                         _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);
                     }
                     break;
                 case ControllerDirection.Down:
-                    if (_bodyPosY > 35)
+                    if (_bodyPosY > 25)
                     {
                         _bodyPosY = _bodyPosY - 5;
                         _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);
@@ -191,11 +191,11 @@ namespace HexapiBackground{
                     break;
                 case ControllerDirection.UpLeft:
                     _travelRotationY = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 110);
+                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 100);
                     break;
                 case ControllerDirection.DownLeft:
                     _travelRotationY = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 110);
+                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 100);
                     break;
                 case ControllerDirection.Right:
                     _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 3);
@@ -203,18 +203,18 @@ namespace HexapiBackground{
                     break;
                 case ControllerDirection.UpRight:
                     _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 110);
+                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 100);
                     break;
                 case ControllerDirection.DownRight:
                     _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 110);
+                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 100);
                     break;
                 case ControllerDirection.Up:
-                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 160);
+                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 150);
                     _travelRotationY = 0;
                     break;
                 case ControllerDirection.Down:
-                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 160);
+                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 150);
                     _travelRotationY = 0;
                     break;
             }
