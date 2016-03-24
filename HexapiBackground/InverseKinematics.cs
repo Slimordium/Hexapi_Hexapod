@@ -6,7 +6,7 @@ using HexapiBackground.Enums;
 
 namespace HexapiBackground{
     /// <summary>
-    /// This is a C# port of the "Phoenix" 3DOF Hexapod code
+    /// This is a port of the "Phoenix" 3DOF Hexapod code in C#. 
     /// </summary>
     internal sealed class InverseKinematics
     {
@@ -70,7 +70,6 @@ namespace HexapiBackground{
                 TurnOffServos();
 
             _movementStarted = enabled;
- 
         }
         #endregion
 
@@ -146,8 +145,8 @@ namespace HexapiBackground{
         #endregion
 
         #region Inverse Kinematics setup
-        private const double CPfConst = 592; //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500
-        private const double PwmDiv = 991; //old 1059, new 991;
+        private const double CPfConst = 650; //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500 was 592
+        private const double PwmDiv = 1059; //old 1059, new 991;
 
         private const double TravelDeadZone = 1;
 
@@ -164,12 +163,12 @@ namespace HexapiBackground{
         private const int CRr = 0;
 
         //All legs being equal, all legs will have the same values
-        private const double CoxaMin = -620; //-650 
-        private const double CoxaMax = 620; //650
-        private const double FemurMin = -890; //
-        private const double FemurMax = 890; //
-        private const double TibiaMin = -890; //
-        private const double TibiaMax = 890; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -630; //-650 
+        private const double CoxaMax = 630; //650
+        private const double FemurMin = -870; //
+        private const double FemurMax = 870; //
+        private const double TibiaMin = -870; //
+        private const double TibiaMax = 870; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double CRrCoxaAngle = -600;
         private const double CRmCoxaAngle = 0;

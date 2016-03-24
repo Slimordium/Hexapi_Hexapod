@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace HexapiBackground
 {
     internal class AdafruitFona
     {
-        private SerialPort _serialPort;
+        private readonly SerialPort _serialPort;
 
         internal AdafruitFona()
         {
@@ -113,6 +112,5 @@ namespace HexapiBackground
             Debug.WriteLine($"Incoming bytes : {r.Length}");
             return r;
         }
-
     }
 }
