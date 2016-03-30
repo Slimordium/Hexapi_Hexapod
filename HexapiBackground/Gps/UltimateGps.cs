@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using HexapiBackground.Enums;
-using HexapiBackground.Gps;
+using HexapiBackground.Hardware;
+using HexapiBackground.Helpers;
 
-namespace HexapiBackground
+namespace HexapiBackground.Gps
 {
     //Tested as 100% working with the Adafruit Ultimate GPS
     //Parses the basic GPS data that is needed for navigation. Calculates drift/accuracy over time. Seems to work fairly well

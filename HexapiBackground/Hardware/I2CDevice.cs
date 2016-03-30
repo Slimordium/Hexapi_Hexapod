@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.I2c;
 
-namespace HexapiBackground
+namespace HexapiBackground.Hardware
 {
     internal sealed class I2CDevice
     {

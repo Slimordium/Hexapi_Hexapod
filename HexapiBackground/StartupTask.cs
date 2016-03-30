@@ -1,6 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿/*
+    3DOF Hexapod - Hexapi startup 
+*/
+
+using System.Threading.Tasks;
 using Windows.ApplicationModel.Background;
 using HexapiBackground.Gps;
+using HexapiBackground.Hardware;
 
 namespace HexapiBackground
 {
@@ -15,14 +20,15 @@ namespace HexapiBackground
 
             SerialPort.ListAvailablePorts();
 
-            var remoteArduino = new RemoteArduino();
-            var gps = new RemoteArduinoRtkGps();
+            //These are all optional----
+            var remoteArduino = new RemoteArduino(); //Only need this if using the PingSensors or the RemoteArduinoRtkGps
+            var gps = new RemoteArduinoRtkGps(); //NavSparkRtkGps, UltimateGps
             var pingSensors = new PingSensors();
             var avc = new Avc();
+            gps.Start();
+            //--------------------------
 
             var hexapi = new Hexapi(gps, avc);
-
-            gps.Start();
             hexapi.Start();
         }
 

@@ -4,7 +4,7 @@ using System.Diagnostics;
 using HexapiBackground.Enums;
 using HexapiBackground.Gps;
 
-namespace HexapiBackground
+namespace HexapiBackground.Helpers
 {
     internal static class GpsHelpers
     {

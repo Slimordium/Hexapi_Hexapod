@@ -2,8 +2,9 @@
 using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
+using HexapiBackground.Hardware;
 
-namespace HexapiBackground.Gps
+namespace HexapiBackground.Gps.Ntrip
 {
     internal class NtripClientFona
     {

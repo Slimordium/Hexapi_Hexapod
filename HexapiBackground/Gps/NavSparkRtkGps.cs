@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using HexapiBackground.Gps;
+using HexapiBackground.Gps.Ntrip;
+using HexapiBackground.Hardware;
+using HexapiBackground.Helpers;
 
-namespace HexapiBackground
+namespace HexapiBackground.Gps
 {
     internal class NavSparkGps : IGps
     {

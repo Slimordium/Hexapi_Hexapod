@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace HexapiBackground
+namespace HexapiBackground.Helpers
 {
     internal static class MathHelpers
     {

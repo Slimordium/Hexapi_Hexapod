@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Windows.Devices.Gpio;
 using Windows.Devices.I2c;
 
-namespace HexapiBackground
+namespace HexapiBackground.Hardware
 {
     internal class Mpu9150
     {

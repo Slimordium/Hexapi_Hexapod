@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using HexapiBackground.Gps;
+using HexapiBackground.Helpers;
 
 namespace HexapiBackground
 {

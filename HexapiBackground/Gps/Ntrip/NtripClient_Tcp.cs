@@ -6,8 +6,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using HexapiBackground.Hardware;
 
-namespace HexapiBackground
+namespace HexapiBackground.Gps.Ntrip
 {
     internal class NtripClientTcp
     {

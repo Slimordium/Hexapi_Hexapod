@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using HexapiBackground.Enums;
 using HexapiBackground.Gps;
+using HexapiBackground.Hardware;
+using HexapiBackground.Helpers;
 
 // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
 

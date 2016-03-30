@@ -8,7 +8,7 @@ using Windows.Devices.SerialCommunication;
 using Microsoft.Maker.RemoteWiring;
 using Microsoft.Maker.Serial;
 
-namespace HexapiBackground
+namespace HexapiBackground.Hardware
 {
     internal sealed class RemoteArduino
     {

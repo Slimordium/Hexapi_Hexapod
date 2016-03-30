@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using HexapiBackground.Gps;
+using HexapiBackground.Hardware;
+using HexapiBackground.Helpers;
 
-namespace HexapiBackground
+namespace HexapiBackground.Gps
 {
     internal class RemoteArduinoRtkGps : IGps
     {

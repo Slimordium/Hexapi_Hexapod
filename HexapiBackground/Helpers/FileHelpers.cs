@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Streams;
 
-namespace HexapiBackground
+namespace HexapiBackground.Helpers
 {
     internal static class FileHelpers
     {

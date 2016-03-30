@@ -9,7 +9,7 @@ using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
 using Buffer = Windows.Storage.Streams.Buffer;
 
-namespace HexapiBackground
+namespace HexapiBackground.Hardware
 {
     internal class SerialPort
     {

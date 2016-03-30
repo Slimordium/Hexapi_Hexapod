@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using HexapiBackground.Enums;
+using HexapiBackground.Hardware;
+using HexapiBackground.Helpers;
 
 namespace HexapiBackground{
     /// <summary>

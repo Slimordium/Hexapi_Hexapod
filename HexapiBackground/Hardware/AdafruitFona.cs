@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 
-namespace HexapiBackground
+namespace HexapiBackground.Hardware
 {
     internal class AdafruitFona
     {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using HexapiBackground.Hardware;
 
 namespace HexapiBackground{
     internal class Avc

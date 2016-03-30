@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace HexapiBackground
+namespace HexapiBackground.Hardware
 {
     internal sealed class PingSensors
     {

@@ -8,7 +8,7 @@ using HexapiBackground.Enums;
 
 // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
 
-namespace HexapiBackground
+namespace HexapiBackground.Hardware
 {
     internal sealed class XboxController
     {
