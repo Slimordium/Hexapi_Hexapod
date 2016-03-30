@@ -2,9 +2,9 @@
 using System.Diagnostics;
 
 namespace HexapiBackground{
-    internal static class Avc
+    internal class Avc
     {
-        internal static void CheckForObstructions(ref double travelLengthX, ref double travelRotationY, ref double travelLengthZ, ref double nominalGaitSpeed)
+        internal void CheckForObstructions(ref double travelLengthX, ref double travelRotationY, ref double travelLengthZ, ref double nominalGaitSpeed)
         {
             var randomNumber = new Random(DateTime.Now.Millisecond);
             var turnDirection = randomNumber.Next(0, 10);

@@ -30,13 +30,13 @@ namespace HexapiBackground{
 
         private RouteFinder _routeFinder;
 
-        private IGps _gps;
+        private readonly IGps _gps;
 
-        internal Hexapi(IGps gps = null)
+        internal Hexapi(IGps gps = null, Avc avc = null)
         {
             _gps = gps;
 
-            _ik = new InverseKinematics();
+            _ik = new InverseKinematics(avc);
 
             if (_gps != null)
                 _routeFinder = new RouteFinder(_ik, gps);

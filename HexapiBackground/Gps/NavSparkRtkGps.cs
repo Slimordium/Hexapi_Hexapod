@@ -70,25 +70,25 @@ namespace HexapiBackground
                 }
             }
 
-            //Task.Factory.StartNew(() =>
-            //{
-            //    Debug.WriteLine("NavSpark RTK GPS Started...");
-                
-            //    while (true)
-            //    {
-            //        var sentences = _serialPort.ReadString();
+            Task.Factory.StartNew(() =>
+            {
+                Debug.WriteLine("NavSpark RTK GPS Started...");
 
-            //        foreach (var s in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
-            //        {
-            //            var latLon = GpsHelpers.NmeaParse(s);
+                while (true)
+                {
+                    var sentences = _serialPort.ReadString();
 
-            //            if (latLon == null)
-            //                continue;
-                        
-            //            CurrentLatLon = latLon;
-            //        }
-            //    }
-            //}, TaskCreationOptions.LongRunning);
+                    foreach (var s in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
+                    {
+                        var latLon = GpsHelpers.NmeaParse(s);
+
+                        if (latLon == null)
+                            continue;
+
+                        CurrentLatLon = latLon;
+                    }
+                }
+            }, TaskCreationOptions.LongRunning);
         }
 
         #endregion

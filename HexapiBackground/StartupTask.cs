@@ -16,17 +16,14 @@ namespace HexapiBackground
             SerialPort.ListAvailablePorts();
 
             var remoteArduino = new RemoteArduino();
+            var gps = new RemoteArduinoRtkGps();
+            var pingSensors = new PingSensors();
+            var avc = new Avc();
 
-            var gps = new RemoteArduinoRtkGps(remoteArduino);
-
-            var pingSensors = new PingSensors(remoteArduino);
-
-            var hexapi = new Hexapi();
+            var hexapi = new Hexapi(gps, avc);
 
             gps.Start();
-
             hexapi.Start();
-             
         }
 
         internal static void Complete()

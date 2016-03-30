@@ -13,9 +13,12 @@ namespace HexapiBackground{
         private bool _movementStarted;
         private readonly SerialPort _serialPort;
         private readonly Stopwatch _sw = new Stopwatch();
+        private readonly Avc _avc;
 
-        internal InverseKinematics()
+        internal InverseKinematics(Avc avc = null)
         {
+            _avc = avc;
+
             for (var i = 0; i < 6; i++)
                 LegServos[i] = new int[3];
 
@@ -83,13 +86,13 @@ namespace HexapiBackground{
             _bodyPosY = 30;
 
             GaitSelect();
-            _sw.Start();
 
+            _sw.Start();
             var startMs = _sw.ElapsedMilliseconds;
 
             while (true)
             {
-                //Avc.CheckForObstructions(ref _travelLengthX, ref _travelRotationY, ref _travelLengthZ, ref _nominalGaitSpeed);
+                _avc?.CheckForObstructions(ref _travelLengthX, ref _travelRotationY, ref _travelLengthZ, ref _nominalGaitSpeed);
 
                 if (!_movementStarted)
                 {

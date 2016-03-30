@@ -15,8 +15,14 @@ namespace HexapiBackground
         private IStream _connection;
         private RemoteDevice _arduino;
 
-        public List<Action<string>> StringReceivedActions { get; set; }
-        public List<Action<byte, PinState>>  DigitalPinUpdatedActions { get; set; }
+        public static List<Action<string>> StringReceivedActions { get; set; }
+        public static List<Action<byte, PinState>>  DigitalPinUpdatedActions { get; set; }
+
+        internal RemoteArduino()
+        {
+            StringReceivedActions = new List<Action<string>>();
+            DigitalPinUpdatedActions = new List<Action<byte, PinState>>();
+        }
 
         internal void Start()
         {

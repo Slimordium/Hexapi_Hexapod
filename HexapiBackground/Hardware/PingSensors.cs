@@ -15,13 +15,9 @@ namespace HexapiBackground
         internal static int CenterInches { get; private set; }
         internal static int RightInches { get; private set; }
 
-        private readonly RemoteArduino _remoteArduino;
-
-        internal PingSensors(RemoteArduino remoteArduino)
+        internal PingSensors()
         {
-            _remoteArduino = remoteArduino;
-
-            _remoteArduino.StringReceivedActions.Add(StringMessageReceived);
+            RemoteArduino.StringReceivedActions.Add(StringMessageReceived);
 
             LeftInches = 0;
             CenterInches = 0;
@@ -35,7 +31,7 @@ namespace HexapiBackground
 
         internal void RangeUpdate(int[] data)
         {
-            if (data.Length < 3)
+            if (data.Length < 10)
             {
                 Debug.WriteLine("Bad ping data");
                 return;
@@ -65,7 +61,9 @@ namespace HexapiBackground
 
             try
             {
-                RangeUpdate((message.Split(',').Select(int.Parse).ToArray()));
+                message = message.Split(':')[1];
+
+                RangeUpdate(message.Split(',').Select(int.Parse).ToArray());
             }
             catch (Exception e)
             {

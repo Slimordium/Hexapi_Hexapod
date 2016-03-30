@@ -9,16 +9,10 @@ namespace HexapiBackground
         private readonly List<double> _correctors = new List<double>();
         private readonly List<LatLon> _latLons = new List<LatLon>();
         private readonly List<LatLon> _latLonsAvg = new List<LatLon>();
-        private readonly RemoteArduino _remoteArduino;
-        
-        public RemoteArduinoRtkGps(bool useRtk)
+      
+        public RemoteArduinoRtkGps()
         {
             CurrentLatLon = new LatLon();
-        }
-
-        public RemoteArduinoRtkGps(RemoteArduino remoteArduino)
-        {
-            _remoteArduino = remoteArduino;
         }
 
         internal int SatellitesInView { get; set; }
@@ -31,18 +25,23 @@ namespace HexapiBackground
 
         public void Start()
         {
-            _remoteArduino.StringReceivedActions.Add(sentences =>
+            RemoteArduino.StringReceivedActions.Add(NmeaReceived);
+        }
+
+        private void NmeaReceived(string sentences)
+        {
+            if (sentences.Contains("$Ping:"))
+                return;
+
+            foreach (var s in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
             {
-                foreach (var s in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
-                {
-                    var latLon = GpsHelpers.NmeaParse(s);
+                var latLon = GpsHelpers.NmeaParse(s);
 
-                    if (latLon == null)
-                        continue;
+                if (latLon == null)
+                    continue;
 
-                    CurrentLatLon = latLon;
-                }
-            });
+                CurrentLatLon = latLon;
+            }
         }
     }
 }
