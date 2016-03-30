@@ -40,7 +40,7 @@ namespace HexapiBackground.Gps
                 _adafruitFona.Start();
                 await Task.Delay(2000);
 
-                if (!_adafruitFona.OpenTcpConnection(_ntripIpAddress, _ntripPort))//Requst Fona to connect to IP and port
+                if (!_adafruitFona.OpenTcpConnection(_ntripIpAddress, _ntripPort))//Request Fona to connect to IP and port
                 {
                     return;
                 }

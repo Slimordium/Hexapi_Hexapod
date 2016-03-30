@@ -780,9 +780,14 @@ void setup()
 	pinMode(rightTrigPin, OUTPUT); //trig
 	pinMode(rightEchoPin, INPUT); //echo
 
+	Serial1.begin(57600); //RTK GPS module
+	Serial2.begin(57600); //Cell modem for RTK Corrections
+	
+	delay(500);
+	OpenTcpConnection();
 }
 
-String Ping()
+String SendPings()
 {
 	String left = String(Ping(1), DEC);
 	delay(30);
@@ -799,20 +804,70 @@ String Ping()
 	return toSend;
 }
 
+void OpenTcpConnection()
+{
+	Serial2.write("AT+CGATT?\r"); //Get GPRS Service status
+	//Debug.WriteLine($"GPRS Status: {_serialPort.ReadFonaLine()}");
+	delay(100);
+
+	Serial2.write("AT+CIPMODE=0\r");
+	//Debug.WriteLine($"Mode set: {_serialPort.ReadFonaLine()}");
+	delay(250);
+
+	Serial2.write("at+cstt=\"wholesale\",\"\",\"\"\r"); //Set APN and start task
+	//Debug.WriteLine($"APN Command: {_serialPort.ReadFonaLine()}");
+	delay(250);
+
+	Serial2.write("AT+CIICR\r"); //Bring up wireless connection
+	delay(250);
+	//Debug.WriteLine($"Bring up wireless connection: {_serialPort.ReadFonaLine()}");
+
+	Serial2.write("AT+CIFSR\r"); //Get IP address
+	delay(500);
+	//Debug.WriteLine($"GPRS IP Address: {_serialPort.ReadFonaLine()}");
+
+	Serial2.write("AT+CIPSTART=\"TCP\",\"69.44.86.36\",\"2101\"\r");
+	delay(1500);
+
+	//Debug.WriteLine($"TCP Connection status: {_serialPort.ReadFonaLine()}");
+
+	AuthenticateNtrip();
+}
+
+void AuthenticateNtrip()
+{
+	String msg = "GET /P041_RTCM3 HTTP/1.1\r\n"; //P041 is the mountpoint for the NTRIP station data
+	msg += "User-Agent: Hexapi\r\n";
+
+	msg += "Authorization: Basic bHdhdGtpbnM6RDJxMDI0MjU=\r\n";
+	msg += "Accept: */*\r\nConnection: close\r\n";
+	msg += "\r\n";
+
+	Serial2.write(msg);
+}
 
 /*==============================================================================
 * LOOP()
 *============================================================================*/
 void loop()
 {
+	//Get NMEA sentences from GPS and forward to the PI 3
+	if (Serial1.available())
+	{
+		String gpsData = Serial1.readString();
+		Firmata.sendString(gpsData);
+	}
 
-
-	Firmata.sendString(Ping());
+	//Get RTK correction data, and then send to the GPS
+	if (Serial2.available())
+	{
+		byte rtkCorrectionData = Serial2.readBytes();
+		Serial1.write(rtkCorrectionData);
+	}
+	
+	Firmata.sendString(SendPings());
 	delay(30);
-
-
-
-
+	
 	//byte pin, analogPin;
 
 	/* DIGITALREAD - as fast as possible, check for changes and output them to the

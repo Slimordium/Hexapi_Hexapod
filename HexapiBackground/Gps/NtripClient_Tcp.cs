@@ -37,8 +37,8 @@ namespace HexapiBackground
         {
             Debug.WriteLine($"Using http:\\\\{ntripIpAddress}:{ntripPort}\\{ntripMountPoint}");
 
-            //_serialPort = serialPort;
-            _serialPort = new SerialPort("AH03F3RYA", 57600, 1000, 1000);
+            _serialPort = serialPort;
+            //_serialPort = new SerialPort("AH03F3RYA", 57600, 1000, 1000); //Used for testing, allows forwarding RTK data via a seperate serial port.
 
             _username = userName;
             _password = password;

@@ -21,7 +21,7 @@ namespace HexapiBackground
         {
             _remoteArduino = remoteArduino;
 
-            _remoteArduino.StringReceivedAction.Add(StringMessageReceived);
+            _remoteArduino.StringReceivedActions.Add(StringMessageReceived);
 
             LeftInches = 0;
             CenterInches = 0;

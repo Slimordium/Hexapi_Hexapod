@@ -14,7 +14,9 @@ namespace HexapiBackground
     {
         private IStream _connection;
         private RemoteDevice _arduino;
-        public List<Action<string>> StringReceivedAction { get; set; }
+
+        public List<Action<string>> StringReceivedActions { get; set; }
+        public List<Action<byte, PinState>>  DigitalPinUpdatedActions { get; set; }
 
         internal void Start()
         {
@@ -74,13 +76,13 @@ namespace HexapiBackground
         {
             Debug.WriteLine("Arduino communication successfully negotiated");
 
-            //_arduino.DigitalPinUpdated += _arduino_DigitalPinUpdated;
+            _arduino.DigitalPinUpdated += Arduino_DigitalPinUpdated;
             _arduino.StringMessageReceived += Arduino_StringMessageReceived;
         }
 
         private void Arduino_StringMessageReceived(string message)
         {
-            foreach (var a in StringReceivedAction)
+            foreach (var a in StringReceivedActions)
             {
                 a.Invoke(message);
             }
@@ -89,6 +91,11 @@ namespace HexapiBackground
         private void Arduino_DigitalPinUpdated(byte pin, PinState state)
         {
             Debug.WriteLine($"Digital pin state changed - pin: {pin}, state: {state}");
+
+            foreach (var a in DigitalPinUpdatedActions)
+            {
+                a.Invoke(pin, state);
+            }
         }
     }
 }

@@ -111,6 +111,7 @@
     <Compile Include="Avc.cs" />
     <Compile Include="Enums\ControllerDirection.cs" />
     <Compile Include="Gps\IGps.cs" />
+    <Compile Include="Gps\RemoteArduinoRtkGps.cs" />
     <Compile Include="Gps\NavSparkRtkGps.cs" />
     <Compile Include="Gps\NtripClient_Fona.cs" />
     <Compile Include="Hardware\AdafruitFona.cs" />
