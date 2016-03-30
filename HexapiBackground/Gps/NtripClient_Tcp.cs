@@ -15,7 +15,7 @@ namespace HexapiBackground
         private readonly IPEndPoint _endPoint;
 
         private readonly ManualResetEventSlim _manualResetEventSlim = new ManualResetEventSlim(false);
-        private readonly string _ntripMountPoint; //P041_RTCM
+        private readonly string _ntripMountPoint; //P041_RTCM3
         private readonly string _password;
         private readonly SerialPort _serialPort;
         private readonly Socket _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -37,7 +37,8 @@ namespace HexapiBackground
         {
             Debug.WriteLine($"Using http:\\\\{ntripIpAddress}:{ntripPort}\\{ntripMountPoint}");
 
-            _serialPort = serialPort;
+            //_serialPort = serialPort;
+            _serialPort = new SerialPort("AH03F3RYA", 57600, 1000, 1000);
 
             _username = userName;
             _password = password;

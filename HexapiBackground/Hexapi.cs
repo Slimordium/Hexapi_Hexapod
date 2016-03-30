@@ -13,16 +13,16 @@ namespace HexapiBackground{
 
         private bool _isMovementStarted = false;
 
-        private double _legLiftHeight = 30;
-        private double _nomGaitSpeed = 50;
+        private double _legLiftHeight = 20;
+        private double _nomGaitSpeed = 65;
         private SelectedFunction _selectedFunction = SelectedFunction.GaitSpeed;
 
         private double _travelLengthX; 
         private double _travelLengthZ; 
         private double _travelRotationY;
 
-        private GaitType _gaitType = GaitType.TripleTripod12Steps;
-        private double _bodyPosY = 75;
+        private GaitType _gaitType = GaitType.Tripod8Steps;
+        private double _bodyPosY = 30;
         private double _bodyRotX1;
         private double _bodyRotZ1;
         private double _bodyPosX;
@@ -70,14 +70,14 @@ namespace HexapiBackground{
                 case SelectedFunction.GaitSpeed: //A
                     if (button == 5)
                     {
-                        if (_nomGaitSpeed < 120)
+                        if (_nomGaitSpeed < 200)
                         {
                             _nomGaitSpeed = _nomGaitSpeed + 5;
                         }
                     }
                     else
                     {
-                        if (_nomGaitSpeed > 45)
+                        if (_nomGaitSpeed > 40)
                         {
                             _nomGaitSpeed = _nomGaitSpeed - 5;
                         }
@@ -91,7 +91,7 @@ namespace HexapiBackground{
                     }
                     else
                     {
-                        if (_legLiftHeight > 35)
+                        if (_legLiftHeight > 10)
                             _legLiftHeight = _legLiftHeight - 5;
                     }
                     break;
@@ -151,7 +151,7 @@ namespace HexapiBackground{
             switch (sender.Direction)
             {
                 case ControllerDirection.Left:
-                    if ((int) _gaitType > 0)
+                    if ( _gaitType > 0)
                     {
                         _gaitType--;
                         _ik.RequestSetGaitType(_gaitType);
@@ -165,14 +165,14 @@ namespace HexapiBackground{
                     }
                     break;
                 case ControllerDirection.Up:
-                    if (_bodyPosY < 130)
+                    if (_bodyPosY < 110)
                     {
                         _bodyPosY = _bodyPosY + 5;
                         _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);
                     }
                     break;
                 case ControllerDirection.Down:
-                    if (_bodyPosY > 25)
+                    if (_bodyPosY > 20)
                     {
                         _bodyPosY = _bodyPosY - 5;
                         _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);
@@ -190,31 +190,31 @@ namespace HexapiBackground{
                     _travelLengthZ = 0;
                     break;
                 case ControllerDirection.UpLeft:
-                    _travelRotationY = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 100);
+                    _travelRotationY = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 1);
+                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 130);
                     break;
                 case ControllerDirection.DownLeft:
-                    _travelRotationY = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 100);
+                    _travelRotationY = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 1);
+                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 130);
                     break;
                 case ControllerDirection.Right:
                     _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 3);
                     _travelLengthZ = 0;
                     break;
                 case ControllerDirection.UpRight:
-                    _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 100);
+                    _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 1);
+                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 130);
                     break;
                 case ControllerDirection.DownRight:
-                    _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 2);
-                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 100);
+                    _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 1);
+                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 130);
                     break;
                 case ControllerDirection.Up:
-                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 150);
+                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 170);
                     _travelRotationY = 0;
                     break;
                 case ControllerDirection.Down:
-                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 150);
+                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 170);
                     _travelRotationY = 0;
                     break;
             }
@@ -228,35 +228,35 @@ namespace HexapiBackground{
             {
                 case ControllerDirection.Left:
                     _bodyRotX1 = 0;
-                    _bodyRotZ1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 7);
+                    _bodyRotZ1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
                     break;
                 case ControllerDirection.UpLeft:
-                    _bodyRotX1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 7);
-                    _bodyRotZ1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 7);
+                    _bodyRotX1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
+                    _bodyRotZ1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
                     break;
                 case ControllerDirection.UpRight:
-                    _bodyRotX1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 7);
-                    _bodyRotZ1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 7);
+                    _bodyRotX1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
+                    _bodyRotZ1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
                     break;
                 case ControllerDirection.Right:
                     _bodyRotX1 = 0;
-                    _bodyRotZ1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 7);
+                    _bodyRotZ1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
                     break;
                 case ControllerDirection.Up:
-                    _bodyRotX1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 7);
+                    _bodyRotX1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
                     _bodyRotZ1 = 0;
                     break;
                 case ControllerDirection.Down:
-                    _bodyRotX1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 7);
+                    _bodyRotX1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
                     _bodyRotZ1 = 0;
                     break;
                 case ControllerDirection.DownLeft:
-                    _bodyRotZ1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 7);
-                    _bodyRotX1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 7);
+                    _bodyRotZ1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
+                    _bodyRotX1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
                     break;
                 case ControllerDirection.DownRight:
-                    _bodyRotZ1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 7);
-                    _bodyRotX1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 7);
+                    _bodyRotZ1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
+                    _bodyRotX1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
                     break;
             }
 
@@ -269,35 +269,35 @@ namespace HexapiBackground{
             {
                 case ControllerDirection.Left:
                     _bodyPosX = 0;
-                    _bodyPosZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 40);
+                    _bodyPosZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
                     break;
                 case ControllerDirection.UpLeft:
-                    _bodyPosX = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 40);
-                    _bodyPosZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 40);
+                    _bodyPosX = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
+                    _bodyPosZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
                     break;
                 case ControllerDirection.UpRight:
-                    _bodyPosX = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 40);
-                    _bodyPosZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 40);
+                    _bodyPosX = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
+                    _bodyPosZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
                     break;
                 case ControllerDirection.Right:
                     _bodyPosX = 0;
-                    _bodyPosZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 40);
+                    _bodyPosZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
                     break;
                 case ControllerDirection.Up:
-                    _bodyPosX = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 40);
+                    _bodyPosX = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
                     _bodyPosZ = 0;
                     break;
                 case ControllerDirection.Down:
-                    _bodyPosX = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 40);
+                    _bodyPosX = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
                     _bodyPosZ = 0;
                     break;
                 case ControllerDirection.DownLeft:
-                    _bodyPosZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 40);
-                    _bodyPosX = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 40);
+                    _bodyPosZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
+                    _bodyPosX = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
                     break;
                 case ControllerDirection.DownRight:
-                    _bodyPosZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 40);
-                    _bodyPosX = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 40);
+                    _bodyPosZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
+                    _bodyPosX = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
                     break;
             }
 

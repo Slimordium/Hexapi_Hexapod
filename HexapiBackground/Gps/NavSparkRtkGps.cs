@@ -21,7 +21,7 @@ namespace HexapiBackground
 
         public NavSparkGps(bool useRtk)
         {
-            _serialPort = new SerialPort("AI041RYGA", 57600, 2000, 2000); //FTDIBUS\VID_0403+PID_6001+AI041RYGA\0000 --AH03F3RYA
+            //_serialPort = new SerialPort("AI041RYGA", 57600, 2000, 2000); //FTDIBUS\VID_0403+PID_6001+AI041RYGA\0000 --AH03F3RYA
 
             _useRtk = useRtk;
 
@@ -70,25 +70,25 @@ namespace HexapiBackground
                 }
             }
 
-            Task.Factory.StartNew(() =>
-            {
-                Debug.WriteLine("NavSpark RTK GPS Started...");
+            //Task.Factory.StartNew(() =>
+            //{
+            //    Debug.WriteLine("NavSpark RTK GPS Started...");
                 
-                while (true)
-                {
-                    var sentences = _serialPort.ReadString();
+            //    while (true)
+            //    {
+            //        var sentences = _serialPort.ReadString();
 
-                    foreach (var s in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
-                    {
-                        var latLon = GpsHelpers.NmeaParse(s);
+            //        foreach (var s in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
+            //        {
+            //            var latLon = GpsHelpers.NmeaParse(s);
 
-                        if (latLon == null)
-                            continue;
+            //            if (latLon == null)
+            //                continue;
                         
-                        CurrentLatLon = latLon;
-                    }
-                }
-            }, TaskCreationOptions.LongRunning);
+            //            CurrentLatLon = latLon;
+            //        }
+            //    }
+            //}, TaskCreationOptions.LongRunning);
         }
 
         #endregion
