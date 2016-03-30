@@ -5,8 +5,9 @@ using System.Threading.Tasks;
 using HexapiBackground.Enums;
 using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
+using HexapiBackground.Navigation;
 
-namespace HexapiBackground{
+namespace HexapiBackground.IK{
     /// <summary>
     /// This is a port of the "Phoenix" 3DOF Hexapod code in C#. 
     /// </summary>

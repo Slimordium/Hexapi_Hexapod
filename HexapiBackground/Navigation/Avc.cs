@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using HexapiBackground.Hardware;
 
-namespace HexapiBackground{
+namespace HexapiBackground.Navigation{
     internal class Avc
     {
         internal void CheckForObstructions(ref double travelLengthX, ref double travelRotationY, ref double travelLengthZ, ref double nominalGaitSpeed)

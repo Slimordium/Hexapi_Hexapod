@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Windows.ApplicationModel.Background;
 using HexapiBackground.Gps;
 using HexapiBackground.Hardware;
+using HexapiBackground.Navigation;
 
 namespace HexapiBackground
 {
