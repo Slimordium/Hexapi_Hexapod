@@ -95,7 +95,7 @@ namespace HexapiBackground{
                     }
                     else
                     {
-                        if (_legLiftHeight > 10)
+                        if (_legLiftHeight > 20)
                             _legLiftHeight = _legLiftHeight - 5;
                     }
                     break;

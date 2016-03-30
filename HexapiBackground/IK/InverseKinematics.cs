@@ -9,7 +9,9 @@ using HexapiBackground.Navigation;
 
 namespace HexapiBackground.IK{
     /// <summary>
-    /// This is a port of the "Phoenix" 3DOF Hexapod code in C#. 
+    /// This is a port of the "Phoenix" 3DOF Hexapod code in C#. Uses CH3-R body from Lynxmotion/robotshop.com
+    /// https://github.com/KurtE/Arduino_Phoenix_Parts/tree/master/Phoenix
+    /// http://www.robotshop.com/en/lynxmotion-aexapod-ch3-r-combo-kit-body-frame.html
     /// </summary>
     internal sealed class InverseKinematics
     {
@@ -151,8 +153,15 @@ namespace HexapiBackground.IK{
         #endregion
 
         #region Inverse Kinematics setup
-        private const double CPfConst = 650; //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500 was 592
-        private const double PwmDiv = 1059; //old 1059, new 991;
+        // A PWM/deg factor of 10,09 give cPwmDiv = 991 and cPFConst = 592
+        // For a modified 5645 (to 180 deg travel): cPwmDiv = 1500 and cPFConst = 900. 
+        //(I should be able to use 1500 and 900 as my servos will do 180ish degrees)
+        
+        //(Yes I am confused)
+
+        //Not sure on these 2, looking at the Phoenix code, the values are pfConst = 592 and PwmDiv = 991 in some places
+        private const double CPfConst = 900; //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500 was 592
+        private const double PwmDiv = 1500; //old 1059, new 991;
 
         private const double TravelDeadZone = 1;
 
@@ -168,6 +177,49 @@ namespace HexapiBackground.IK{
         private const int CRm = 1;
         private const int CRr = 0;
 
+        /*
+        From: http://forums.trossenrobotics.com/showthread.php?7762-KURT-lt-HELP!!!!!!!!!-Phantom-X-Phoenix-code-to-run-on-my-hexapod
+
+        Min/Max Angles(157-203): these are the approximate minimum and maximum angles each of the servos can move.Assuming coxa 0 point is straight out from robot, Femur 0 is with femur horizontal to ground, and Tibia 0 is with tibia a 90 degree angle from femur (i.e perpendicular to ground). Measurements are in 10ths of degree, so 750 is 75 degrees.
+
+        Leg Dimensions(213-245)
+        Coxa's - horizontal distance between center of coxa servo horn and femur servo horn in mm. Which in your case looks pretty small
+        Femur - Measure straight line between center of femur servo horn and tibia servo(disregard curve)
+        Tibia - center of tibia horn to tip.
+
+        Body Dimensions (250 - 280) - probably OK since using Trossen body.
+
+        Now some harder parts that take experimenting.
+        Start Positions feet(281-320) - First part is trying to figure out the distance the feet are from the coxa servo horn in mm, with the body more or less at the ground.With this you can figure out the X and Z values for each of the legs, where for example the middle legs all of the distance is in the X direction.Where as the Front and rear legs are at something like 60 degrees, so you use the sine and cosine of the angle to calculate the X and Z for each of the legs.
+
+        The CHexInitY value is something I always needs to play with.It is the Y distance from the coxa servo to the ground... Again I often need to muck with this with different setups.
+
+        Now with some robots (possibly yours), the ideal position of the legs may depend on how high up the body is. I allow you change the height using the commander.For example when the body gets up higher you may wish for the legs to be closer in to the body.
+        */
+
+        //For reference... when using the CH3 Hexapod body. Good place to start
+        //
+        //#define cRROffsetX      -69     //Distance X from center of the body to the Right Rear coxa
+        //#define cRROffsetZ      119     //Distance Z from center of the body to the Right Rear coxa
+        //#define cRMOffsetX      -138    //Distance X from center of the body to the Right Middle coxa
+        //#define cRMOffsetZ      0       //Distance Z from center of the body to the Right Middle coxa
+        //#define cRFOffsetX      -69     //Distance X from center of the body to the Right Front coxa
+        //#define cRFOffsetZ      -119    //Distance Z from center of the body to the Right Front coxa
+
+        //#define cLROffsetX      69      //Distance X from center of the body to the Left Rear coxa
+        //#define cLROffsetZ      119     //Distance Z from center of the body to the Left Rear coxa
+        //#define cLMOffsetX      138     //Distance X from center of the body to the Left Middle coxa
+        //#define cLMOffsetZ      0       //Distance Z from center of the body to the Left Middle coxa
+        //#define cLFOffsetX      69      //Distance X from center of the body to the Left Front coxa
+        //#define cLFOffsetZ      -119    //Distance Z from center of the body to the Left Front coxa
+
+        //        //--------------------------------------------------------------------
+        //        //[START POSITIONS FEET]
+        //#define cHexInitXZ	 111 
+        //#define CHexInitXZCos60  56        // COS(60) = .5 for CH3 (I think)
+        //#define CHexInitXZSin60  96    // sin(60) = .866
+        //#define CHexInitY		 65 //30
+
         //All legs being equal, all legs will have the same values
         private const double CoxaMin = -630; //-650 
         private const double CoxaMax = 630; //650
@@ -176,53 +228,67 @@ namespace HexapiBackground.IK{
         private const double TibiaMin = -870; //
         private const double TibiaMax = 870; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
-        private const double CRrCoxaAngle = -600;
+        private const double CRrCoxaAngle = -600; //Might need to be 450? I think 600 is 60 degrees.
         private const double CRmCoxaAngle = 0;
         private const double CRfCoxaAngle = 600;
         private const double CLrCoxaAngle = -600;
         private const double CLmCoxaAngle = 0;
         private const double CLfCoxaAngle = 600;
 
-        private const double CRfOffsetX = -136;
-        private const double CRfOffsetZ = -136;
-        private const double CLfOffsetZ = -136;
-        private const double CLfOffsetX = 136;
-        private const double CRrOffsetZ = 136;
-        private const double CRrOffsetX = -136;
-        private const double CLrOffsetZ = 136;
-        private const double CLrOffsetX = 136;
-        private const double CRmOffsetX = -136;
+
+        //I was using these, which look wrong. But they did "work"
+        //private const double CLfOffsetZ = -136;
+        //private const double CLfOffsetX = 136;
+        //private const double CRrOffsetZ = 136;
+        //private const double CRrOffsetX = -136;
+        //private const double CLrOffsetZ = 136;
+        //private const double CLrOffsetX = 136;
+        //private const double CRmOffsetX = -136;
+        //private const double CRmOffsetZ = 0;
+        //private const double CLmOffsetX = 136;
+        //private const double CLmOffsetZ = 0;
+
+        private const double CRfOffsetZ = -119; //Distance Z from center of the body to the coxa
+        private const double CRfOffsetX = -69; //Distance X from center of the body to the coxa
+        private const double CLfOffsetZ = -119;
+        private const double CLfOffsetX = 69;
+        private const double CRrOffsetZ = 119;
+        private const double CRrOffsetX = -69;
+        private const double CLrOffsetZ = 119;
+        private const double CLrOffsetX = 69;
         private const double CRmOffsetZ = 0;
-        private const double CLmOffsetX = 136;
+        private const double CRmOffsetX = -119;
         private const double CLmOffsetZ = 0;
+        private const double CLmOffsetX = 119;
 
         private const double CoxaLength = 36; //mm
         private const double FemurLength = 74; //mm
         private const double TibiaLength = 123; //mm
 
-        private const double CHexInitXz = 110; 
-        private const double CHexInitXzCos45 = 77.78; // Cos(45) = .7071
-        private const double CHexInitXzSin45 = 77.78; // Sin(45) = .7071
+        //Foot start positions
+        private const double CHexInitXz = 110; //Coxa + Femur, Cos/Sin calculations use this number
+        private const double CHexInitXzCos60 = 55; // (.5) not Cos(60) = .7071 ?
+        private const double CHexInitXzSin60 = 95.26; //(.866) not Sin(60) = .7071 ?
         private const double CHexInitY = 45; 
 
-        private const double CRfInitPosX = CHexInitXzCos45;
+        private const double CRfInitPosX = CHexInitXzCos60;
         private const double CRfInitPosY = CHexInitY;
-        private const double CRfInitPosZ = -CHexInitXzSin45;
-        private const double CLrInitPosX = CHexInitXzCos45;
+        private const double CRfInitPosZ = -CHexInitXzSin60;
+        private const double CLrInitPosX = CHexInitXzCos60;
         private const double CLrInitPosY = CHexInitY;
-        private const double CLrInitPosZ = CHexInitXzCos45;
+        private const double CLrInitPosZ = CHexInitXzCos60;
         private const double CLmInitPosX = CHexInitXz;
         private const double CLmInitPosY = CHexInitY;
         private const double CLmInitPosZ = 0;
-        private const double CLfInitPosX = CHexInitXzCos45;
+        private const double CLfInitPosX = CHexInitXzCos60;
         private const double CLfInitPosY = CHexInitY;
-        private const double CLfInitPosZ = -CHexInitXzSin45;
+        private const double CLfInitPosZ = -CHexInitXzSin60;
         private const double CRmInitPosX = CHexInitXz;
         private const double CRmInitPosY = CHexInitY;
         private const double CRmInitPosZ = 0;
-        private const double CRrInitPosX = CHexInitXzCos45;
+        private const double CRrInitPosX = CHexInitXzCos60;
         private const double CRrInitPosY = CHexInitY;
-        private const double CRrInitPosZ = CHexInitXzSin45;
+        private const double CRrInitPosZ = CHexInitXzSin60;
 
         private readonly double[] _cInitPosX = { CRrInitPosX, CRmInitPosX, CRfInitPosX, CLrInitPosX, CLmInitPosX, CLfInitPosX };
         private readonly double[] _cInitPosY = { CRrInitPosY, CRmInitPosY, CRfInitPosY, CLrInitPosY, CLmInitPosY, CLfInitPosY };
