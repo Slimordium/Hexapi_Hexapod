@@ -114,6 +114,7 @@
     <Compile Include="Gps\NavSparkRtkGps.cs" />
     <Compile Include="Gps\NtripClient_Fona.cs" />
     <Compile Include="Hardware\AdafruitFona.cs" />
+    <Compile Include="Hardware\RemoteArduino.cs" />
     <Compile Include="Helpers\GpsHelpers.cs" />
     <Compile Include="Helpers\FileHelpers.cs" />
     <Compile Include="Gps\NtripClient_Tcp.cs" />

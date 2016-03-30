@@ -7,9 +7,9 @@ namespace HexapiBackground.Gps
 {
     internal class NtripClientFona
     {
-        private static readonly Encoding _encoding = new ASCIIEncoding();
+        private static readonly Encoding Encoding = new ASCIIEncoding();
         private readonly string _ntripIpAddress;
-        private readonly string _ntripMountPoint; //P041_RTCM
+        private readonly string _ntripMountPoint; //P041_RTCM3
         private readonly int _ntripPort;
         private readonly string _password;
         private readonly SerialPort _serialPort;
@@ -73,7 +73,7 @@ namespace HexapiBackground.Gps
 
         private static string ToBase64(string str)
         {
-            var byteArray = _encoding.GetBytes(str);
+            var byteArray = Encoding.GetBytes(str);
             return Convert.ToBase64String(byteArray, 0, byteArray.Length);
         }
     }

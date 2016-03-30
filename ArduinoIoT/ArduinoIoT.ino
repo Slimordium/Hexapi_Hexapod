@@ -782,11 +782,7 @@ void setup()
 
 }
 
-
-/*==============================================================================
-* LOOP()
-*============================================================================*/
-void loop()
+String Ping()
 {
 	String left = String(Ping(1), DEC);
 	delay(30);
@@ -794,14 +790,29 @@ void loop()
 	delay(30);
 	String right = String(Ping(3), DEC);
 
-	String toSend = String(left + "," + center + "," + right);
+	String toSend = String("$Ping:" + left + "," + center + "," + right);
 
 	char chars[24];
 
 	toSend.toCharArray(chars, 24);
 
-	Firmata.sendString(chars);
+	return toSend;
+}
+
+
+/*==============================================================================
+* LOOP()
+*============================================================================*/
+void loop()
+{
+
+
+	Firmata.sendString(Ping());
 	delay(30);
+
+
+
+
 	//byte pin, analogPin;
 
 	/* DIGITALREAD - as fast as possible, check for changes and output them to the

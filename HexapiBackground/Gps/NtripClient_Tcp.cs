@@ -11,9 +11,8 @@ namespace HexapiBackground
 {
     internal class NtripClientTcp
     {
-        private static readonly Encoding _encoding = new ASCIIEncoding();
+        private static readonly Encoding Encoding = new ASCIIEncoding();
         private readonly IPEndPoint _endPoint;
-
         private readonly ManualResetEventSlim _manualResetEventSlim = new ManualResetEventSlim(false);
         private readonly string _ntripMountPoint; //P041_RTCM3
         private readonly string _password;
@@ -33,7 +32,8 @@ namespace HexapiBackground
         /// <param name="userName"></param>
         /// <param name="password"></param>
         /// <param name="serialPort"></param>
-        public NtripClientTcp(string ntripIpAddress, int ntripPort, string ntripMountPoint, string userName, string password, SerialPort serialPort)
+        public NtripClientTcp(string ntripIpAddress, int ntripPort, string ntripMountPoint, string userName,
+            string password, SerialPort serialPort)
         {
             Debug.WriteLine($"Using http:\\\\{ntripIpAddress}:{ntripPort}\\{ntripMountPoint}");
 
@@ -152,11 +152,7 @@ namespace HexapiBackground
                     return;
                 }
 
-                //var stringData = Encoding.ASCII.GetString(eventArgs.BufferList[0].Array, eventArgs.Offset, eventArgs.BytesTransferred);
-
                 SendToGps(data);
-
-                //Debug.WriteLine(stringData);
 
                 Debug.WriteLine($"Bytes : {eventArgs.BytesTransferred}");
 
@@ -192,7 +188,7 @@ namespace HexapiBackground
 
         internal static string ToBase64(string str)
         {
-            var byteArray = _encoding.GetBytes(str);
+            var byteArray = Encoding.GetBytes(str);
             return Convert.ToBase64String(byteArray, 0, byteArray.Length);
         }
     }
