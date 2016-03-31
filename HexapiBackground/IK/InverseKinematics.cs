@@ -19,6 +19,7 @@ namespace HexapiBackground.IK{
         private readonly SerialPort _serialPort;
         private readonly Stopwatch _sw = new Stopwatch();
         private readonly Avc _avc;
+        private static readonly StringBuilder StringBuilder = new StringBuilder();
 
         internal InverseKinematics(Avc avc = null)
         {
@@ -564,12 +565,12 @@ namespace HexapiBackground.IK{
         }
         #endregion
 
-        private static readonly StringBuilder _stringBuilder = new StringBuilder();
-
         #region Servo related, build various servo controller strings and read values
         private static string UpdateServoPositions(double[] coxaAngles, double[] femurAngles, double[] tibiaAngles)
         {
-            _stringBuilder.Clear();
+            StringBuilder.Clear();
+
+            var gaitSpeed = _nominalGaitSpeed - 5;
 
             for (var legIndex = 0; legIndex <= 5; legIndex++)
             {
@@ -594,14 +595,14 @@ namespace HexapiBackground.IK{
                     tibiaPosition = Math.Round((tibiaAngles[legIndex] + 900) * 1000 / PwmDiv + CPfConst);
                 }
 
-                _stringBuilder.Append($"#{LegServos[legIndex][0]}P{coxaPosition}");
-                _stringBuilder.Append($"#{LegServos[legIndex][1]}P{femurPosition}");
-                _stringBuilder.Append($"#{LegServos[legIndex][2]}P{tibiaPosition}");
+                StringBuilder.Append($"#{LegServos[legIndex][0]}P{coxaPosition}");
+                StringBuilder.Append($"#{LegServos[legIndex][1]}P{femurPosition}");
+                StringBuilder.Append($"#{LegServos[legIndex][2]}P{tibiaPosition}");
             }
 
-            _stringBuilder.Append($"T{_nominalGaitSpeed}\r");
+            StringBuilder.Append($"T{gaitSpeed}\r");
 
-            return _stringBuilder.ToString();
+            return StringBuilder.ToString();
         }
 
         private void TurnOffServos()

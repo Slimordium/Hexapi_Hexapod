@@ -797,9 +797,9 @@ String SendPings()
 
 	String toSend = String("$Ping:" + left + "," + center + "," + right);
 
-	char chars[24];
+	//char chars[24];
 
-	toSend.toCharArray(chars, 24);
+	//toSend.toCharArray(chars, 24);
 
 	return toSend;
 }
@@ -861,11 +861,17 @@ void loop()
 	//Get RTK correction data, and then send to the GPS
 	if (Serial2.available())
 	{
-		byte rtkCorrectionData = Serial2.readBytes();
+		uint8_t rtkCorrectionData = Serial2.readBytes();
 		Serial1.write(rtkCorrectionData);
 	}
 	
-	Firmata.sendString(SendPings());
+	String toSend = SendPings();
+
+	char chars[24];
+
+	toSend.toCharArray(chars, 24);
+
+	Firmata.sendString(chars);
 	delay(30);
 	
 	//byte pin, analogPin;
@@ -902,7 +908,7 @@ void loop()
 	//}
 }
 
-long Ping(int sensor)
+String Ping(int sensor)
 {
 	int trigPin;
 	int echoPin;
@@ -931,6 +937,8 @@ long Ping(int sensor)
 
 	long duration = pulseIn(echoPin, HIGH);
 
-	return duration;
+	String r = String(duration, DEC);
+
+	return r;
 }
 
