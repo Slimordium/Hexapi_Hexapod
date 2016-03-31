@@ -22,14 +22,14 @@ namespace HexapiBackground
             SerialPort.ListAvailablePorts();
 
             //These are all optional----
-            var remoteArduino = new RemoteArduino(); //Only need this if using the PingSensors or the RemoteArduinoRtkGps
-            var gps = new RemoteArduinoRtkGps(); //NavSparkRtkGps, UltimateGps
-            var pingSensors = new PingSensors();
-            var avc = new Avc();
-            gps.Start();
+            //var remoteArduino = new RemoteArduino(); //Only need this if using the PingSensors or the RemoteArduinoRtkGps
+            //var gps = new RemoteArduinoRtkGps(); //NavSparkRtkGps, UltimateGps
+            //var pingSensors = new PingSensors();
+            //var avc = new Avc();
+            //gps.Start();
             //--------------------------
 
-            var hexapi = new Hexapi(gps, avc);
+            var hexapi = new Hexapi();//new Hexapi(gps, avc)
             hexapi.Start();
         }
 

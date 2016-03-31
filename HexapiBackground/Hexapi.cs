@@ -26,7 +26,7 @@ namespace HexapiBackground{
         private double _travelRotationY;
 
         private GaitType _gaitType = GaitType.Tripod8Steps;
-        private double _bodyPosY = 30;
+        private double _bodyPosY = 0;
         private double _bodyRotX1;
         private double _bodyRotZ1;
         private double _bodyPosX;
@@ -169,14 +169,14 @@ namespace HexapiBackground{
                     }
                     break;
                 case ControllerDirection.Up:
-                    if (_bodyPosY < 110)
+                    if (_bodyPosY < 90)
                     {
                         _bodyPosY = _bodyPosY + 5;
                         _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);
                     }
                     break;
                 case ControllerDirection.Down:
-                    if (_bodyPosY > 20)
+                    if (_bodyPosY > 5)
                     {
                         _bodyPosY = _bodyPosY - 5;
                         _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);

@@ -85,10 +85,10 @@ namespace HexapiBackground.IK{
         internal void Start()
         {
             _gaitStep = 0;
-            _nominalGaitSpeed = 65;
+            _nominalGaitSpeed = 65; //ms
             _legLiftHeight = 20;
             _gaitType = GaitType.Tripod8Steps;
-            _bodyPosY = 30;
+            _bodyPosY = 0; //Height of body in mm from ground
 
             GaitSelect();
 
@@ -146,22 +146,16 @@ namespace HexapiBackground.IK{
                 _serialPort.Write(positions);
 
                 while (_sw.ElapsedMilliseconds < (startMs + _nominalGaitSpeed)) {  }
-                //_sw.Restart();
+
                 startMs = _sw.ElapsedMilliseconds;
             }
         }
         #endregion
 
         #region Inverse Kinematics setup
-        // A PWM/deg factor of 10,09 give cPwmDiv = 991 and cPFConst = 592
-        // For a modified 5645 (to 180 deg travel): cPwmDiv = 1500 and cPFConst = 900. 
-        //(I should be able to use 1500 and 900 as my servos will do 180ish degrees)
         
-        //(Yes I am confused)
-
-        //Not sure on these 2, looking at the Phoenix code, the values are pfConst = 592 and PwmDiv = 991 in some places
-        private const double CPfConst = 900; //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500 was 592
-        private const double PwmDiv = 1500; //old 1059, new 991;
+        private const double CPfConst = 592; //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500 was 592
+        private const double PwmDiv = 991; //old 1059, new 991;
 
         private const double TravelDeadZone = 1;
 
@@ -177,49 +171,6 @@ namespace HexapiBackground.IK{
         private const int CRm = 1;
         private const int CRr = 0;
 
-        /*
-        From: http://forums.trossenrobotics.com/showthread.php?7762-KURT-lt-HELP!!!!!!!!!-Phantom-X-Phoenix-code-to-run-on-my-hexapod
-
-        Min/Max Angles(157-203): these are the approximate minimum and maximum angles each of the servos can move.Assuming coxa 0 point is straight out from robot, Femur 0 is with femur horizontal to ground, and Tibia 0 is with tibia a 90 degree angle from femur (i.e perpendicular to ground). Measurements are in 10ths of degree, so 750 is 75 degrees.
-
-        Leg Dimensions(213-245)
-        Coxa's - horizontal distance between center of coxa servo horn and femur servo horn in mm. Which in your case looks pretty small
-        Femur - Measure straight line between center of femur servo horn and tibia servo(disregard curve)
-        Tibia - center of tibia horn to tip.
-
-        Body Dimensions (250 - 280) - probably OK since using Trossen body.
-
-        Now some harder parts that take experimenting.
-        Start Positions feet(281-320) - First part is trying to figure out the distance the feet are from the coxa servo horn in mm, with the body more or less at the ground.With this you can figure out the X and Z values for each of the legs, where for example the middle legs all of the distance is in the X direction.Where as the Front and rear legs are at something like 60 degrees, so you use the sine and cosine of the angle to calculate the X and Z for each of the legs.
-
-        The CHexInitY value is something I always needs to play with.It is the Y distance from the coxa servo to the ground... Again I often need to muck with this with different setups.
-
-        Now with some robots (possibly yours), the ideal position of the legs may depend on how high up the body is. I allow you change the height using the commander.For example when the body gets up higher you may wish for the legs to be closer in to the body.
-        */
-
-        //For reference... when using the CH3 Hexapod body. Good place to start
-        //
-        //#define cRROffsetX      -69     //Distance X from center of the body to the Right Rear coxa
-        //#define cRROffsetZ      119     //Distance Z from center of the body to the Right Rear coxa
-        //#define cRMOffsetX      -138    //Distance X from center of the body to the Right Middle coxa
-        //#define cRMOffsetZ      0       //Distance Z from center of the body to the Right Middle coxa
-        //#define cRFOffsetX      -69     //Distance X from center of the body to the Right Front coxa
-        //#define cRFOffsetZ      -119    //Distance Z from center of the body to the Right Front coxa
-
-        //#define cLROffsetX      69      //Distance X from center of the body to the Left Rear coxa
-        //#define cLROffsetZ      119     //Distance Z from center of the body to the Left Rear coxa
-        //#define cLMOffsetX      138     //Distance X from center of the body to the Left Middle coxa
-        //#define cLMOffsetZ      0       //Distance Z from center of the body to the Left Middle coxa
-        //#define cLFOffsetX      69      //Distance X from center of the body to the Left Front coxa
-        //#define cLFOffsetZ      -119    //Distance Z from center of the body to the Left Front coxa
-
-        //        //--------------------------------------------------------------------
-        //        //[START POSITIONS FEET]
-        //#define cHexInitXZ	 111 
-        //#define CHexInitXZCos60  56        // COS(60) = .5 for CH3 (I think)
-        //#define CHexInitXZSin60  96    // sin(60) = .866
-        //#define CHexInitY		 65 //30
-
         //All legs being equal, all legs will have the same values
         private const double CoxaMin = -630; //-650 
         private const double CoxaMax = 630; //650
@@ -228,28 +179,15 @@ namespace HexapiBackground.IK{
         private const double TibiaMin = -870; //
         private const double TibiaMax = 870; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
-        private const double CRrCoxaAngle = -600; //Might need to be 450? I think 600 is 60 degrees.
+        private const double CRrCoxaAngle = -450; //45 degrees
         private const double CRmCoxaAngle = 0;
-        private const double CRfCoxaAngle = 600;
-        private const double CLrCoxaAngle = -600;
+        private const double CRfCoxaAngle = 450;
+        private const double CLrCoxaAngle = -450;
         private const double CLmCoxaAngle = 0;
-        private const double CLfCoxaAngle = 600;
-
-
-        //I was using these, which look wrong. But they did "work"
-        //private const double CLfOffsetZ = -136;
-        //private const double CLfOffsetX = 136;
-        //private const double CRrOffsetZ = 136;
-        //private const double CRrOffsetX = -136;
-        //private const double CLrOffsetZ = 136;
-        //private const double CLrOffsetX = 136;
-        //private const double CRmOffsetX = -136;
-        //private const double CRmOffsetZ = 0;
-        //private const double CLmOffsetX = 136;
-        //private const double CLmOffsetZ = 0;
-
-        private const double CRfOffsetZ = -119; //Distance Z from center of the body to the coxa
-        private const double CRfOffsetX = -69; //Distance X from center of the body to the coxa
+        private const double CLfCoxaAngle = 450;
+        
+        private const double CRfOffsetZ = -119; //Distance Z from center line that crosses from front/back of the body to the coxa (Z front/back)
+        private const double CRfOffsetX = -69; //Distance X from center like that crosses left/right of the body to the coxa (X side to side)
         private const double CLfOffsetZ = -119;
         private const double CLfOffsetX = 69;
         private const double CRrOffsetZ = 119;
@@ -257,38 +195,43 @@ namespace HexapiBackground.IK{
         private const double CLrOffsetZ = 119;
         private const double CLrOffsetX = 69;
         private const double CRmOffsetZ = 0;
-        private const double CRmOffsetX = -119;
+        private const double CRmOffsetX = -138;
         private const double CLmOffsetZ = 0;
-        private const double CLmOffsetX = 119;
+        private const double CLmOffsetX = 138;
 
-        private const double CoxaLength = 36; //mm
-        private const double FemurLength = 74; //mm
-        private const double TibiaLength = 123; //mm
+        private const double CoxaLength = 32.5; //mm
+        private const double FemurLength = 72.5; //mm
+        private const double TibiaLength = 125; //mm
 
         //Foot start positions
-        private const double CHexInitXz = 110; //Coxa + Femur, Cos/Sin calculations use this number
-        private const double CHexInitXzCos60 = 55; // (.5) not Cos(60) = .7071 ?
-        private const double CHexInitXzSin60 = 95.26; //(.866) not Sin(60) = .7071 ?
-        private const double CHexInitY = 45; 
-
-        private const double CRfInitPosX = CHexInitXzCos60;
+        private const double CHexInitXz = CoxaLength + FemurLength; //This determins how far the feet are from the body.
+        private const double CHexInitXzCos45 = CHexInitXz * .7071; //Use .7071 when using a round body with legs 45 degrees apart
+        private const double CHexInitXzSin45 = CHexInitXz * .7071; 
+        private const double CHexInitY = 70; 
+         
+        private const double CRfInitPosX = CHexInitXzCos45;
         private const double CRfInitPosY = CHexInitY;
-        private const double CRfInitPosZ = -CHexInitXzSin60;
-        private const double CLrInitPosX = CHexInitXzCos60;
+        private const double CRfInitPosZ = -CHexInitXzSin45;
+
+        private const double CLrInitPosX = CHexInitXzCos45;
         private const double CLrInitPosY = CHexInitY;
-        private const double CLrInitPosZ = CHexInitXzCos60;
+        private const double CLrInitPosZ = CHexInitXzCos45;
+
         private const double CLmInitPosX = CHexInitXz;
         private const double CLmInitPosY = CHexInitY;
         private const double CLmInitPosZ = 0;
-        private const double CLfInitPosX = CHexInitXzCos60;
+
+        private const double CLfInitPosX = CHexInitXzCos45;
         private const double CLfInitPosY = CHexInitY;
-        private const double CLfInitPosZ = -CHexInitXzSin60;
+        private const double CLfInitPosZ = -CHexInitXzSin45;
+
         private const double CRmInitPosX = CHexInitXz;
         private const double CRmInitPosY = CHexInitY;
         private const double CRmInitPosZ = 0;
-        private const double CRrInitPosX = CHexInitXzCos60;
+
+        private const double CRrInitPosX = CHexInitXzCos45;
         private const double CRrInitPosY = CHexInitY;
-        private const double CRrInitPosZ = CHexInitXzSin60;
+        private const double CRrInitPosZ = CHexInitXzSin45;
 
         private readonly double[] _cInitPosX = { CRrInitPosX, CRmInitPosX, CRfInitPosX, CLrInitPosX, CLmInitPosX, CLfInitPosX };
         private readonly double[] _cInitPosY = { CRrInitPosY, CRmInitPosY, CRfInitPosY, CLrInitPosY, CLmInitPosY, CLfInitPosY };
@@ -303,18 +246,18 @@ namespace HexapiBackground.IK{
         private readonly double[] _femurAngle1 = new double[6]; //Actual Angle of the vertical hip, decimals = 1
         private readonly double[] _tibiaAngle1 = new double[6]; //Actual Angle of the knee, decimals = 1
 
-        private readonly int[] _gaitLegNr = new int[6]; //Init position of the leg
+        private readonly int[] _gaitLegNr = new int[6]; //Initial position of the leg
 
         private double[] _gaitPosX = new double[6];//Array containing Relative X position corresponding to the Gait
         private double[] _gaitPosY = new double[6];//Array containing Relative Y position corresponding to the Gait
         private double[] _gaitPosZ = new double[6];//Array containing Relative Z position corresponding to the Gait
         private double[] _gaitRotY = new double[6];//Array containing Relative Y rotation corresponding to the Gait
 
-        private readonly double[] _legPosX = new double[6]; //Actual X Position of the Leg should be length of 6
+        private readonly double[] _legPosX = new double[6]; //Actual X Position of the Leg 
         private readonly double[] _legPosY = new double[6]; //Actual Y Position of the Leg
         private readonly double[] _legPosZ = new double[6]; //Actual Z Position of the Leg
 
-        private static volatile int _lastLeg; //TRUE when the current leg is the last leg of the sequence
+        private static int _lastLeg; //true = the current leg is the last leg of the sequence
 
         private int _liftDivFactor; //Normaly: 2, when NrLiftedPos=5: 4
         private int _numberOfLiftedPositions; //Number of positions that a single leg is lifted [1-3]
@@ -323,23 +266,23 @@ namespace HexapiBackground.IK{
         private bool _travelRequest; //Temp to check if the gait is in motion
 
         private double _bodyPosX; //Global Input for the position of the body
-        private double _bodyPosY = 60; //Controls height of the body from the ground
+        private double _bodyPosY; //Controls height of the body from the ground
         private double _bodyPosZ;
 
         private double _bodyRotX1; //Global Input pitch of the body
         private double _bodyRotY1; //Global Input rotation of the body
         private double _bodyRotZ1; //Global Input roll of the body
 
-        private int _halfLiftHeight; //If TRUE the outer positions of the ligted legs will be half height    
+        private int _halfLiftHeight; //If true the outer positions of the ligted legs will be half height    
         private double _legLiftHeight; //Current Travel height
 
-        private static volatile int _gaitStep;
+        private static int _gaitStep;
         private GaitType _gaitType;
-        private static double _nominalGaitSpeed = 40; //Nominal speed of the gait in MS
+        private static double _nominalGaitSpeed = 65; //Nominal speed of the gait in ms
 
-        private double _travelLengthX; //Current Travel length X
+        private double _travelLengthX; //Current Travel length X - Left/Right
         private double _travelLengthZ; //Current Travel length Z - Negative numbers = "forward" movement.
-        private double _travelRotationY; //Current Travel Rotation Y
+        private double _travelRotationY; //Current Travel Rotation Y 
 
         private static readonly int[][] LegServos = new int[6][];
 
@@ -707,12 +650,9 @@ namespace HexapiBackground.IK{
                 Debug.WriteLine(e);
             }
         }
-
         #endregion
 
         #region MathHelpers, and static methods
-
-
         private static void GetSinCos(double angleDeg, out double sin, out double cos)
         {
             var angle = Math.PI * angleDeg / 180.0;
