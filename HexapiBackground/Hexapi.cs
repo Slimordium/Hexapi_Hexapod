@@ -18,14 +18,14 @@ namespace HexapiBackground{
         private bool _isMovementStarted = false;
 
         private double _legLiftHeight = 20;
-        private double _nomGaitSpeed = 65;
+        private double _nomGaitSpeed = 50;
         private SelectedFunction _selectedFunction = SelectedFunction.GaitSpeed;
 
         private double _travelLengthX; 
         private double _travelLengthZ; 
         private double _travelRotationY;
 
-        private GaitType _gaitType = GaitType.Tripod8Steps;
+        private GaitType _gaitType = GaitType.TripleTripod16Steps;
         private double _bodyPosY = 0;
         private double _bodyRotX1;
         private double _bodyRotZ1;
@@ -81,7 +81,7 @@ namespace HexapiBackground{
                     }
                     else
                     {
-                        if (_nomGaitSpeed > 40)
+                        if (_nomGaitSpeed > 45)
                         {
                             _nomGaitSpeed = _nomGaitSpeed - 5;
                         }
@@ -214,11 +214,11 @@ namespace HexapiBackground{
                     _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 130);
                     break;
                 case ControllerDirection.Up:
-                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 170);
+                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 190);
                     _travelRotationY = 0;
                     break;
                 case ControllerDirection.Down:
-                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 170);
+                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 190);
                     _travelRotationY = 0;
                     break;
             }

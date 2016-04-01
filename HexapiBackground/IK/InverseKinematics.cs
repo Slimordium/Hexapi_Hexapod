@@ -86,9 +86,9 @@ namespace HexapiBackground.IK{
         internal void Start()
         {
             _gaitStep = 0;
-            _nominalGaitSpeed = 65; //ms
+            _nominalGaitSpeed = 50; //ms
             _legLiftHeight = 20;
-            _gaitType = GaitType.Tripod8Steps;
+            _gaitType = GaitType.TripleTripod12Steps;
             _bodyPosY = 0; //Height of body in mm from ground
 
             GaitSelect();
@@ -279,7 +279,7 @@ namespace HexapiBackground.IK{
 
         private static int _gaitStep;
         private GaitType _gaitType;
-        private static double _nominalGaitSpeed = 65; //Nominal speed of the gait in ms
+        private static double _nominalGaitSpeed = 50; //Nominal speed of the gait in ms
 
         private double _travelLengthX; //Current Travel length X - Left/Right
         private double _travelLengthZ; //Current Travel length Z - Negative numbers = "forward" movement.
@@ -570,7 +570,7 @@ namespace HexapiBackground.IK{
         {
             StringBuilder.Clear();
 
-            var gaitSpeed = _nominalGaitSpeed - 5;
+            var gaitSpeed = _nominalGaitSpeed - 3;
 
             for (var legIndex = 0; legIndex <= 5; legIndex++)
             {

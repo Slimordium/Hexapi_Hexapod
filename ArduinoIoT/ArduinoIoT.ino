@@ -817,8 +817,10 @@ void SendPings()
 
 void OpenTcpConnection()
 {
-  Serial2.write("AT+CGATT?\r"); //Get GPRS Service status
-  //Debug.WriteLine($"GPRS Status: {_serialPort.ReadFonaLine()}");
+	Serial2.write("ATE0\r"); //Get GPRS Service status
+
+	Serial2.write("AT+CGATT?\r"); //Get GPRS Service status
+	//Debug.WriteLine($"GPRS Status: {_serialPort.ReadFonaLine()}");
 
 Serial.write(Serial2.read());
   delay(100);
@@ -829,7 +831,7 @@ Serial.write(Serial2.read());
   Serial.write(Serial2.read());
   delay(250);
 
-  Serial2.write("at+cstt=\"wholesale\",\"\",\"\"\r"); //Set APN and start task
+  Serial2.write("at+cstt=\"wholesale\"\r"); //Set APN and start task
   //Debug.WriteLine($"APN Command: {_serialPort.ReadFonaLine()}");
 
 Serial.write(Serial2.read());
