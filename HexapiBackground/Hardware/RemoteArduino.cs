@@ -13,7 +13,7 @@ namespace HexapiBackground.Hardware
     internal sealed class RemoteArduino
     {
         private IStream _connection;
-        private RemoteDevice _arduino;
+        internal static RemoteDevice Arduino { get; private set; }
 
         public static List<Action<string>> StringReceivedActions { get; set; }
         public static List<Action<byte, PinState>>  DigitalPinUpdatedActions { get; set; }
@@ -34,7 +34,7 @@ namespace HexapiBackground.Hardware
                 while (_connection == null)
                 {
                     var deviceInformationCollection = await DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector());
-                    var selectedPort = deviceInformationCollection.FirstOrDefault(d => d.Id.Contains("AI041V40A"));//AI041V40A is the serial number of the FTDI chip on the SparkFun USB/Serial adapter
+                    var selectedPort = deviceInformationCollection.FirstOrDefault(d => d.Id.Contains("A104OHRXA"));//AI041V40A is the serial number of the FTDI chip on the SparkFun USB/Serial adapter
 
                     if (selectedPort == null)
                     {
@@ -73,17 +73,17 @@ namespace HexapiBackground.Hardware
         private void Connection_ConnectionEstablished()
         {
             Debug.WriteLine("Serial connection for the Arduino to the FTDI UART established");
-            _arduino = new RemoteDevice(_connection);
-            _arduino.DeviceConnectionFailed += Arduino_DeviceConnectionFailed;
-            _arduino.DeviceReady += Arduino_DeviceReady;
+            Arduino = new RemoteDevice(_connection);
+            Arduino.DeviceConnectionFailed += Arduino_DeviceConnectionFailed;
+            Arduino.DeviceReady += Arduino_DeviceReady;
         }
 
         private void Arduino_DeviceReady()
         {
             Debug.WriteLine("Arduino communication successfully negotiated");
 
-            _arduino.DigitalPinUpdated += Arduino_DigitalPinUpdated;
-            _arduino.StringMessageReceived += Arduino_StringMessageReceived;
+            Arduino.DigitalPinUpdated += Arduino_DigitalPinUpdated;
+            Arduino.StringMessageReceived += Arduino_StringMessageReceived;
         }
 
         private void Arduino_StringMessageReceived(string message)

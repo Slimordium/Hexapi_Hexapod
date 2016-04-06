@@ -77,7 +77,11 @@ namespace HexapiBackground.Gps.Ntrip
             msg += "Accept: */*\r\nConnection: close\r\n";
             msg += "\r\n";
 
-            return Encoding.ASCII.GetBytes(msg);
+            var r = Encoding.ASCII.GetBytes(msg);
+
+            Debug.WriteLine(r);
+
+            return r;
         }
 
         internal void Connect()

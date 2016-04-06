@@ -6,6 +6,7 @@ using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
 using HexapiBackground.IK;
 using HexapiBackground.Navigation;
+using Microsoft.Maker.RemoteWiring;
 
 // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
 
@@ -115,7 +116,15 @@ namespace HexapiBackground{
                     _selectedFunction = SelectedFunction.LegHeight;
                     break;
                 case 2: //X
-                    _selectedFunction = SelectedFunction.TranslateHorizontal;
+                    //_selectedFunction = SelectedFunction.TranslateHorizontal;
+
+                    Task.Factory.StartNew(async() => //This fires a dart from the Dream Cheeky (thinkgeek) usb nerf dart launcher. 
+                    {
+                        RemoteArduino.Arduino.digitalWrite(7, PinState.HIGH);
+                        await Task.Delay(3000);
+                        RemoteArduino.Arduino.digitalWrite(7, PinState.LOW);
+                    });
+
                     break;
                 case 3: //Y
                     _selectedFunction = SelectedFunction.Translate3D;

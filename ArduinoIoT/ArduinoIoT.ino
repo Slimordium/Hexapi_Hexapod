@@ -23,6 +23,7 @@ See file LICENSE.txt for further informations on licensing terms.
 Last updated by Jeff Hoefs: December 26th, 2015
 */
 
+
 #include <SoftwareSerial.h>
 #include <Boards.h>
 #include <Servo.h>
@@ -749,34 +750,29 @@ void setup()
 {
 	Firmata.setFirmwareVersion(FIRMATA_FIRMWARE_MAJOR_VERSION, FIRMATA_FIRMWARE_MINOR_VERSION);
 
-	//Firmata.attach(ANALOG_MESSAGE, analogWriteCallback);
-	//Firmata.attach(DIGITAL_MESSAGE, digitalWriteCallback);
-	//Firmata.attach(REPORT_ANALOG, reportAnalogCallback);
-	//Firmata.attach(REPORT_DIGITAL, reportDigitalCallback);
+	////Firmata.attach(ANALOG_MESSAGE, analogWriteCallback);
+	Firmata.attach(DIGITAL_MESSAGE, digitalWriteCallback);
+	////Firmata.attach(REPORT_ANALOG, reportAnalogCallback);
+	////Firmata.attach(REPORT_DIGITAL, reportDigitalCallback);
 	Firmata.attach(SET_PIN_MODE, setPinModeCallback);
 	Firmata.attach(SET_DIGITAL_PIN_VALUE, setPinValueCallback);
 	Firmata.attach(START_SYSEX, sysexCallback);
 	Firmata.attach(SYSTEM_RESET, systemResetCallback);
+	
+	Serial3.begin(57600);
+	Firmata.begin(Serial3);
 
-	// to use a port other than Serial, such as Serial1 on an Arduino Leonardo or Mega,
-	// Call begin(baud) on the alternate serial port and pass it to Firmata to begin like this:
-	// Serial1.begin(57600);
-	// Firmata.begin(Serial1);
-	// then comment out or remove lines 701 - 704 below
+	while (!Serial3) {
+	// wait for serial port to connect. Needed for ATmega32u4-based boards and Arduino 101
+	}
 
-	//Firmata.begin(57600);
-	//while (!Serial) {
-	//  ; // wait for serial port to connect. Needed for ATmega32u4-based boards and Arduino 101
-	//}
-	//systemResetCallback();  // reset to default config
+	systemResetCallback();  // reset to default config
 
-	disableI2CPins();
+	//disableI2CPins();
 
-	pinMode(2, OUTPUT);
-	digitalWrite(2, HIGH);
-
-	delay(5000);
-
+	//pinMode(2, OUTPUT);
+	//digitalWrite(2, LOW);
+	
 	pinMode(leftTrigPin, OUTPUT); //trig
 	pinMode(leftEchoPin, INPUT); //echo
 
@@ -786,146 +782,162 @@ void setup()
 	pinMode(rightTrigPin, OUTPUT); //trig
 	pinMode(rightEchoPin, INPUT); //echo
 
-	Serial.begin(57600);
-	Serial1.begin(57600); //RTK GPS module
-	Serial2.begin(57600); //Cell modem for RTK Corrections
+	Serial.begin(57600); //Debug
+	//Serial1.begin(57600); //RTK GPS module
+	//Serial2.begin(57600); //Cell modem for RTK Corrections
 
-	delay(1500);
-	OpenTcpConnection();
+	//OpenTcpConnection();
 }
 
-char gpsData[256];
-char rtkData[256];
+char gpsData[512];
+char rtkData[512];
 char pingData[24];
+char readBuffer[256];
 
-void SendPings()
+void PingAll()
 {
 	String left = Ping(1);
-	delay(30);
-	String center = Ping(2);
-	delay(30);
+	delay(20);
 	String right = Ping(3);
+	delay(20);
+	String center = Ping(2);
 
 	String toSend = String("$Ping:" + left + "," + center + "," + right);
-
-
+	
 	toSend.toCharArray(pingData, 24);
 
-	//Firmata.sendString(pingData);
+	Firmata.sendString(pingData);
 
 	Serial.write(pingData);
-	Serial.write('\r');
+	Serial.write('\r\n');
+}
+
+void ReadWriteDebug()
+{
+	Serial2.readBytes(readBuffer, 256);
+	Serial.write(readBuffer);
+	
+	Serial.write('\r\n');
 }
 
 void OpenTcpConnection()
 {
-	Serial2.write("ATE0\r"); //Get GPRS Service status
-
 	Serial2.write("AT+CGATT?\r"); //Get GPRS Service status
-	//Debug.WriteLine($"GPRS Status: {_serialPort.ReadFonaLine()}");
 
-	//Serial.write(Serial2.read());
-	delay(100);
+	ReadWriteDebug();
 
 	Serial2.write("AT+CIPMODE=0\r");
-	//Debug.WriteLine($"Mode set: {_serialPort.ReadFonaLine()}");
 
-	//Serial.write(Serial2.read());
-	delay(250);
+	ReadWriteDebug();
 
 	Serial2.write("at+cstt=\"wholesale\"\r"); //Set APN and start task
-	//Debug.WriteLine($"APN Command: {_serialPort.ReadFonaLine()}");
 
-	//Serial.write(Serial2.read());
-
-	delay(250);
+	ReadWriteDebug();
 
 	Serial2.write("AT+CIICR\r"); //Bring up wireless connection
-	delay(250);
-	//Debug.WriteLine($"Bring up wireless connection: {_serialPort.ReadFonaLine()}");
-
-	//Serial.write(Serial2.read());
+	
+	ReadWriteDebug();
 
 	Serial2.write("AT+CIFSR\r"); //Get IP address
-	delay(500);
-	//Debug.WriteLine($"GPRS IP Address: {_serialPort.ReadFonaLine()}");
-
-	//Serial.write(Serial2.read());
+	
+	ReadWriteDebug();
 
 	Serial2.write("AT+CIPSTART=\"TCP\",\"69.44.86.36\",\"2101\"\r");
-	delay(1500);
 
-	//Serial.write(Serial2.read());
+	delay(1500);//Wait until it "actually" connects
 
-	//Debug.WriteLine($"TCP Connection status: {_serialPort.ReadFonaLine()}");
+	ReadWriteDebug();
 
 	AuthenticateNtrip();
 }
 
 void AuthenticateNtrip()
 {
-	String msg = "GET /P041_RTCM3 HTTP/1.1\r\n"; //P041 is the mountpoint for the NTRIP station data
-	msg += "User-Agent: Hexapi\r\n";
+	Serial2.write("AT+CIPSEND\r"); //This always helps...
 
-	msg += "Authorization: Basic bHdhdGtpbnM6RDJxMDI0MjU=\r\n";
-	msg += "Accept: */*\r\nConnection: close\r\n";
-	msg += "\r\n";
+	Serial2.write("GET /P041_RTCM3 HTTP/1.1");
+	Serial.write('\r\n');
 
-	char chars[140];
-	msg.toCharArray(chars, 140);
+	Serial2.write("User-Agent: Hexapi");
+	Serial.write('\r\n');
+
+	Serial2.write("Authorization: Basic bHdhdGtpbnM6RDJxMDI0MjU=");
+	Serial.write('\r\n');
+
+	Serial2.write("Accept: */*");
+	Serial.write('\r\n');
+
+	Serial2.write("Connection: close");
+	Serial.write('\r\n');
+
+	Serial.write('\r\n');
+
+	Serial2.write("\x1A");
+
+	Serial2.write('\r');
+
+	//String msg = "GET /P041_RTCM3 HTTP/1.1\r\n"; //P041 is the mountpoint for the NTRIP station data
+	//msg += "User-Agent: Hexapi\r\n";
+
+	//msg += "Authorization: Basic bHdhdGtpbnM6RDJxMDI0MjU=\r\n";
+	//msg += "Accept: */*\r\nConnection: close\r\n";
+	//msg += "\r\n";
+
+	//char chars[140];
+	//msg.toCharArray(chars, 140);
 
 	//Serial.write(chars);
-	Serial2.write(chars);
-	//Serial.write('\r');
+	//Serial2.write(chars);
+	
+	/*Serial2.write((byte)0x1a);
+	Serial2.write('\r');
+	Serial2.write('\n');
 
-  //Serial.write(Serial2.read());
+	Serial.write('\r');
+	Serial.write('\n');*/
+
+	ReadWriteDebug();
 
 	delay(1500);
+
+	ReadWriteDebug();
 }
 
 void loop()
 {
 	//Get NMEA sentences from GPS and forward to the PI 3
-	if (Serial1.available())
-	{
-		Serial.write("GPS Data arrived");
-
-		Serial1.readBytes(gpsData, 256);
-		
-		//Firmata.sendString(gpsData);
-
-		Serial.write(gpsData);
-		Serial.write('\r');
-	}
+	//if (Serial1.available())
+	//{
+	//	Serial.write("GPS Data arrived");
+	//	Serial1.readBytes(gpsData, 512);
+	//	//Firmata.sendString(gpsData);
+	//	//delay(250);
+	//	Serial.write(gpsData);
+	//	Serial.write('\r\n');
+	//	//Serial1.flush();
+	//}
 
 	//Get RTK correction data, and then send to the GPS
-	if (Serial2.available())
+	/*if (Serial2.available())
 	{
 		Serial.write("RTK Data arrived");
-
-
-		Serial2.readBytes(rtkData, 256);
-
+		Serial2.readBytes(rtkData, 512);
 		Serial1.write(rtkData);
+		Serial.write(rtkData); //Debug
+		Serial.write('\r\n');
+	}*/
 
-		Serial.write(rtkData);
-		Serial.write('\r');
-	}
+	PingAll();
 
-	//SendPings();
-
-	delay(500);
+	delay(60);
 
 	//byte pin, analogPin;
-
 	/* DIGITALREAD - as fast as possible, check for changes and output them to the
 	* FTDI buffer using Serial.print()  */
 	//checkDigitalInputs();
 
-	/* STREAMREAD - processing incoming messagse as soon as possible, while still
-	* checking digital inputs.  */
-	while (Firmata.available())
-		Firmata.processInput();
+	while (Firmata.available()) //<---LW
+		Firmata.processInput(); //<---LW
 
 	// TODO - ensure that Stream buffer doesn't go over 60 bytes
 
@@ -977,11 +989,9 @@ String Ping(int sensor)
 	delayMicroseconds(10);
 	digitalWrite(trigPin, LOW);
 
-	long duration = pulseIn(echoPin, HIGH, 1000);
+	long duration = pulseIn(echoPin, HIGH);
 
 	String r = String(duration, DEC);
-
-
 
 	return r;
 }
