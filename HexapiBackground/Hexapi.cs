@@ -18,7 +18,7 @@ namespace HexapiBackground{
 
         private bool _isMovementStarted = false;
 
-        private double _legLiftHeight = 20;
+        private double _legLiftHeight = 15;
         private double _nomGaitSpeed = 50;
         private SelectedFunction _selectedFunction = SelectedFunction.GaitSpeed;
 
@@ -26,7 +26,7 @@ namespace HexapiBackground{
         private double _travelLengthZ; 
         private double _travelRotationY;
 
-        private GaitType _gaitType = GaitType.TripleTripod16Steps;
+        private GaitType _gaitType = GaitType.RippleGait12Steps;
         private double _bodyPosY = 0;
         private double _bodyRotX1;
         private double _bodyRotZ1;
@@ -118,13 +118,16 @@ namespace HexapiBackground{
                 case 2: //X
                     //_selectedFunction = SelectedFunction.TranslateHorizontal;
 
-                    Task.Factory.StartNew(async() => //This fires a dart from the Dream Cheeky (thinkgeek) usb nerf dart launcher. 
+                    Task.Factory.StartNew(async () => //This fires a dart from the Dream Cheeky (thinkgeek) usb nerf dart launcher. 
                     {
-                        RemoteArduino.Arduino.digitalWrite(7, PinState.HIGH);
-                        await Task.Delay(3000);
-                        RemoteArduino.Arduino.digitalWrite(7, PinState.LOW);
-                    });
+                        //RemoteArduino.Arduino.digitalWrite(7, PinState.HIGH);
+                        InverseKinematics.SerialPort.Write("#5H\r"); //On the SSC-32U, it sets channel 5 HIGH for 3 seconds
 
+                        await Task.Delay(3000);
+
+                        InverseKinematics.SerialPort.Write("#5L\r"); //On the SSC-32U, it sets channel 5 LOW
+                        //RemoteArduino.Arduino.digitalWrite(7, PinState.LOW);
+                    });
                     break;
                 case 3: //Y
                     _selectedFunction = SelectedFunction.Translate3D;
@@ -149,13 +152,13 @@ namespace HexapiBackground{
 
         private void XboxController_RightTriggerChanged(int trigger)
         {
-            _travelLengthX = MathHelpers.Map(trigger, 0, 10000, 0, 90);
+            _travelLengthX = MathHelpers.Map(trigger, 0, 10000, 0, 50);
             _ik.RequestMovement(_nomGaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
         }
 
         private void XboxController_LeftTriggerChanged(int trigger)
         {
-            _travelLengthX = -MathHelpers.Map(trigger, 0, 10000, 0, 90);
+            _travelLengthX = -MathHelpers.Map(trigger, 0, 10000, 0, 50);
             _ik.RequestMovement(_nomGaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
         }
 
@@ -204,11 +207,11 @@ namespace HexapiBackground{
                     break;
                 case ControllerDirection.UpLeft:
                     _travelRotationY = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 1);
-                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 130);
+                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 110);
                     break;
                 case ControllerDirection.DownLeft:
                     _travelRotationY = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 1);
-                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 130);
+                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 110);
                     break;
                 case ControllerDirection.Right:
                     _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 3);
@@ -216,11 +219,11 @@ namespace HexapiBackground{
                     break;
                 case ControllerDirection.UpRight:
                     _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 1);
-                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 130);
+                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 110);
                     break;
                 case ControllerDirection.DownRight:
                     _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 1);
-                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 130);
+                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 110);
                     break;
                 case ControllerDirection.Up:
                     _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 190);

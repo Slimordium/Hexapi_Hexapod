@@ -16,8 +16,8 @@ namespace HexapiBackground.IK{
     internal sealed class InverseKinematics
     {
         private bool _movementStarted;
-        private readonly SerialPort _serialPort;
-        private readonly Stopwatch _sw = new Stopwatch();
+        internal static SerialPort SerialPort;
+        private Stopwatch _sw = new Stopwatch();
         private readonly Avc _avc;
         private static readonly StringBuilder StringBuilder = new StringBuilder();
 
@@ -29,8 +29,6 @@ namespace HexapiBackground.IK{
                 LegServos[i] = new int[3];
 
             _movementStarted = false;
-
-            _serialPort = new SerialPort("AI041V40", 38400, 200, 200); //UART0 Does not seem to be enabled for the PI 3 and Windows 10 IoT core
 
             for (var legIndex = 0; legIndex <= 5; legIndex++)
             {
@@ -85,10 +83,12 @@ namespace HexapiBackground.IK{
         #region Main logic loop 
         internal void Start()
         {
+            SerialPort = new SerialPort("AI041V40", 38400, 200, 200); //UART0 Does not seem to be enabled for the PI 3 and Windows 10 IoT core
+
             _gaitStep = 0;
             _nominalGaitSpeed = 50; //ms
-            _legLiftHeight = 20;
-            _gaitType = GaitType.TripleTripod12Steps;
+            _legLiftHeight = 15;
+            _gaitType = GaitType.RippleGait12Steps;
             _bodyPosY = 0; //Height of body in mm from ground
 
             GaitSelect();
@@ -98,7 +98,7 @@ namespace HexapiBackground.IK{
 
             while (true)
             {
-                _avc?.CheckForObstructions(ref _travelLengthX, ref _travelRotationY, ref _travelLengthZ, ref _nominalGaitSpeed);
+                //_avc?.CheckForObstructions(ref _travelLengthX, ref _travelRotationY, ref _travelLengthZ, ref _nominalGaitSpeed);
 
                 if (!_movementStarted)
                 {
@@ -144,7 +144,7 @@ namespace HexapiBackground.IK{
 
                 var positions = UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1);
 
-                _serialPort.Write(positions);
+                SerialPort.Write(positions);
 
                 while (_sw.ElapsedMilliseconds < (startMs + _nominalGaitSpeed)) {  }
 
@@ -175,10 +175,10 @@ namespace HexapiBackground.IK{
         //All legs being equal, all legs will have the same values
         private const double CoxaMin = -630; //-650 
         private const double CoxaMax = 630; //650
-        private const double FemurMin = -870; //
-        private const double FemurMax = 870; //
-        private const double TibiaMin = -870; //
-        private const double TibiaMax = 870; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double FemurMin = -770; //
+        private const double FemurMax = 770; //
+        private const double TibiaMin = -770; //
+        private const double TibiaMax = 770; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double CRrCoxaAngle = -450; //45 degrees
         private const double CRmCoxaAngle = 0;
@@ -618,7 +618,7 @@ namespace HexapiBackground.IK{
 
             stringBuilder.Append($"T0\r");
 
-            _serialPort.Write(stringBuilder.ToString());
+            SerialPort.Write(stringBuilder.ToString());
         }
 
         public async void LoadLegDefaults()
