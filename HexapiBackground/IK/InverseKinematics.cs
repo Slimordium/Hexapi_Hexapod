@@ -16,8 +16,8 @@ namespace HexapiBackground.IK{
     internal sealed class InverseKinematics
     {
         private bool _movementStarted;
-        internal static SerialPort SerialPort;
-        private Stopwatch _sw = new Stopwatch();
+        internal static SerialPort SerialPort { get; private set; }
+        private readonly Stopwatch _sw = new Stopwatch();
         private readonly Avc _avc;
         private static readonly StringBuilder StringBuilder = new StringBuilder();
 
@@ -83,73 +83,76 @@ namespace HexapiBackground.IK{
         #region Main logic loop 
         internal void Start()
         {
-            SerialPort = new SerialPort("AI041V40", 38400, 200, 200); //UART0 Does not seem to be enabled for the PI 3 and Windows 10 IoT core
+            SerialPort = new SerialPort("AI041V40", 115200, 200, 200); //UART0 Does not seem to be enabled for the PI 3 and Windows 10 IoT core
 
-            _gaitStep = 0;
-            _nominalGaitSpeed = 50; //ms
-            _legLiftHeight = 15;
-            _gaitType = GaitType.RippleGait12Steps;
-            _bodyPosY = 0; //Height of body in mm from ground
-
-            GaitSelect();
-
-            _sw.Start();
-            var startMs = _sw.ElapsedMilliseconds;
-
-            while (true)
+            Task.Factory.StartNew(() =>
             {
-                //_avc?.CheckForObstructions(ref _travelLengthX, ref _travelRotationY, ref _travelLengthZ, ref _nominalGaitSpeed);
+                _gaitStep = 0;
+                _nominalGaitSpeed = 50; //ms
+                _legLiftHeight = 15;
+                _gaitType = GaitType.RippleGait12Steps;
+                _bodyPosY = 0; //Height of body in mm from ground
 
-                if (!_movementStarted)
+                GaitSelect();
+
+                _sw.Start();
+                var startMs = _sw.ElapsedMilliseconds;
+
+                while (true)
                 {
-                    Task.Delay(200).Wait();
-                    continue;
+                    //_avc?.CheckForObstructions(ref _travelLengthX, ref _travelRotationY, ref _travelLengthZ, ref _nominalGaitSpeed);
+
+                    if (!_movementStarted)
+                    {
+                        Task.Delay(200).Wait();
+                        continue;
+                    }
+
+                    _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) ||
+                                     (Math.Abs(_travelLengthZ) > TravelDeadZone) ||
+                                     (Math.Abs(_travelRotationY) > TravelDeadZone);
+
+                    _liftDivFactor = _numberOfLiftedPositions == 5 ? 4 : 2;
+
+                    _lastLeg = 0;
+
+                    for (var legIndex = 0; legIndex < 6; legIndex++)
+                    {
+                        if (legIndex == 5)
+                            _lastLeg = 1;
+
+                        var gaitPosXyZrotY = Gait(legIndex, _travelRequest, _travelLengthX,
+                                             _travelLengthZ, _travelRotationY,
+                                             _gaitPosX, _gaitPosY, _gaitPosZ, _gaitRotY,
+                                             _numberOfLiftedPositions, _gaitLegNr[legIndex],
+                                             _legLiftHeight, _liftDivFactor, _halfLiftHeight, _stepsInGait, _tlDivFactor);
+
+                        _gaitPosX = gaitPosXyZrotY[0];
+                        _gaitPosY = gaitPosXyZrotY[1];
+                        _gaitPosZ = gaitPosXyZrotY[2];
+                        _gaitRotY = gaitPosXyZrotY[3];
+
+                        var angles = BodyLegIk(legIndex,
+                                            _legPosX[legIndex], _legPosY[legIndex], _legPosZ[legIndex],
+                                            _bodyPosX, _bodyPosY, _bodyPosZ,
+                                            _gaitPosX[legIndex], _gaitPosY[legIndex], _gaitPosZ[legIndex], _gaitRotY[legIndex],
+                                            _cOffsetX[legIndex], _cOffsetZ[legIndex],
+                                            _bodyRotX1, _bodyRotZ1, _bodyRotY1, _cCoxaAngle1[legIndex]);
+
+                        _coxaAngle1[legIndex] = angles[0];
+                        _femurAngle1[legIndex] = angles[1];
+                        _tibiaAngle1[legIndex] = angles[2];
+                    }
+
+                    var positions = UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1);
+
+                    while (_sw.ElapsedMilliseconds < (startMs + _nominalGaitSpeed)) { }
+
+                    SerialPort.Write(positions);
+
+                    startMs = _sw.ElapsedMilliseconds;
                 }
-
-                _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) || 
-                                 (Math.Abs(_travelLengthZ) > TravelDeadZone) ||
-                                 (Math.Abs(_travelRotationY) > TravelDeadZone);
-
-                _liftDivFactor = _numberOfLiftedPositions == 5 ? 4 : 2;
-
-                _lastLeg = 0;
-
-                for (var legIndex = 0; legIndex < 6; legIndex++)
-                {
-                    if (legIndex == 5)
-                        _lastLeg = 1;
-
-                    var gaitPosXyZrotY = Gait(legIndex, _travelRequest, _travelLengthX,
-                                         _travelLengthZ, _travelRotationY,
-                                         _gaitPosX, _gaitPosY, _gaitPosZ, _gaitRotY,
-                                         _numberOfLiftedPositions, _gaitLegNr[legIndex],
-                                         _legLiftHeight, _liftDivFactor, _halfLiftHeight, _stepsInGait, _tlDivFactor);
-
-                    _gaitPosX = gaitPosXyZrotY[0];
-                    _gaitPosY = gaitPosXyZrotY[1];
-                    _gaitPosZ = gaitPosXyZrotY[2];
-                    _gaitRotY = gaitPosXyZrotY[3];
-
-                    var angles = BodyLegIk(legIndex,
-                                        _legPosX[legIndex], _legPosY[legIndex], _legPosZ[legIndex],
-                                        _bodyPosX, _bodyPosY, _bodyPosZ,
-                                        _gaitPosX[legIndex], _gaitPosY[legIndex], _gaitPosZ[legIndex], _gaitRotY[legIndex],
-                                        _cOffsetX[legIndex], _cOffsetZ[legIndex],
-                                        _bodyRotX1, _bodyRotZ1, _bodyRotY1, _cCoxaAngle1[legIndex]);
-
-                    _coxaAngle1[legIndex] = angles[0];
-                    _femurAngle1[legIndex] = angles[1];
-                    _tibiaAngle1[legIndex] = angles[2];
-                }
-
-                var positions = UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1);
-
-                SerialPort.Write(positions);
-
-                while (_sw.ElapsedMilliseconds < (startMs + _nominalGaitSpeed)) {  }
-
-                startMs = _sw.ElapsedMilliseconds;
-            }
+            }, TaskCreationOptions.LongRunning);
         }
         #endregion
 
@@ -175,10 +178,10 @@ namespace HexapiBackground.IK{
         //All legs being equal, all legs will have the same values
         private const double CoxaMin = -630; //-650 
         private const double CoxaMax = 630; //650
-        private const double FemurMin = -770; //
-        private const double FemurMax = 770; //
-        private const double TibiaMin = -770; //
-        private const double TibiaMax = 770; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double FemurMin = -700; //
+        private const double FemurMax = 700; //
+        private const double TibiaMin = -700; //
+        private const double TibiaMax = 700; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double CRrCoxaAngle = -450; //45 degrees
         private const double CRmCoxaAngle = 0;
@@ -205,7 +208,7 @@ namespace HexapiBackground.IK{
         private const double TibiaLength = 125; //mm
 
         //Foot start positions
-        private const double CHexInitXz = CoxaLength + FemurLength; //This determins how far the feet are from the body.
+        private const double CHexInitXz = CoxaLength + FemurLength + 3; //This determins how far the feet are from the body.
         private const double CHexInitXzCos45 = CHexInitXz * .7071; //Use .7071 when using a round body with legs 45 degrees apart
         private const double CHexInitXzSin45 = CHexInitXz * .7071; 
         private const double CHexInitY = 70; 
@@ -295,7 +298,6 @@ namespace HexapiBackground.IK{
             switch (_gaitType)
             {
                 case GaitType.RippleGait12Steps:
-                    //Ripple Gait 12 steps
                     _gaitLegNr[CLr] = 1;
                     _gaitLegNr[CRf] = 3;
                     _gaitLegNr[CLm] = 5;
@@ -307,10 +309,8 @@ namespace HexapiBackground.IK{
                     _halfLiftHeight = 3;
                     _tlDivFactor = 8;
                     _stepsInGait = 12;
-                    //_nominalGaitSpeed = 110;
                     break;
                 case GaitType.Tripod8Steps:
-                    //Tripod 8 steps
                     _gaitLegNr[CLr] = 5;
                     _gaitLegNr[CRf] = 1;
                     _gaitLegNr[CLm] = 1;
@@ -322,10 +322,8 @@ namespace HexapiBackground.IK{
                     _halfLiftHeight = 3;
                     _tlDivFactor = 4;
                     _stepsInGait = 8;
-                    //_nominalGaitSpeed = 80;
                     break;
                 case GaitType.TripleTripod12Steps:
-                    //Triple Tripod 12 step
                     _gaitLegNr[CRf] = 3;
                     _gaitLegNr[CLm] = 4;
                     _gaitLegNr[CRr] = 5;
@@ -337,10 +335,8 @@ namespace HexapiBackground.IK{
                     _halfLiftHeight = 3;
                     _tlDivFactor = 8;
                     _stepsInGait = 12;
-                    //_nominalGaitSpeed = 100;
                     break;
                 case GaitType.TripleTripod16Steps:
-                    // Triple Tripod 16 steps, use 5 lifted positions
                     _gaitLegNr[CRf] = 4;
                     _gaitLegNr[CLm] = 5;
                     _gaitLegNr[CRr] = 6;
@@ -352,10 +348,8 @@ namespace HexapiBackground.IK{
                     _halfLiftHeight = 1;
                     _tlDivFactor = 10;
                     _stepsInGait = 16;
-                    //_nominalGaitSpeed = 100;
                     break;
                 case GaitType.Wave24Steps:
-                    //Wave 24 steps
                     _gaitLegNr[CLr] = 1;
                     _gaitLegNr[CRf] = 21;
                     _gaitLegNr[CLm] = 5;
@@ -368,7 +362,6 @@ namespace HexapiBackground.IK{
                     _halfLiftHeight = 3;
                     _tlDivFactor = 20;
                     _stepsInGait = 24;
-                    //_nominalGaitSpeed = 110;
                     break;
             }
         }
@@ -541,25 +534,17 @@ namespace HexapiBackground.IK{
             var ikFeetPosZ = legPosZ + bodyPosZ - bodyFkPosZ + gaitPosZ;
 
             double xyhyp2;
-
-            //Calculate IKCoxaAngle and IKFeetPosXZ
             var getatan = GetATan2(ikFeetPosX, ikFeetPosZ, out xyhyp2);
 
             coxaFemurTibiaAngle[0] = ((getatan * 180) / 3141) + cCoxaAngle1;
 
             var ikFeetPosXz = xyhyp2 / OneHundred;
             var ika14 = GetATan2(ikFeetPosY, ikFeetPosXz - CoxaLength, out xyhyp2);
-            var iksw2 = xyhyp2;
-            var temp1 = (((FemurLength * FemurLength) - (TibiaLength * TibiaLength)) * TenThousand + (iksw2 * iksw2));
-            var temp2 = 2 * FemurLength * OneHundred * iksw2;
-            var ika24 = GetArcCos(temp1 / (temp2 / TenThousand));
+            var ika24 = GetArcCos((((FemurLength * FemurLength) - (TibiaLength * TibiaLength)) * TenThousand + (xyhyp2 * xyhyp2)) / ((2 * FemurLength * OneHundred * xyhyp2) / TenThousand));
 
             coxaFemurTibiaAngle[1] = -(ika14 + ika24) * 180 / 3141 + 900;
 
-            temp1 = (((FemurLength * FemurLength) + (TibiaLength * TibiaLength)) * TenThousand - (iksw2 * iksw2));
-            temp2 = (2 * FemurLength * TibiaLength);
-
-            coxaFemurTibiaAngle[2] = -(900 - GetArcCos(temp1 / temp2) * 180 / 3141);
+            coxaFemurTibiaAngle[2] = -(900 - GetArcCos((((FemurLength * FemurLength) + (TibiaLength * TibiaLength)) * TenThousand - (xyhyp2 * xyhyp2)) / (2 * FemurLength * TibiaLength)) * 180 / 3141);
 
             return coxaFemurTibiaAngle;
         }
@@ -569,8 +554,6 @@ namespace HexapiBackground.IK{
         private static string UpdateServoPositions(double[] coxaAngles, double[] femurAngles, double[] tibiaAngles)
         {
             StringBuilder.Clear();
-
-            var gaitSpeed = _nominalGaitSpeed - 3;
 
             for (var legIndex = 0; legIndex <= 5; legIndex++)
             {
@@ -600,12 +583,12 @@ namespace HexapiBackground.IK{
                 StringBuilder.Append($"#{LegServos[legIndex][2]}P{tibiaPosition}");
             }
 
-            StringBuilder.Append($"T{gaitSpeed}\r");
+            StringBuilder.Append($"T{_nominalGaitSpeed}\r");
 
             return StringBuilder.ToString();
         }
 
-        private void TurnOffServos()
+        private static void TurnOffServos()
         {
             var stringBuilder = new StringBuilder();
 
@@ -621,7 +604,7 @@ namespace HexapiBackground.IK{
             SerialPort.Write(stringBuilder.ToString());
         }
 
-        public async void LoadLegDefaults()
+        private static async void LoadLegDefaults()
         {
             var config = await FileHelpers.ReadStringFromFile("hexapod.config");
             

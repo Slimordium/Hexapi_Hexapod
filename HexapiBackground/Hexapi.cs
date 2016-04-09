@@ -6,7 +6,6 @@ using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
 using HexapiBackground.IK;
 using HexapiBackground.Navigation;
-using Microsoft.Maker.RemoteWiring;
 
 // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
 
