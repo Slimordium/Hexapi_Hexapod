@@ -15,18 +15,32 @@ namespace HexapiBackground{
         private readonly InverseKinematics _ik;
         private readonly XboxController _xboxController;
 
-        private bool _isMovementStarted = false;
+        private bool _isMovementStarted;
+
+        internal static double LegLiftHeightUpperLimit { get; set; }
+        internal static double LegLiftHeightLowerLimit { get; set; }
+
+        internal static double GaitSpeedMax { get; set; }
+        internal static double GaitSpeedMin { get; set; }
 
         private double _legLiftHeight = 15;
-        private double _nomGaitSpeed = 50;
+        internal double GaitSpeedUpperLimit { get; set; }
+        internal double GaitSpeedLowerLimit { get; set; }
+        private double _gaitSpeed;
         private SelectedFunction _selectedFunction = SelectedFunction.GaitSpeed;
 
         private double _travelLengthX; 
         private double _travelLengthZ; 
         private double _travelRotationY;
 
+        internal static double TravelLengthZupperLimit { get; set; }
+        internal static double TravelLengthZlowerLimit { get; set; }
+        internal static double TravelLengthXlimit { get; set; }
+        internal static double TravelRotationYlimit { get; set; }
+
         private GaitType _gaitType = GaitType.RippleGait12Steps;
-        private double _bodyPosY = 0;
+
+        private double _bodyPosY;
         private double _bodyRotX1;
         private double _bodyRotZ1;
         private double _bodyPosX;
@@ -36,11 +50,11 @@ namespace HexapiBackground{
 
         private readonly IGps _gps;
 
-        internal Hexapi(IGps gps = null, Avc avc = null)
+        internal Hexapi(IGps gps = null)
         {
             _gps = gps;
 
-            _ik = new InverseKinematics(avc);
+            _ik = new InverseKinematics();
 
             if (_gps != null)
                 _routeFinder = new RouteFinder(_ik, gps);
@@ -55,6 +69,14 @@ namespace HexapiBackground{
             _xboxController.RightTriggerChanged += XboxController_RightTriggerChanged;
             _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
+
+            _gaitSpeed = 40;
+            GaitSpeedUpperLimit = 200;
+            GaitSpeedLowerLimit = 40;
+            TravelLengthZupperLimit = 190;
+            TravelLengthZlowerLimit = 90;
+            TravelLengthXlimit = 40;
+            TravelRotationYlimit = 3;
         }
 
         public void Start()
@@ -74,34 +96,34 @@ namespace HexapiBackground{
                 case SelectedFunction.GaitSpeed: //A
                     if (button == 5)
                     {
-                        if (_nomGaitSpeed < 200)
+                        if (_gaitSpeed < GaitSpeedUpperLimit) //200
                         {
-                            _nomGaitSpeed = _nomGaitSpeed + 5;
+                            _gaitSpeed = _gaitSpeed + 5;
                         }
                     }
                     else
                     {
-                        if (_nomGaitSpeed > 45)
+                        if (_gaitSpeed > GaitSpeedLowerLimit) //45
                         {
-                            _nomGaitSpeed = _nomGaitSpeed - 5;
+                            _gaitSpeed = _gaitSpeed - 5;
                         }
                     }
                     break;
                 case SelectedFunction.LegHeight: //B
                     if (button == 5)
                     {
-                        if (_legLiftHeight < 90)
+                        if (_legLiftHeight < LegLiftHeightUpperLimit) //90
                             _legLiftHeight = _legLiftHeight + 5;
                     }
                     else
                     {
-                        if (_legLiftHeight > 20)
+                        if (_legLiftHeight > LegLiftHeightLowerLimit) //20
                             _legLiftHeight = _legLiftHeight - 5;
                     }
                     break;
             }
 
-            _ik.RequestSetGaitOptions(_nomGaitSpeed, _legLiftHeight);
+            _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
         }
 
         private void XboxController_FunctionButtonChanged(int button)
@@ -134,14 +156,21 @@ namespace HexapiBackground{
                 case 7: //Start button
                     _isMovementStarted = !_isMovementStarted;
 
-                    _ik.RequestSetMovement(_isMovementStarted);
+                    if (_isMovementStarted)
+                    {
+                        _ik.RequestMovement(_gaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
+                        _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
+                        _ik.RequestSetGaitType(GaitType.RippleGait12Steps);
+                    }
+                    else
+                        _ik.RequestMovement(_gaitSpeed, 0, 0, 0);
 
+                    _ik.RequestSetMovement(_isMovementStarted);
                     Debug.WriteLine("setting movement to  " + _isMovementStarted);
                     break;
                 case 6: //back button
                     if (_gps != null)
                         GpsHelpers.SaveWaypoint(_gps.CurrentLatLon);
-
                     break;
                 default:
                     Debug.WriteLine("button? " + button);
@@ -151,14 +180,14 @@ namespace HexapiBackground{
 
         private void XboxController_RightTriggerChanged(int trigger)
         {
-            _travelLengthX = MathHelpers.Map(trigger, 0, 10000, 0, 50);
-            _ik.RequestMovement(_nomGaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
+            _travelLengthX = MathHelpers.Map(trigger, 0, 10000, 0, TravelLengthXlimit);
+            _ik.RequestMovement(_gaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
         }
 
         private void XboxController_LeftTriggerChanged(int trigger)
         {
-            _travelLengthX = -MathHelpers.Map(trigger, 0, 10000, 0, 50);
-            _ik.RequestMovement(_nomGaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
+            _travelLengthX = -MathHelpers.Map(trigger, 0, 10000, 0, TravelLengthXlimit);
+            _ik.RequestMovement(_gaitSpeed,  _travelLengthX, _travelLengthZ, _travelRotationY);
         }
 
         private void XboxController_DpadDirectionChanged(ControllerVector sender)
@@ -201,40 +230,40 @@ namespace HexapiBackground{
             switch (sender.Direction)
             {
                 case ControllerDirection.Left:
-                    _travelRotationY = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 3);
+                    _travelRotationY = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, TravelRotationYlimit);
                     _travelLengthZ = 0;
                     break;
                 case ControllerDirection.UpLeft:
-                    _travelRotationY = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 1);
-                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 110);
+                    _travelRotationY = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, TravelRotationYlimit);
+                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, TravelLengthZlowerLimit);
                     break;
                 case ControllerDirection.DownLeft:
-                    _travelRotationY = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 1);
-                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 110);
+                    _travelRotationY = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, TravelRotationYlimit);
+                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, TravelLengthZlowerLimit); //110
                     break;
                 case ControllerDirection.Right:
-                    _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 3);
+                    _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, TravelRotationYlimit); //3
                     _travelLengthZ = 0;
                     break;
                 case ControllerDirection.UpRight:
-                    _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 1);
-                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 110);
+                    _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, TravelRotationYlimit);
+                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, TravelLengthZupperLimit);//190
                     break;
                 case ControllerDirection.DownRight:
-                    _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 1);
-                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 110);
+                    _travelRotationY = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, TravelRotationYlimit);
+                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, TravelLengthZlowerLimit);
                     break;
                 case ControllerDirection.Up:
-                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 190);
+                    _travelLengthZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, TravelLengthZupperLimit);
                     _travelRotationY = 0;
                     break;
                 case ControllerDirection.Down:
-                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 190);
+                    _travelLengthZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, TravelLengthZupperLimit);
                     _travelRotationY = 0;
                     break;
             }
 
-            _ik.RequestMovement(_nomGaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
+            _ik.RequestMovement(_gaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
         }
 
         private void SetBodyRot(ControllerVector sender)
@@ -243,35 +272,35 @@ namespace HexapiBackground{
             {
                 case ControllerDirection.Left:
                     _bodyRotX1 = 0;
-                    _bodyRotZ1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
+                    _bodyRotZ1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 8);
                     break;
                 case ControllerDirection.UpLeft:
-                    _bodyRotX1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
-                    _bodyRotZ1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
+                    _bodyRotX1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotZ1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 8);
                     break;
                 case ControllerDirection.UpRight:
-                    _bodyRotX1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
-                    _bodyRotZ1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
+                    _bodyRotX1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotZ1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 8);
                     break;
                 case ControllerDirection.Right:
                     _bodyRotX1 = 0;
-                    _bodyRotZ1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
+                    _bodyRotZ1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 8);
                     break;
                 case ControllerDirection.Up:
-                    _bodyRotX1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
+                    _bodyRotX1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 8);
                     _bodyRotZ1 = 0;
                     break;
                 case ControllerDirection.Down:
-                    _bodyRotX1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
+                    _bodyRotX1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 8);
                     _bodyRotZ1 = 0;
                     break;
                 case ControllerDirection.DownLeft:
-                    _bodyRotZ1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
-                    _bodyRotX1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
+                    _bodyRotZ1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotX1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 8);
                     break;
                 case ControllerDirection.DownRight:
-                    _bodyRotZ1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
-                    _bodyRotX1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 9);
+                    _bodyRotZ1 = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 8);
+                    _bodyRotX1 = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 8);
                     break;
             }
 

@@ -18,13 +18,10 @@ namespace HexapiBackground.IK{
         private bool _movementStarted;
         internal static SerialPort SerialPort { get; private set; }
         private readonly Stopwatch _sw = new Stopwatch();
-        private readonly Avc _avc;
         private static readonly StringBuilder StringBuilder = new StringBuilder();
 
-        internal InverseKinematics(Avc avc = null)
+        internal InverseKinematics()
         {
-            _avc = avc;
-
             for (var i = 0; i < 6; i++)
                 LegServos[i] = new int[3];
 
@@ -41,9 +38,9 @@ namespace HexapiBackground.IK{
         }
 
         #region Request movement
-        internal void RequestMovement(double nominalGaitSpeed, double travelLengthX, double travelLengthZ, double travelRotationY)
+        internal void RequestMovement(double gaitSpeed,double travelLengthX, double travelLengthZ, double travelRotationY)
         {
-            _nominalGaitSpeed = nominalGaitSpeed; 
+            _gaitSpeedInMs = gaitSpeed; 
             _travelLengthX = travelLengthX;
             _travelLengthZ = travelLengthZ;
             _travelRotationY = travelRotationY;
@@ -59,9 +56,9 @@ namespace HexapiBackground.IK{
             _bodyPosY = bodyPosY;
         }
 
-        internal void RequestSetGaitOptions(double nominalGaitSpeed, double legLiftHeight)
+        internal void RequestSetGaitOptions(double gaitSpeed, double legLiftHeight)
         {
-            _nominalGaitSpeed = nominalGaitSpeed;
+            _gaitSpeedInMs = gaitSpeed;
             _legLiftHeight = legLiftHeight;
         }
 
@@ -73,10 +70,13 @@ namespace HexapiBackground.IK{
 
         internal void RequestSetMovement(bool enabled)
         {
-            if (!enabled)
-                TurnOffServos();
-
             _movementStarted = enabled;
+
+            if (!enabled)
+            {
+                Task.Delay(500).Wait();
+                TurnOffServos();
+            }
         }
         #endregion
 
@@ -87,20 +87,12 @@ namespace HexapiBackground.IK{
 
             Task.Factory.StartNew(() =>
             {
-                _gaitStep = 0;
-                _nominalGaitSpeed = 50; //ms
-                _legLiftHeight = 15;
-                _gaitType = GaitType.RippleGait12Steps;
-                _bodyPosY = 0; //Height of body in mm from ground
-
-                GaitSelect();
-
                 _sw.Start();
                 var startMs = _sw.ElapsedMilliseconds;
 
                 while (true)
                 {
-                    //_avc?.CheckForObstructions(ref _travelLengthX, ref _travelRotationY, ref _travelLengthZ, ref _nominalGaitSpeed);
+                    //_avc.CheckForObstructions(ref _travelLengthX, ref _travelRotationY, ref _travelLengthZ, ref _nominalGaitSpeed);
 
                     if (!_movementStarted)
                     {
@@ -146,7 +138,7 @@ namespace HexapiBackground.IK{
 
                     var positions = UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1);
 
-                    while (_sw.ElapsedMilliseconds < (startMs + _nominalGaitSpeed)) { }
+                    while (_sw.ElapsedMilliseconds < (startMs + _gaitSpeedInMs)) { }
 
                     SerialPort.Write(positions);
 
@@ -282,7 +274,7 @@ namespace HexapiBackground.IK{
 
         private static int _gaitStep;
         private GaitType _gaitType;
-        private static double _nominalGaitSpeed = 50; //Nominal speed of the gait in ms
+        private static double _gaitSpeedInMs = 50; //Nominal speed of the gait in ms
 
         private double _travelLengthX; //Current Travel length X - Left/Right
         private double _travelLengthZ; //Current Travel length Z - Negative numbers = "forward" movement.
@@ -583,7 +575,7 @@ namespace HexapiBackground.IK{
                 StringBuilder.Append($"#{LegServos[legIndex][2]}P{tibiaPosition}");
             }
 
-            StringBuilder.Append($"T{_nominalGaitSpeed}\r");
+            StringBuilder.Append($"T{_gaitSpeedInMs}\r");
 
             return StringBuilder.ToString();
         }
