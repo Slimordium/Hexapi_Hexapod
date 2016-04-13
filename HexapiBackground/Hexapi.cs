@@ -23,7 +23,7 @@ namespace HexapiBackground{
         internal static double GaitSpeedMax { get; set; }
         internal static double GaitSpeedMin { get; set; }
 
-        private double _legLiftHeight = 15;
+        private double _legLiftHeight = 30;
         internal double GaitSpeedUpperLimit { get; set; }
         internal double GaitSpeedLowerLimit { get; set; }
         private double _gaitSpeed;
@@ -38,9 +38,9 @@ namespace HexapiBackground{
         internal static double TravelLengthXlimit { get; set; }
         internal static double TravelRotationYlimit { get; set; }
 
-        private GaitType _gaitType = GaitType.RippleGait12Steps;
+        private GaitType _gaitType = GaitType.Tripod8Steps;
 
-        private double _bodyPosY;
+        private double _bodyPosY = 20;
         private double _bodyRotX1;
         private double _bodyRotZ1;
         private double _bodyPosX;
@@ -70,13 +70,15 @@ namespace HexapiBackground{
             _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
 
-            _gaitSpeed = 40;
-            GaitSpeedUpperLimit = 200;
+            _gaitSpeed = 70;
+            GaitSpeedUpperLimit = 250;
             GaitSpeedLowerLimit = 40;
-            TravelLengthZupperLimit = 190;
-            TravelLengthZlowerLimit = 90;
+            TravelLengthZupperLimit = 170;
+            TravelLengthZlowerLimit = 80;
             TravelLengthXlimit = 40;
-            TravelRotationYlimit = 3;
+            TravelRotationYlimit = 2.5;
+            LegLiftHeightUpperLimit = 100;
+            LegLiftHeightLowerLimit = 30;
         }
 
         public void Start()

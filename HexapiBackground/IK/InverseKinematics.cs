@@ -168,12 +168,12 @@ namespace HexapiBackground.IK{
         private const int CRr = 0;
 
         //All legs being equal, all legs will have the same values
-        private const double CoxaMin = -630; //-650 
-        private const double CoxaMax = 630; //650
-        private const double FemurMin = -700; //
-        private const double FemurMax = 700; //
-        private const double TibiaMin = -700; //
-        private const double TibiaMax = 700; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -610; //-650 
+        private const double CoxaMax = 610; //650
+        private const double FemurMin = -680; //
+        private const double FemurMax = 680; //
+        private const double TibiaMin = -680; //
+        private const double TibiaMax = 680; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double CRrCoxaAngle = -450; //45 degrees
         private const double CRmCoxaAngle = 0;
@@ -183,13 +183,13 @@ namespace HexapiBackground.IK{
         private const double CLfCoxaAngle = 450;
         
         private const double CRfOffsetZ = -119; //Distance Z from center line that crosses from front/back of the body to the coxa (Z front/back)
-        private const double CRfOffsetX = -69; //Distance X from center like that crosses left/right of the body to the coxa (X side to side)
+        private const double CRfOffsetX = -71; //Distance X from center line that crosses left/right of the body to the coxa (X side to side)
         private const double CLfOffsetZ = -119;
-        private const double CLfOffsetX = 69;
+        private const double CLfOffsetX = 71;
         private const double CRrOffsetZ = 119;
-        private const double CRrOffsetX = -69;
+        private const double CRrOffsetX = -71;
         private const double CLrOffsetZ = 119;
-        private const double CLrOffsetX = 69;
+        private const double CLrOffsetX = 71;
         private const double CRmOffsetZ = 0;
         private const double CRmOffsetX = -138;
         private const double CLmOffsetZ = 0;
@@ -200,7 +200,7 @@ namespace HexapiBackground.IK{
         private const double TibiaLength = 125; //mm
 
         //Foot start positions
-        private const double CHexInitXz = CoxaLength + FemurLength + 3; //This determins how far the feet are from the body.
+        private const double CHexInitXz = CoxaLength + FemurLength; //This determins how far the feet are from the body.
         private const double CHexInitXzCos45 = CHexInitXz * .7071; //Use .7071 when using a round body with legs 45 degrees apart
         private const double CHexInitXzSin45 = CHexInitXz * .7071; 
         private const double CHexInitY = 70; 
@@ -273,7 +273,7 @@ namespace HexapiBackground.IK{
         private double _legLiftHeight; //Current Travel height
 
         private static int _gaitStep;
-        private GaitType _gaitType;
+        private GaitType _gaitType = GaitType.TripleTripod12Steps;
         private static double _gaitSpeedInMs = 50; //Nominal speed of the gait in ms
 
         private double _travelLengthX; //Current Travel length X - Left/Right
