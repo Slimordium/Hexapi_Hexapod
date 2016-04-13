@@ -182,25 +182,25 @@ namespace HexapiBackground.IK{
         private const double CLmCoxaAngle = 0;
         private const double CLfCoxaAngle = 450;
         
-        private const double CRfOffsetZ = -119; //Distance Z from center line that crosses from front/back of the body to the coxa (Z front/back)
-        private const double CRfOffsetX = -71; //Distance X from center line that crosses left/right of the body to the coxa (X side to side)
-        private const double CLfOffsetZ = -119;
-        private const double CLfOffsetX = 71;
+        private const double CRfOffsetZ = -120; //Distance Z from center line that crosses from front/back of the body to the coxa (Z front/back)
+        private const double CRfOffsetX = -70; //Distance X from center line that crosses left/right of the body to the coxa (X side to side)
+        private const double CLfOffsetZ = -120;
+        private const double CLfOffsetX = 70;
         private const double CRrOffsetZ = 119;
-        private const double CRrOffsetX = -71;
-        private const double CLrOffsetZ = 119;
-        private const double CLrOffsetX = 71;
+        private const double CRrOffsetX = -70;
+        private const double CLrOffsetZ = 120;
+        private const double CLrOffsetX = 70;
         private const double CRmOffsetZ = 0;
-        private const double CRmOffsetX = -138;
+        private const double CRmOffsetX = -139;
         private const double CLmOffsetZ = 0;
-        private const double CLmOffsetX = 138;
+        private const double CLmOffsetX = 139;
 
         private const double CoxaLength = 32.5; //mm
         private const double FemurLength = 72.5; //mm
         private const double TibiaLength = 125; //mm
 
         //Foot start positions
-        private const double CHexInitXz = CoxaLength + FemurLength; //This determins how far the feet are from the body.
+        private const double CHexInitXz = CoxaLength + FemurLength - 1; //This determins how far the feet are from the body.
         private const double CHexInitXzCos45 = CHexInitXz * .7071; //Use .7071 when using a round body with legs 45 degrees apart
         private const double CHexInitXzSin45 = CHexInitXz * .7071; 
         private const double CHexInitY = 70; 
