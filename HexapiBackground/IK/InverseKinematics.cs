@@ -29,9 +29,9 @@ namespace HexapiBackground.IK{
 
             for (var legIndex = 0; legIndex <= 5; legIndex++)
             {
-                _legPosX[legIndex] = _cInitPosX[legIndex]; //Set start positions for each leg
-                _legPosY[legIndex] = _cInitPosY[legIndex];
-                _legPosZ[legIndex] = _cInitPosZ[legIndex];
+                _legPosX[legIndex] = _initPosX[legIndex]; //Set start positions for each leg
+                _legPosY[legIndex] = _initPosY[legIndex];
+                _legPosZ[legIndex] = _initPosZ[legIndex];
             }
 
             LoadLegDefaults();
@@ -46,7 +46,7 @@ namespace HexapiBackground.IK{
             _travelRotationY = travelRotationY;
         }
 
-        internal void RequestBodyPosition(double bodyRotX1, double bodyRotZ1, double bodyPosX, double bodyPosZ, double bodyPosY)
+        internal void RequestBodyPosition(double bodyRotX1, double bodyRotZ1, double bodyPosX, double bodyPosZ, double bodyPosY, double bodyRotY1)
         {
             _bodyRotX1 = bodyRotX1;
             _bodyRotZ1 = bodyRotZ1;
@@ -54,6 +54,7 @@ namespace HexapiBackground.IK{
             _bodyPosX = bodyPosX;
             _bodyPosZ = bodyPosZ;
             _bodyPosY = bodyPosY;
+            _bodyRotY1 = bodyRotY1; //body rotation
         }
 
         internal void RequestSetGaitOptions(double gaitSpeed, double legLiftHeight)
@@ -128,7 +129,7 @@ namespace HexapiBackground.IK{
                                             _legPosX[legIndex], _legPosY[legIndex], _legPosZ[legIndex],
                                             _bodyPosX, _bodyPosY, _bodyPosZ,
                                             _gaitPosX[legIndex], _gaitPosY[legIndex], _gaitPosZ[legIndex], _gaitRotY[legIndex],
-                                            _cOffsetX[legIndex], _cOffsetZ[legIndex],
+                                            _offsetX[legIndex], _offsetZ[legIndex],
                                             _bodyRotX1, _bodyRotZ1, _bodyRotY1, _cCoxaAngle1[legIndex]);
 
                         _coxaAngle1[legIndex] = angles[0];
@@ -150,93 +151,93 @@ namespace HexapiBackground.IK{
 
         #region Inverse Kinematics setup
         
-        private const double CPfConst = 592; //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500 was 592
+        private const double PfConst = 592; //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500 was 592
         private const double PwmDiv = 991; //old 1059, new 991;
 
-        private const double TravelDeadZone = 1;
+        private const double TravelDeadZone = 0;
 
         private const double OneHundred = 100;
         private const double OneThousand = 1000;
         private const double TenThousand = 10000;
         private const double OneMillion = 1000000;
 
-        private const int CLf = 5;
-        private const int CLm = 4;
-        private const int CLr = 3;
-        private const int CRf = 2;
-        private const int CRm = 1;
-        private const int CRr = 0;
+        private const int Lf = 5;
+        private const int Lm = 4;
+        private const int Lr = 3;
+        private const int Rf = 2;
+        private const int Rm = 1;
+        private const int Rr = 0;
 
         //All legs being equal, all legs will have the same values
         private const double CoxaMin = -610; //-650 
         private const double CoxaMax = 610; //650
-        private const double FemurMin = -680; //
-        private const double FemurMax = 680; //
-        private const double TibiaMin = -680; //
-        private const double TibiaMax = 680; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double FemurMin = -610; //
+        private const double FemurMax = 610; //
+        private const double TibiaMin = -610; //
+        private const double TibiaMax = 610; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
-        private const double CRrCoxaAngle = -450; //45 degrees
-        private const double CRmCoxaAngle = 0;
-        private const double CRfCoxaAngle = 450;
-        private const double CLrCoxaAngle = -450;
-        private const double CLmCoxaAngle = 0;
-        private const double CLfCoxaAngle = 450;
+        private const double RrCoxaAngle = -450; //45 degrees
+        private const double RmCoxaAngle = 0;
+        private const double RfCoxaAngle = 450;
+        private const double LrCoxaAngle = -450;
+        private const double LmCoxaAngle = 0;
+        private const double LfCoxaAngle = 450;
         
-        private const double CRfOffsetZ = -120; //Distance Z from center line that crosses from front/back of the body to the coxa (Z front/back)
-        private const double CRfOffsetX = -70; //Distance X from center line that crosses left/right of the body to the coxa (X side to side)
-        private const double CLfOffsetZ = -120;
-        private const double CLfOffsetX = 70;
-        private const double CRrOffsetZ = 119;
-        private const double CRrOffsetX = -70;
-        private const double CLrOffsetZ = 120;
-        private const double CLrOffsetX = 70;
-        private const double CRmOffsetZ = 0;
-        private const double CRmOffsetX = -139;
-        private const double CLmOffsetZ = 0;
-        private const double CLmOffsetX = 139;
+        private const double RfOffsetZ = -126; //Distance Z from center line that crosses from front/back of the body to the coxa (Z front/back)
+        private const double RfOffsetX = -70; //Distance X from center line that crosses left/right of the body to the coxa (X side to side)
+        private const double LfOffsetZ = -126;
+        private const double LfOffsetX = 70;
+        private const double RrOffsetZ = 126;
+        private const double RrOffsetX = -70;
+        private const double LrOffsetZ = 126;
+        private const double LrOffsetX = 70;
+        private const double RmOffsetZ = 0;
+        private const double RmOffsetX = -135;
+        private const double LmOffsetZ = 0;
+        private const double LmOffsetX = 135;
 
-        private const double CoxaLength = 32.5; //mm
-        private const double FemurLength = 72.5; //mm
-        private const double TibiaLength = 125; //mm
+        private const double CoxaLength = 33; //mm
+        private const double FemurLength = 73; //mm
+        private const double TibiaLength = 123; //mm
 
         //Foot start positions
-        private const double CHexInitXz = CoxaLength + FemurLength - 1; //This determins how far the feet are from the body.
-        private const double CHexInitXzCos45 = CHexInitXz * .7071; //Use .7071 when using a round body with legs 45 degrees apart
-        private const double CHexInitXzSin45 = CHexInitXz * .7071; 
-        private const double CHexInitY = 70; 
+        private const double HexInitXz = CoxaLength + FemurLength - 4.5; //This determins how far the feet are from the body.
+        private const double HexInitXzCos45 = HexInitXz * .7071; //Use .7071 when using a round body with legs 45 degrees apart
+        private const double HexInitXzSin45 = HexInitXz * .7071; 
+        private const double HexInitY = 70; 
          
-        private const double CRfInitPosX = CHexInitXzCos45;
-        private const double CRfInitPosY = CHexInitY;
-        private const double CRfInitPosZ = -CHexInitXzSin45;
+        private const double RfInitPosX = HexInitXzCos45;
+        private const double RfInitPosY = HexInitY;
+        private const double RfInitPosZ = -HexInitXzSin45;
 
-        private const double CLrInitPosX = CHexInitXzCos45;
-        private const double CLrInitPosY = CHexInitY;
-        private const double CLrInitPosZ = CHexInitXzCos45;
+        private const double LrInitPosX = HexInitXzCos45;
+        private const double LrInitPosY = HexInitY;
+        private const double LrInitPosZ = HexInitXzCos45;
 
-        private const double CLmInitPosX = CHexInitXz;
-        private const double CLmInitPosY = CHexInitY;
-        private const double CLmInitPosZ = 0;
+        private const double LmInitPosX = HexInitXz;
+        private const double LmInitPosY = HexInitY;
+        private const double LmInitPosZ = 0;
 
-        private const double CLfInitPosX = CHexInitXzCos45;
-        private const double CLfInitPosY = CHexInitY;
-        private const double CLfInitPosZ = -CHexInitXzSin45;
+        private const double LfInitPosX = HexInitXzCos45;
+        private const double LfInitPosY = HexInitY;
+        private const double LfInitPosZ = -HexInitXzSin45;
 
-        private const double CRmInitPosX = CHexInitXz;
-        private const double CRmInitPosY = CHexInitY;
-        private const double CRmInitPosZ = 0;
+        private const double RmInitPosX = HexInitXz;
+        private const double RmInitPosY = HexInitY;
+        private const double RmInitPosZ = 0;
 
-        private const double CRrInitPosX = CHexInitXzCos45;
-        private const double CRrInitPosY = CHexInitY;
-        private const double CRrInitPosZ = CHexInitXzSin45;
+        private const double RrInitPosX = HexInitXzCos45;
+        private const double RrInitPosY = HexInitY;
+        private const double RrInitPosZ = HexInitXzSin45;
 
-        private readonly double[] _cInitPosX = { CRrInitPosX, CRmInitPosX, CRfInitPosX, CLrInitPosX, CLmInitPosX, CLfInitPosX };
-        private readonly double[] _cInitPosY = { CRrInitPosY, CRmInitPosY, CRfInitPosY, CLrInitPosY, CLmInitPosY, CLfInitPosY };
-        private readonly double[] _cInitPosZ = { CRrInitPosZ, CRmInitPosZ, CRfInitPosZ, CLrInitPosZ, CLmInitPosZ, CLfInitPosZ };
+        private readonly double[] _initPosX = { RrInitPosX, RmInitPosX, RfInitPosX, LrInitPosX, LmInitPosX, LfInitPosX };
+        private readonly double[] _initPosY = { RrInitPosY, RmInitPosY, RfInitPosY, LrInitPosY, LmInitPosY, LfInitPosY };
+        private readonly double[] _initPosZ = { RrInitPosZ, RmInitPosZ, RfInitPosZ, LrInitPosZ, LmInitPosZ, LfInitPosZ };
 
-        private readonly double[] _cOffsetX = { CRrOffsetX, CRmOffsetX, CRfOffsetX, CLrOffsetX, CLmOffsetX, CLfOffsetX };
-        private readonly double[] _cOffsetZ = { CRrOffsetZ, CRmOffsetZ, CRfOffsetZ, CLrOffsetZ, CLmOffsetZ, CLfOffsetZ };
+        private readonly double[] _offsetX = { RrOffsetX, RmOffsetX, RfOffsetX, LrOffsetX, LmOffsetX, LfOffsetX };
+        private readonly double[] _offsetZ = { RrOffsetZ, RmOffsetZ, RfOffsetZ, LrOffsetZ, LmOffsetZ, LfOffsetZ };
 
-        private readonly double[] _cCoxaAngle1 = { CRrCoxaAngle, CRmCoxaAngle, CRfCoxaAngle, CLrCoxaAngle, CLmCoxaAngle, CLfCoxaAngle };
+        private readonly double[] _cCoxaAngle1 = { RrCoxaAngle, RmCoxaAngle, RfCoxaAngle, LrCoxaAngle, LmCoxaAngle, LfCoxaAngle };
 
         private readonly double[] _coxaAngle1 = new double[6];
         private readonly double[] _femurAngle1 = new double[6]; //Actual Angle of the vertical hip, decimals = 1
@@ -290,12 +291,12 @@ namespace HexapiBackground.IK{
             switch (_gaitType)
             {
                 case GaitType.RippleGait12Steps:
-                    _gaitLegNr[CLr] = 1;
-                    _gaitLegNr[CRf] = 3;
-                    _gaitLegNr[CLm] = 5;
-                    _gaitLegNr[CRr] = 7;
-                    _gaitLegNr[CLf] = 9;
-                    _gaitLegNr[CRm] = 11;
+                    _gaitLegNr[Lr] = 1;
+                    _gaitLegNr[Rf] = 3;
+                    _gaitLegNr[Lm] = 5;
+                    _gaitLegNr[Rr] = 7;
+                    _gaitLegNr[Lf] = 9;
+                    _gaitLegNr[Rm] = 11;
 
                     _numberOfLiftedPositions = 3;
                     _halfLiftHeight = 3;
@@ -303,12 +304,12 @@ namespace HexapiBackground.IK{
                     _stepsInGait = 12;
                     break;
                 case GaitType.Tripod8Steps:
-                    _gaitLegNr[CLr] = 5;
-                    _gaitLegNr[CRf] = 1;
-                    _gaitLegNr[CLm] = 1;
-                    _gaitLegNr[CRr] = 1;
-                    _gaitLegNr[CLf] = 5;
-                    _gaitLegNr[CRm] = 5;
+                    _gaitLegNr[Lr] = 5;
+                    _gaitLegNr[Rf] = 1;
+                    _gaitLegNr[Lm] = 1;
+                    _gaitLegNr[Rr] = 1;
+                    _gaitLegNr[Lf] = 5;
+                    _gaitLegNr[Rm] = 5;
 
                     _numberOfLiftedPositions = 3;
                     _halfLiftHeight = 3;
@@ -316,12 +317,12 @@ namespace HexapiBackground.IK{
                     _stepsInGait = 8;
                     break;
                 case GaitType.TripleTripod12Steps:
-                    _gaitLegNr[CRf] = 3;
-                    _gaitLegNr[CLm] = 4;
-                    _gaitLegNr[CRr] = 5;
-                    _gaitLegNr[CLf] = 9;
-                    _gaitLegNr[CRm] = 10;
-                    _gaitLegNr[CLr] = 11;
+                    _gaitLegNr[Rf] = 3;
+                    _gaitLegNr[Lm] = 4;
+                    _gaitLegNr[Rr] = 5;
+                    _gaitLegNr[Lf] = 9;
+                    _gaitLegNr[Rm] = 10;
+                    _gaitLegNr[Lr] = 11;
 
                     _numberOfLiftedPositions = 3;
                     _halfLiftHeight = 3;
@@ -329,12 +330,12 @@ namespace HexapiBackground.IK{
                     _stepsInGait = 12;
                     break;
                 case GaitType.TripleTripod16Steps:
-                    _gaitLegNr[CRf] = 4;
-                    _gaitLegNr[CLm] = 5;
-                    _gaitLegNr[CRr] = 6;
-                    _gaitLegNr[CLf] = 12;
-                    _gaitLegNr[CRm] = 13;
-                    _gaitLegNr[CLr] = 14;
+                    _gaitLegNr[Rf] = 4;
+                    _gaitLegNr[Lm] = 5;
+                    _gaitLegNr[Rr] = 6;
+                    _gaitLegNr[Lf] = 12;
+                    _gaitLegNr[Rm] = 13;
+                    _gaitLegNr[Lr] = 14;
 
                     _numberOfLiftedPositions = 5;
                     _halfLiftHeight = 1;
@@ -342,13 +343,13 @@ namespace HexapiBackground.IK{
                     _stepsInGait = 16;
                     break;
                 case GaitType.Wave24Steps:
-                    _gaitLegNr[CLr] = 1;
-                    _gaitLegNr[CRf] = 21;
-                    _gaitLegNr[CLm] = 5;
+                    _gaitLegNr[Lr] = 1;
+                    _gaitLegNr[Rf] = 21;
+                    _gaitLegNr[Lm] = 5;
 
-                    _gaitLegNr[CRr] = 13;
-                    _gaitLegNr[CLf] = 9;
-                    _gaitLegNr[CRm] = 17;
+                    _gaitLegNr[Rr] = 13;
+                    _gaitLegNr[Lf] = 9;
+                    _gaitLegNr[Rm] = 17;
 
                     _numberOfLiftedPositions = 3;
                     _halfLiftHeight = 3;
@@ -559,15 +560,15 @@ namespace HexapiBackground.IK{
 
                 if (legIndex < 3)
                 {
-                    coxaPosition = Math.Round((-coxaAngles[legIndex] + 900) * 1000 / PwmDiv + CPfConst);
-                    femurPosition = Math.Round((-femurAngles[legIndex] + 900) * 1000 / PwmDiv + CPfConst);
-                    tibiaPosition = Math.Round((-tibiaAngles[legIndex] + 900) * 1000 / PwmDiv + CPfConst);
+                    coxaPosition = Math.Round((-coxaAngles[legIndex] + 900) * 1000 / PwmDiv + PfConst);
+                    femurPosition = Math.Round((-femurAngles[legIndex] + 900) * 1000 / PwmDiv + PfConst);
+                    tibiaPosition = Math.Round((-tibiaAngles[legIndex] + 900) * 1000 / PwmDiv + PfConst);
                 }
                 else
                 {
-                    coxaPosition = Math.Round((coxaAngles[legIndex] + 900) * 1000 / PwmDiv + CPfConst);
-                    femurPosition = Math.Round((femurAngles[legIndex] + 900) * 1000 / PwmDiv + CPfConst);
-                    tibiaPosition = Math.Round((tibiaAngles[legIndex] + 900) * 1000 / PwmDiv + CPfConst);
+                    coxaPosition = Math.Round((coxaAngles[legIndex] + 900) * 1000 / PwmDiv + PfConst);
+                    femurPosition = Math.Round((femurAngles[legIndex] + 900) * 1000 / PwmDiv + PfConst);
+                    tibiaPosition = Math.Round((tibiaAngles[legIndex] + 900) * 1000 / PwmDiv + PfConst);
                 }
 
                 StringBuilder.Append($"#{LegServos[legIndex][0]}P{coxaPosition}");

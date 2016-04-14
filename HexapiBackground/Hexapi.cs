@@ -43,6 +43,7 @@ namespace HexapiBackground{
         private double _bodyPosY = 20;
         private double _bodyRotX1;
         private double _bodyRotZ1;
+        private double _bodyRotY1;
         private double _bodyPosX;
         private double _bodyPosZ;
 
@@ -133,27 +134,22 @@ namespace HexapiBackground{
             switch (button)
             {
                 case 0: //A
-                    _selectedFunction = SelectedFunction.GaitSpeed;
+                    if (_selectedFunction == SelectedFunction.GaitSpeed)
+                        _selectedFunction = SelectedFunction.LegHeight;
+                    else
+                        _selectedFunction = SelectedFunction.GaitSpeed;
                     break;
                 case 1: //B
-                    _selectedFunction = SelectedFunction.LegHeight;
+                    if (_selectedFunction == SelectedFunction.TranslateHorizontal)
+                        _selectedFunction = SelectedFunction.Translate3D;
+                    else
+                        _selectedFunction = SelectedFunction.TranslateHorizontal;
                     break;
                 case 2: //X
-                    //_selectedFunction = SelectedFunction.TranslateHorizontal;
 
-                    Task.Factory.StartNew(async () => //This fires a dart from the Dream Cheeky (thinkgeek) usb nerf dart launcher. 
-                    {
-                        //RemoteArduino.Arduino.digitalWrite(7, PinState.HIGH);
-                        InverseKinematics.SerialPort.Write("#5H\r"); //On the SSC-32U, it sets channel 5 HIGH for 3 seconds
-
-                        await Task.Delay(3000);
-
-                        InverseKinematics.SerialPort.Write("#5L\r"); //On the SSC-32U, it sets channel 5 LOW
-                        //RemoteArduino.Arduino.digitalWrite(7, PinState.LOW);
-                    });
                     break;
                 case 3: //Y
-                    _selectedFunction = SelectedFunction.Translate3D;
+
                     break;
                 case 7: //Start button
                     _isMovementStarted = !_isMovementStarted;
@@ -173,6 +169,17 @@ namespace HexapiBackground{
                 case 6: //back button
                     if (_gps != null)
                         GpsHelpers.SaveWaypoint(_gps.CurrentLatLon);
+                    else
+                        Task.Factory.StartNew(async () => //This fires a dart from the Dream Cheeky (thinkgeek) usb nerf dart launcher. 
+                        {
+                            //RemoteArduino.Arduino.digitalWrite(7, PinState.HIGH);
+                            InverseKinematics.SerialPort.Write("#5H\r"); //On the SSC-32U, it sets channel 5 HIGH for 3 seconds
+
+                            await Task.Delay(3000);
+
+                            InverseKinematics.SerialPort.Write("#5L\r"); //On the SSC-32U, it sets channel 5 LOW
+                                                                         //RemoteArduino.Arduino.digitalWrite(7, PinState.LOW);
+                        });
                     break;
                 default:
                     Debug.WriteLine("button? " + button);
@@ -197,31 +204,41 @@ namespace HexapiBackground{
             switch (sender.Direction)
             {
                 case ControllerDirection.Left:
-                    if ( _gaitType > 0)
+                    if ( _gaitType > 0 && _selectedFunction != SelectedFunction.TranslateHorizontal)
                     {
                         _gaitType--;
                         _ik.RequestSetGaitType(_gaitType);
                     }
+                    else if (_selectedFunction == SelectedFunction.TranslateHorizontal && _bodyRotY1 > -6)
+                    {
+                        _bodyRotY1--;
+                        _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY1);
+                    }
                     break;
                 case ControllerDirection.Right:
-                    if ((int) _gaitType < 4)
+                    if ((int) _gaitType < 4 && _selectedFunction != SelectedFunction.TranslateHorizontal)
                     {
                         _gaitType++;
                         _ik.RequestSetGaitType(_gaitType);
+                    }
+                    else if (_selectedFunction == SelectedFunction.TranslateHorizontal && _bodyRotY1 < 6)
+                    {
+                        _bodyRotY1++;
+                        _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY1);
                     }
                     break;
                 case ControllerDirection.Up:
                     if (_bodyPosY < 90)
                     {
                         _bodyPosY = _bodyPosY + 5;
-                        _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);
+                        _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY1);
                     }
                     break;
                 case ControllerDirection.Down:
                     if (_bodyPosY > 5)
                     {
                         _bodyPosY = _bodyPosY - 5;
-                        _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);
+                        _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY1);
                     }
                     break;
             }
@@ -306,7 +323,7 @@ namespace HexapiBackground{
                     break;
             }
 
-            _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);
+            _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY1);
         }
 
         private void SetBodyHorizontalOffset(ControllerVector sender)
@@ -314,8 +331,8 @@ namespace HexapiBackground{
             switch (sender.Direction)
             {
                 case ControllerDirection.Left:
-                    _bodyPosX = 0;
-                    _bodyPosZ = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
+                    _bodyPosX = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30); ;
+                    _bodyPosZ = 0;
                     break;
                 case ControllerDirection.UpLeft:
                     _bodyPosX = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
@@ -326,8 +343,8 @@ namespace HexapiBackground{
                     _bodyPosZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
                     break;
                 case ControllerDirection.Right:
-                    _bodyPosX = 0;
-                    _bodyPosZ = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
+                    _bodyPosX = -MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
+                    _bodyPosZ = 0;
                     break;
                 case ControllerDirection.Up:
                     _bodyPosX = MathHelpers.Map(sender.Magnitude, 0, 10000, 0, 30);
@@ -347,7 +364,7 @@ namespace HexapiBackground{
                     break;
             }
 
-            _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY);
+            _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY1);
         }
 
         private void XboxController_LeftDirectionChanged(ControllerVector sender)
