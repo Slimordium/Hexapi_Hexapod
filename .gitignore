@@ -1,0 +1,7 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/HexapiBackground/obj/ARM/Debug
+/.vs/HexapiBackground/v14
+/ArduinoIoT/ArduinoIoT.vcxproj.user
