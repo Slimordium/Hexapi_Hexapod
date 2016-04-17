@@ -7,6 +7,7 @@ using Windows.ApplicationModel.Background;
 using HexapiBackground.Gps;
 using HexapiBackground.Hardware;
 using HexapiBackground.Navigation;
+using HexapiBackground.SignalR;
 
 namespace HexapiBackground
 {
@@ -33,6 +34,8 @@ namespace HexapiBackground
 
             var hexapi = new Hexapi();//new Hexapi(gps, avc)
             hexapi.Start();
+
+            
         }
 
         internal static void Complete()

@@ -6,6 +6,7 @@ using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
 using HexapiBackground.IK;
 using HexapiBackground.Navigation;
+using HexapiBackground.SignalR;
 
 // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
 
@@ -40,7 +41,7 @@ namespace HexapiBackground{
 
         private GaitType _gaitType = GaitType.Tripod8Steps;
 
-        private double _bodyPosY = 20;
+        private double _bodyPosY;
         private double _bodyRotX1;
         private double _bodyRotZ1;
         private double _bodyRotY1;
@@ -56,6 +57,8 @@ namespace HexapiBackground{
             _gps = gps;
 
             _ik = new InverseKinematics();
+
+            var asdf = new HexapiLeapMotionClient(_ik);
 
             if (_gps != null)
                 _routeFinder = new RouteFinder(_ik, gps);

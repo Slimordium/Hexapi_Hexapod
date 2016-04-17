@@ -5,3 +5,11 @@
 /HexapiBackground/obj/ARM/Debug
 /.vs/HexapiBackground/v14
 /ArduinoIoT/ArduinoIoT.vcxproj.user
+/ArduinoIoT/Debug
+/ArduinoIoT/__vm
+/HexapiBackground/bin
+/HexapiBackground/obj/x64/Debug
+/HexapiLeapMotion/HexapiLeapMotion/bin
+/HexapiLeapMotion/HexapiLeapMotion/obj
+/HexapiLeapMotion/packages
+/HexapiLeapMotion.zip

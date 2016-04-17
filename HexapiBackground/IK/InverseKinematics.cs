@@ -169,12 +169,12 @@ namespace HexapiBackground.IK{
         private const int Rr = 0;
 
         //All legs being equal, all legs will have the same values
-        private const double CoxaMin = -610; //-650 
-        private const double CoxaMax = 610; //650
-        private const double FemurMin = -610; //
-        private const double FemurMax = 610; //
-        private const double TibiaMin = -610; //
-        private const double TibiaMax = 610; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -600; //-650 
+        private const double CoxaMax = 600; //650
+        private const double FemurMin = -600; //
+        private const double FemurMax = 600; //
+        private const double TibiaMin = -600; //
+        private const double TibiaMax = 600; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double RrCoxaAngle = -450; //45 degrees
         private const double RmCoxaAngle = 0;
@@ -198,10 +198,10 @@ namespace HexapiBackground.IK{
 
         private const double CoxaLength = 33; //mm
         private const double FemurLength = 73; //mm
-        private const double TibiaLength = 123; //mm
+        private const double TibiaLength = 125; //mm
 
         //Foot start positions
-        private const double HexInitXz = CoxaLength + FemurLength - 4.5; //This determins how far the feet are from the body.
+        private const double HexInitXz = CoxaLength + FemurLength; //This determins how far the feet are from the body.
         private const double HexInitXzCos45 = HexInitXz * .7071; //Use .7071 when using a round body with legs 45 degrees apart
         private const double HexInitXzSin45 = HexInitXz * .7071; 
         private const double HexInitY = 70; 
@@ -480,12 +480,12 @@ namespace HexapiBackground.IK{
             var posY = legPosY + bodyPosY + gaitPosY;
             var posZ = legPosZ + bodyPosZ + gaitPosZ;
 
-            double sinA4; //Sin buffer for BodyRotX calculations
-            double cosA4; //Cos buffer for BodyRotX calculations
-            double sinB4; //Sin buffer for BodyRotX calculations
-            double cosB4; //Cos buffer for BodyRotX calculations
-            double sinG4; //Sin buffer for BodyRotZ calculations
-            double cosG4; //Cos buffer for BodyRotZ calculations
+            double sinA; //Sin buffer for BodyRotX calculations
+            double cosA; //Cos buffer for BodyRotX calculations
+            double sinB; //Sin buffer for BodyRotX calculations
+            double cosB; //Cos buffer for BodyRotX calculations
+            double sinG; //Sin buffer for BodyRotZ calculations
+            double cosG; //Cos buffer for BodyRotZ calculations
 
             //Calculating totals from center of the body to the feet 
             var cprX = cOffsetX + posX;
@@ -496,24 +496,24 @@ namespace HexapiBackground.IK{
             //Sinus Alfa = SinA, cosinus Alfa = cosA. and so on... 
 
             //First calculate sinus and cosinus for each rotation: 
-            GetSinCos(bodyRotX1, out sinG4, out cosG4);
+            GetSinCos(bodyRotX1, out sinG, out cosG);
 
-            GetSinCos(bodyRotZ1, out sinB4, out cosB4);
+            GetSinCos(bodyRotZ1, out sinB, out cosB);
 
-            GetSinCos(bodyRotY1 + (gaitRotY * 10), out sinA4, out cosA4);
+            GetSinCos(bodyRotY1 + (gaitRotY * 10), out sinA, out cosA);
 
             //Calculation of rotation matrix: 
             var bodyFkPosX = (cprX * OneHundred -
-                          ((cprX * OneHundred * cosA4 / TenThousand * cosB4 / TenThousand) - (cprZ * OneHundred * cosB4 / TenThousand * sinA4 / TenThousand) +
-                           (posY * OneHundred * sinB4 / TenThousand))) / OneHundred;
+                          ((cprX * OneHundred * cosA / TenThousand * cosB / TenThousand) - (cprZ * OneHundred * cosB / TenThousand * sinA / TenThousand) +
+                           (posY * OneHundred * sinB / TenThousand))) / OneHundred;
             var bodyFkPosZ = (cprZ * OneHundred -
-                          ((cprX * OneHundred * cosG4 / TenThousand * sinA4 / TenThousand) + (cprX * OneHundred * cosA4 / TenThousand * sinB4 / TenThousand * sinG4 / TenThousand) +
-                           (cprZ * OneHundred * cosA4 / TenThousand * cosG4 / TenThousand) - (cprZ * OneHundred * sinA4 / TenThousand * sinB4 / TenThousand * sinG4 / TenThousand) -
-                           (posY * OneHundred * cosB4 / TenThousand * sinG4 / TenThousand))) / OneHundred;
+                          ((cprX * OneHundred * cosG / TenThousand * sinA / TenThousand) + (cprX * OneHundred * cosA / TenThousand * sinB / TenThousand * sinG / TenThousand) +
+                           (cprZ * OneHundred * cosA / TenThousand * cosG / TenThousand) - (cprZ * OneHundred * sinA / TenThousand * sinB / TenThousand * sinG / TenThousand) -
+                           (posY * OneHundred * cosB / TenThousand * sinG / TenThousand))) / OneHundred;
             var bodyFkPosY = (posY * OneHundred -
-                          ((cprX * OneHundred * sinA4 / TenThousand * sinG4 / TenThousand) - (cprX * OneHundred * cosA4 / TenThousand * cosG4 / TenThousand * sinB4 / TenThousand) +
-                           (cprZ * OneHundred * cosA4 / TenThousand * sinG4 / TenThousand) + (cprZ * OneHundred * cosG4 / TenThousand * sinA4 / TenThousand * sinB4 / TenThousand) +
-                           (posY * OneHundred * cosB4 / TenThousand * cosG4 / TenThousand))) / OneHundred;
+                          ((cprX * OneHundred * sinA / TenThousand * sinG / TenThousand) - (cprX * OneHundred * cosA / TenThousand * cosG / TenThousand * sinB / TenThousand) +
+                           (cprZ * OneHundred * cosA / TenThousand * sinG / TenThousand) + (cprZ * OneHundred * cosG / TenThousand * sinA / TenThousand * sinB / TenThousand) +
+                           (posY * OneHundred * cosB / TenThousand * cosG / TenThousand))) / OneHundred;
 
             var coxaFemurTibiaAngle = new double[3];
 
