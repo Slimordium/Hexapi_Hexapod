@@ -502,6 +502,10 @@ namespace HexapiBackground.IK{
 
             GetSinCos(bodyRotY1 + (gaitRotY * 10), out sinA, out cosA);
 
+            //cosA = cosA*TenThousand;
+            //cosB = cosB*TenThousand;
+            //cosG = cosG*TenThousand;
+
             //Calculation of rotation matrix: 
             var bodyFkPosX = (cprX * OneHundred -
                           ((cprX * OneHundred * cosA / TenThousand * cosB / TenThousand) - (cprZ * OneHundred * cosB / TenThousand * sinA / TenThousand) +
@@ -529,15 +533,15 @@ namespace HexapiBackground.IK{
             double xyhyp2;
             var getatan = GetATan2(ikFeetPosX, ikFeetPosZ, out xyhyp2);
 
-            coxaFemurTibiaAngle[0] = ((getatan * 180) / 3141) + cCoxaAngle1;
+            coxaFemurTibiaAngle[0] = ((getatan * 180) / (Math.PI * 1000)) + cCoxaAngle1;
 
             var ikFeetPosXz = xyhyp2 / OneHundred;
             var ika14 = GetATan2(ikFeetPosY, ikFeetPosXz - CoxaLength, out xyhyp2);
             var ika24 = GetArcCos((((FemurLength * FemurLength) - (TibiaLength * TibiaLength)) * TenThousand + (xyhyp2 * xyhyp2)) / ((2 * FemurLength * OneHundred * xyhyp2) / TenThousand));
 
-            coxaFemurTibiaAngle[1] = -(ika14 + ika24) * 180 / 3141 + 900;
+            coxaFemurTibiaAngle[1] = -(ika14 + ika24) * 180 / (Math.PI * 1000) + 900;
 
-            coxaFemurTibiaAngle[2] = -(900 - GetArcCos((((FemurLength * FemurLength) + (TibiaLength * TibiaLength)) * TenThousand - (xyhyp2 * xyhyp2)) / (2 * FemurLength * TibiaLength)) * 180 / 3141);
+            coxaFemurTibiaAngle[2] = -(900 - GetArcCos((((FemurLength * FemurLength) + (TibiaLength * TibiaLength)) * TenThousand - (xyhyp2 * xyhyp2)) / (2 * FemurLength * TibiaLength)) * 180 / (Math.PI * 1000));
 
             return coxaFemurTibiaAngle;
         }
