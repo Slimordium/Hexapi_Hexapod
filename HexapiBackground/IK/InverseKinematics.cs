@@ -198,13 +198,13 @@ namespace HexapiBackground.IK{
 
         private const double CoxaLength = 33; //mm
         private const double FemurLength = 73; //mm
-        private const double TibiaLength = 125; //mm
+        private const double TibiaLength = 131; //mm
 
         //Foot start positions
         private const double HexInitXz = CoxaLength + FemurLength; //This determins how far the feet are from the body.
         private const double HexInitXzCos45 = HexInitXz * .7071; //Use .7071 when using a round body with legs 45 degrees apart
         private const double HexInitXzSin45 = HexInitXz * .7071; 
-        private const double HexInitY = 70; 
+        private const double HexInitY = 85; 
          
         private const double RfInitPosX = HexInitXzCos45;
         private const double RfInitPosY = HexInitY;

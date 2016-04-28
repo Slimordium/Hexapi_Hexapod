@@ -58,7 +58,7 @@ namespace HexapiBackground{
 
             _ik = new InverseKinematics();
 
-            var asdf = new HexapiLeapMotionClient(_ik);
+            //var asdf = new HexapiLeapMotionClient(_ik);
 
             if (_gps != null)
                 _routeFinder = new RouteFinder(_ik, gps);
