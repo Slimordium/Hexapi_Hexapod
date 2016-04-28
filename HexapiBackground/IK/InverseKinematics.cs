@@ -22,6 +22,8 @@ namespace HexapiBackground.IK{
 
         internal InverseKinematics()
         {
+            _pi1K = Math.PI*1000;
+
             for (var i = 0; i < 6; i++)
                 LegServos[i] = new int[3];
 
@@ -84,7 +86,7 @@ namespace HexapiBackground.IK{
         #region Main logic loop 
         internal void Start()
         {
-            SerialPort = new SerialPort("AI041V40", 115200, 200, 200); //UART0 Does not seem to be enabled for the PI 3 and Windows 10 IoT core
+            SerialPort = new SerialPort("AI041V40A", 115200, 200, 200); //BCM2836 = Onboard UART on PI3 and build 14322
 
             Task.Factory.StartNew(() =>
             {
@@ -156,8 +158,6 @@ namespace HexapiBackground.IK{
 
         private const double TravelDeadZone = 0;
 
-        private const double OneHundred = 100;
-        private const double OneThousand = 1000;
         private const double TenThousand = 10000;
         private const double OneMillion = 1000000;
 
@@ -168,7 +168,6 @@ namespace HexapiBackground.IK{
         private const int Rm = 1;
         private const int Rr = 0;
 
-        //All legs being equal, all legs will have the same values
         private const double CoxaMin = -600; //-650 
         private const double CoxaMax = 600; //650
         private const double FemurMin = -600; //
@@ -197,8 +196,8 @@ namespace HexapiBackground.IK{
         private const double LmOffsetX = 135;
 
         private const double CoxaLength = 33; //mm
-        private const double FemurLength = 73; //mm
-        private const double TibiaLength = 131; //mm
+        private const double FemurLength = 70; //mm
+        private const double TibiaLength = 130; //mm
 
         //Foot start positions
         private const double HexInitXz = CoxaLength + FemurLength; //This determins how far the feet are from the body.
@@ -282,6 +281,8 @@ namespace HexapiBackground.IK{
         private double _travelRotationY; //Current Travel Rotation Y 
 
         private static readonly int[][] LegServos = new int[6][];
+
+        private static double _pi1K;
 
         #endregion
 
@@ -469,7 +470,7 @@ namespace HexapiBackground.IK{
                                             double gaitPosX, double gaitPosY, double gaitPosZ, double gaitRotY, 
                                             double cOffsetX, double cOffsetZ,
                                             double bodyRotX1, double bodyRotZ1, double bodyRotY1,
-                                            double cCoxaAngle1)
+                                            double coxaAngle)
         {
             var posX = 0d;
             if (legIndex <= 2)
@@ -488,36 +489,32 @@ namespace HexapiBackground.IK{
             double cosG; //Cos buffer for BodyRotZ calculations
 
             //Calculating totals from center of the body to the feet 
-            var cprX = cOffsetX + posX;
-            var cprZ = cOffsetZ + posZ;
+            var cprX = (cOffsetX + posX) * 100;
+            var cprZ = (cOffsetZ + posZ) * 100;
 
-            //Successive global rotation matrix: 
+            posY = posY * 100;
+
             //Math shorts for rotation: Alfa [A] = Xrotate, Beta [B] = Zrotate, Gamma [G] = Yrotate 
             //Sinus Alfa = SinA, cosinus Alfa = cosA. and so on... 
 
-            //First calculate sinus and cosinus for each rotation: 
+            GetSinCos(bodyRotY1 + (gaitRotY * 10), out sinA, out cosA);
+            GetSinCos(bodyRotZ1, out sinB, out cosB);
             GetSinCos(bodyRotX1, out sinG, out cosG);
 
-            GetSinCos(bodyRotZ1, out sinB, out cosB);
-
-            GetSinCos(bodyRotY1 + (gaitRotY * 10), out sinA, out cosA);
-
-            //cosA = cosA*TenThousand;
-            //cosB = cosB*TenThousand;
-            //cosG = cosG*TenThousand;
-
             //Calculation of rotation matrix: 
-            var bodyFkPosX = (cprX * OneHundred -
-                          ((cprX * OneHundred * cosA / TenThousand * cosB / TenThousand) - (cprZ * OneHundred * cosB / TenThousand * sinA / TenThousand) +
-                           (posY * OneHundred * sinB / TenThousand))) / OneHundred;
-            var bodyFkPosZ = (cprZ * OneHundred -
-                          ((cprX * OneHundred * cosG / TenThousand * sinA / TenThousand) + (cprX * OneHundred * cosA / TenThousand * sinB / TenThousand * sinG / TenThousand) +
-                           (cprZ * OneHundred * cosA / TenThousand * cosG / TenThousand) - (cprZ * OneHundred * sinA / TenThousand * sinB / TenThousand * sinG / TenThousand) -
-                           (posY * OneHundred * cosB / TenThousand * sinG / TenThousand))) / OneHundred;
-            var bodyFkPosY = (posY * OneHundred -
-                          ((cprX * OneHundred * sinA / TenThousand * sinG / TenThousand) - (cprX * OneHundred * cosA / TenThousand * cosG / TenThousand * sinB / TenThousand) +
-                           (cprZ * OneHundred * cosA / TenThousand * sinG / TenThousand) + (cprZ * OneHundred * cosG / TenThousand * sinA / TenThousand * sinB / TenThousand) +
-                           (posY * OneHundred * cosB / TenThousand * cosG / TenThousand))) / OneHundred;
+            var bodyFkPosX = (cprX -
+                          ((cprX * cosA * cosB) - (cprZ * cosB * sinA) +
+                           (posY * sinB))) / 100;
+
+            var bodyFkPosZ = (cprZ -
+                          ((cprX * cosG * sinA) + (cprX * cosA * sinB * sinG) +
+                           (cprZ * cosA * cosG) - (cprZ * sinA * sinB * sinG) -
+                           (posY * cosB * sinG))) / 100;
+
+            var bodyFkPosY = (posY -
+                          ((cprX * sinA * sinG) - (cprX * cosA * cosG * sinB) +
+                           (cprZ * cosA * sinG) + (cprZ * cosG * sinA * sinB) +
+                           (posY * cosB * cosG))) / 100;
 
             var coxaFemurTibiaAngle = new double[3];
 
@@ -533,15 +530,15 @@ namespace HexapiBackground.IK{
             double xyhyp2;
             var getatan = GetATan2(ikFeetPosX, ikFeetPosZ, out xyhyp2);
 
-            coxaFemurTibiaAngle[0] = ((getatan * 180) / (Math.PI * 1000)) + cCoxaAngle1;
+            coxaFemurTibiaAngle[0] = ((getatan * 180) / _pi1K) + coxaAngle;
 
-            var ikFeetPosXz = xyhyp2 / OneHundred;
+            var ikFeetPosXz = xyhyp2 / 100;
             var ika14 = GetATan2(ikFeetPosY, ikFeetPosXz - CoxaLength, out xyhyp2);
-            var ika24 = GetArcCos((((FemurLength * FemurLength) - (TibiaLength * TibiaLength)) * TenThousand + (xyhyp2 * xyhyp2)) / ((2 * FemurLength * OneHundred * xyhyp2) / TenThousand));
+            var ika24 = GetArcCos((((FemurLength * FemurLength) - (TibiaLength * TibiaLength)) * TenThousand + (xyhyp2 * xyhyp2)) / ((2 * FemurLength * 100 * xyhyp2) / TenThousand));
 
-            coxaFemurTibiaAngle[1] = -(ika14 + ika24) * 180 / (Math.PI * 1000) + 900;
+            coxaFemurTibiaAngle[1] = -(ika14 + ika24) * 180 / _pi1K + 900;
 
-            coxaFemurTibiaAngle[2] = -(900 - GetArcCos((((FemurLength * FemurLength) + (TibiaLength * TibiaLength)) * TenThousand - (xyhyp2 * xyhyp2)) / (2 * FemurLength * TibiaLength)) * 180 / (Math.PI * 1000));
+            coxaFemurTibiaAngle[2] = -(900 - GetArcCos((((FemurLength * FemurLength) + (TibiaLength * TibiaLength)) * TenThousand - (xyhyp2 * xyhyp2)) / (2 * FemurLength * TibiaLength)) * 180 / _pi1K);
 
             return coxaFemurTibiaAngle;
         }
@@ -638,14 +635,14 @@ namespace HexapiBackground.IK{
         {
             var angle = Math.PI * angleDeg / 180.0;
 
-            sin = Math.Sin(angle) * TenThousand;
-            cos = Math.Cos(angle) * TenThousand;
+            sin = Math.Sin(angle);
+            cos = Math.Cos(angle);
         }
 
         private static double GetArcCos(double cos)
         {
             var c = cos / TenThousand; //Wont work right unless you do / 10000 then * 10000
-            return (Math.Abs(Math.Abs(c) - 1.0) < .001
+            return (Math.Abs(Math.Abs(c) - 1.0) < .00001
                 ? (1 - c) * Math.PI / 2.0
                 : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * TenThousand;
         }
