@@ -88,7 +88,7 @@ namespace HexapiBackground.IK{
         #region Main logic loop 
         internal void Start()
         {
-            SerialPort = new SerialPort("BCM2836", 115200, 200, 200); //BCM2836 = Onboard UART on PI3 and build 14322 (AI041V40A)
+            SerialPort = new SerialPort("BCM2836", 115200, 200, 200); //BCM2836 = Onboard UART on PI3 and IoT Core build 14322 (AI041V40A is the USB/Serial dongle)
 
             Task.Factory.StartNew(() =>
             {
@@ -650,7 +650,7 @@ namespace HexapiBackground.IK{
         private static double GetArcCos(double cos)
         {
             var c = cos / TenThousand; //Wont work right unless you do / 10000 then * 10000
-            return (Math.Abs(Math.Abs(c) - 1.0) < .00001
+            return (Math.Abs(Math.Abs(c) - 1.0) < .000001
                 ? (1 - c) * Math.PI / 2.0
                 : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * TenThousand;
         }
