@@ -37,6 +37,8 @@ namespace HexapiBackground.IK{
             }
 
             LoadLegDefaults();
+
+            GaitSelect();
         }
 
         #region Request movement
@@ -67,8 +69,8 @@ namespace HexapiBackground.IK{
 
         internal void RequestSetGaitType(GaitType gaitType)
         {
+            _lastGaitType = _gaitType;
             _gaitType = gaitType;
-            GaitSelect();
         }
 
         internal void RequestSetMovement(bool enabled)
@@ -86,7 +88,7 @@ namespace HexapiBackground.IK{
         #region Main logic loop 
         internal void Start()
         {
-            SerialPort = new SerialPort("AI041V40A", 115200, 200, 200); //BCM2836 = Onboard UART on PI3 and build 14322
+            SerialPort = new SerialPort("BCM2836", 115200, 200, 200); //BCM2836 = Onboard UART on PI3 and build 14322 (AI041V40A)
 
             Task.Factory.StartNew(() =>
             {
@@ -99,13 +101,18 @@ namespace HexapiBackground.IK{
 
                     if (!_movementStarted)
                     {
-                        Task.Delay(200).Wait();
+                        while (_sw.ElapsedMilliseconds < (startMs + 50)) { }
+                        startMs = _sw.ElapsedMilliseconds;
                         continue;
                     }
 
                     _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) ||
                                      (Math.Abs(_travelLengthZ) > TravelDeadZone) ||
                                      (Math.Abs(_travelRotationY) > TravelDeadZone);
+
+                    //Only switch the gait after the previous one is complete
+                    if (_gaitStep == 1 && _lastGaitType != _gaitType)
+                        GaitSelect();
 
                     _liftDivFactor = _numberOfLiftedPositions == 5 ? 4 : 2;
 
@@ -139,13 +146,11 @@ namespace HexapiBackground.IK{
                         _tibiaAngle1[legIndex] = angles[2];
                     }
 
-                    var positions = UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1);
-
-                    while (_sw.ElapsedMilliseconds < (startMs + _gaitSpeedInMs)) { }
-
-                    SerialPort.Write(positions);
+                    while (_sw.ElapsedMilliseconds <= (startMs + _gaitSpeedInMs)) { }
 
                     startMs = _sw.ElapsedMilliseconds;
+
+                    SerialPort.Write(UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1));
                 }
             }, TaskCreationOptions.LongRunning);
         }
@@ -272,8 +277,9 @@ namespace HexapiBackground.IK{
         private int _halfLiftHeight; //If true the outer positions of the ligted legs will be half height    
         private double _legLiftHeight; //Current Travel height
 
-        private static int _gaitStep;
+        private static int _gaitStep = 1;
         private GaitType _gaitType = GaitType.TripleTripod12Steps;
+        private GaitType _lastGaitType = GaitType.TripleTripod12Steps;
         private static double _gaitSpeedInMs = 50; //Nominal speed of the gait in ms
 
         private double _travelLengthX; //Current Travel length X - Left/Right
@@ -456,7 +462,9 @@ namespace HexapiBackground.IK{
             //The last leg in this step
             _gaitStep = _gaitStep + 1;
             if (_gaitStep > stepsInGait)
+            {
                 _gaitStep = 1;
+            }
 
             return gaitXyZrotY;
         }
