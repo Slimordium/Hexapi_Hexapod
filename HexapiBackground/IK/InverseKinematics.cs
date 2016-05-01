@@ -158,8 +158,8 @@ namespace HexapiBackground.IK{
 
         #region Inverse Kinematics setup
         
-        private const double PfConst = 592; //old 650 ; 900*(1000/cPwmDiv)+cPFConst must always be 1500 was 592
-        private const double PwmDiv = 991; //old 1059, new 991;
+        private const double PfConst = 650; //old 650 ; 900*(1000/PwmDiv)+cPFConst must always be 1500 was 592
+        private const double PwmDiv = 1059; //old 1059, new 991;
 
         private const double TravelDeadZone = 0;
 
@@ -173,12 +173,12 @@ namespace HexapiBackground.IK{
         private const int Rm = 1;
         private const int Rr = 0;
 
-        private const double CoxaMin = -600; //-650 
-        private const double CoxaMax = 600; //650
-        private const double FemurMin = -600; //
-        private const double FemurMax = 600; //
-        private const double TibiaMin = -600; //
-        private const double TibiaMax = 600; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -590; //
+        private const double CoxaMax = 590; //
+        private const double FemurMin = -590; //
+        private const double FemurMax = 590; //
+        private const double TibiaMin = -590; //
+        private const double TibiaMax = 590; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double RrCoxaAngle = -450; //45 degrees
         private const double RmCoxaAngle = 0;
@@ -205,10 +205,10 @@ namespace HexapiBackground.IK{
         private const double TibiaLength = 130; //mm
 
         //Foot start positions
-        private const double HexInitXz = CoxaLength + FemurLength; //This determins how far the feet are from the body.
-        private const double HexInitXzCos45 = HexInitXz * .7071; //Use .7071 when using a round body with legs 45 degrees apart
+        private const double HexInitXz = CoxaLength + FemurLength;
+        private const double HexInitXzCos45 = HexInitXz * .7071; //http://www.math.com/tables/trig/tables.htm
         private const double HexInitXzSin45 = HexInitXz * .7071; 
-        private const double HexInitY = 85; 
+        private const double HexInitY = 70; 
          
         private const double RfInitPosX = HexInitXzCos45;
         private const double RfInitPosY = HexInitY;
@@ -373,74 +373,63 @@ namespace HexapiBackground.IK{
         {
             var gaitXyZrotY = new double[4][];
 
-            //Leg middle up position
-            //Gait in motion														  									
-            //Gait NOT in motion, return to home position
-            if ((travelRequest && (numberOfLiftedPositions == 1 || numberOfLiftedPositions == 3 || numberOfLiftedPositions == 5) && _gaitStep == gaitLegNr) || (!travelRequest && _gaitStep == gaitLegNr && ((Math.Abs(gaitPosX[legIndex]) > 2) || (Math.Abs(gaitPosZ[legIndex]) > 2) || (Math.Abs(gaitRotY[legIndex]) > 2))))
+            if ((travelRequest && 
+                (numberOfLiftedPositions == 1 || numberOfLiftedPositions == 3 || numberOfLiftedPositions == 5) && _gaitStep == gaitLegNr) || 
+                (!travelRequest &&
+                _gaitStep == gaitLegNr && ((Math.Abs(gaitPosX[legIndex]) > 2) || (Math.Abs(gaitPosZ[legIndex]) > 2) || (Math.Abs(gaitRotY[legIndex]) > 2))))
             {
-                //Up
                 gaitPosX[legIndex] = 0;
                 gaitPosY[legIndex] = -legLiftHeight;
                 gaitPosZ[legIndex] = 0;
                 gaitRotY[legIndex] = 0;
             }
             //Optional Half height Rear (2, 3, 5 lifted positions)
-            else if (((numberOfLiftedPositions == 2 && _gaitStep == gaitLegNr) ||
-                      (numberOfLiftedPositions >= 3 &&
-                       (_gaitStep == gaitLegNr - 1 || _gaitStep == gaitLegNr + (stepsInGait - 1)))) &&
-                     travelRequest)
+            else if (travelRequest && 
+                    ((numberOfLiftedPositions == 2 && _gaitStep == gaitLegNr) || (numberOfLiftedPositions >= 3 && (_gaitStep == gaitLegNr - 1 || _gaitStep == gaitLegNr + (stepsInGait - 1)))))
             {
                 gaitPosX[legIndex] = -travelLengthX / liftDivFactor;
                 gaitPosY[legIndex] = -3 * legLiftHeight / (3 + halfLiftHeight);
-                //Easier to shift between div factor: /1 (3/3), /2 (3/6) and 3/4
                 gaitPosZ[legIndex] = -travelLengthZ / liftDivFactor;
                 gaitRotY[legIndex] = -travelRotationY / liftDivFactor;
             }
-
             // Optional Half height front (2, 3, 5 lifted positions)
-            else if ((numberOfLiftedPositions >= 2) &&
-                     (_gaitStep == gaitLegNr + 1 || _gaitStep == gaitLegNr - (stepsInGait - 1)) &&
-                     travelRequest)
+            else if (travelRequest && 
+                    (numberOfLiftedPositions >= 2) &&
+                    (_gaitStep == gaitLegNr + 1 || _gaitStep == gaitLegNr - (stepsInGait - 1)))
             {
                 gaitPosX[legIndex] = travelLengthX / liftDivFactor;
                 gaitPosY[legIndex] = -3 * legLiftHeight / (3 + halfLiftHeight);
-                // Easier to shift between div factor: /1 (3/3), /2 (3/6) and 3/4
                 gaitPosZ[legIndex] = travelLengthZ / liftDivFactor;
                 gaitRotY[legIndex] = travelRotationY / liftDivFactor;
             }
-
             //Optional Half heigth Rear 5 LiftedPos (5 lifted positions)
-            else if (((numberOfLiftedPositions == 5 && (_gaitStep == gaitLegNr - 2))) && travelRequest)
+            else if (travelRequest && 
+                    ((numberOfLiftedPositions == 5 && (_gaitStep == gaitLegNr - 2))))
             {
                 gaitPosX[legIndex] = -travelLengthX / 2;
                 gaitPosY[legIndex] = -legLiftHeight / 2;
                 gaitPosZ[legIndex] = -travelLengthZ / 2;
                 gaitRotY[legIndex] = -travelRotationY / 2;
             }
-
             //Optional Half heigth Front 5 LiftedPos (5 lifted positions)
-            else if ((numberOfLiftedPositions == 5) &&
-                     (_gaitStep == gaitLegNr + 2 || _gaitStep == gaitLegNr - (stepsInGait - 2)) &&
-                     travelRequest)
+            else if (travelRequest && 
+                    (numberOfLiftedPositions == 5) &&
+                    (_gaitStep == gaitLegNr + 2 || _gaitStep == gaitLegNr - (stepsInGait - 2)))
             {
                 gaitPosX[legIndex] = travelLengthX / 2;
                 gaitPosY[legIndex] = -legLiftHeight / 2;
                 gaitPosZ[legIndex] = travelLengthZ / 2;
                 gaitRotY[legIndex] = travelRotationY / 2;
             }
-
             //Leg front down position
-            else if ((_gaitStep == gaitLegNr + numberOfLiftedPositions ||
-                      _gaitStep == gaitLegNr - (stepsInGait - numberOfLiftedPositions)) &&
+            else if ((_gaitStep == gaitLegNr + numberOfLiftedPositions || _gaitStep == gaitLegNr - (stepsInGait - numberOfLiftedPositions)) &&
                      gaitPosY[legIndex] < 0)
             {
                 gaitPosX[legIndex] = travelLengthX / 2;
                 gaitPosZ[legIndex] = travelLengthZ / 2;
                 gaitRotY[legIndex] = travelRotationY / 2;
                 gaitPosY[legIndex] = 0;
-                //Only move leg down at once if terrain adaption is turned off
             }
-
             //Move body forward      
             else
             {
@@ -455,7 +444,6 @@ namespace HexapiBackground.IK{
             gaitXyZrotY[2] = gaitPosZ;
             gaitXyZrotY[3] = gaitRotY;
 
-            //Advance to the next step
             if (_lastLeg != 1)
                 return gaitXyZrotY;
 
@@ -480,7 +468,7 @@ namespace HexapiBackground.IK{
                                             double bodyRotX1, double bodyRotZ1, double bodyRotY1,
                                             double coxaAngle)
         {
-            var posX = 0d;
+            var posX = 0D;
             if (legIndex <= 2)
                 posX = -legPosX + bodyPosX + gaitPosX;
             else
@@ -497,36 +485,41 @@ namespace HexapiBackground.IK{
             double cosG; //Cos buffer for BodyRotZ calculations
 
             //Calculating totals from center of the body to the feet 
-            var cprX = (cOffsetX + posX) * 100;
-            var cprZ = (cOffsetZ + posZ) * 100;
+            var cprX = (cOffsetX + posX) * 100D;
+            var cprZ = (cOffsetZ + posZ) * 100D;
 
             posY = posY * 100;
 
             //Math shorts for rotation: Alfa [A] = Xrotate, Beta [B] = Zrotate, Gamma [G] = Yrotate 
             //Sinus Alfa = SinA, cosinus Alfa = cosA. and so on... 
 
-            GetSinCos(bodyRotY1 + (gaitRotY * 10), out sinA, out cosA);
+            GetSinCos(bodyRotY1 + (gaitRotY * 10D), out sinA, out cosA);
             GetSinCos(bodyRotZ1, out sinB, out cosB);
             GetSinCos(bodyRotX1, out sinG, out cosG);
 
             //Calculation of rotation matrix: 
             var bodyFkPosX = (cprX -
-                          ((cprX * cosA * cosB) - (cprZ * cosB * sinA) +
-                           (posY * sinB))) / 100;
+                          ((cprX * cosA * cosB) - 
+                           (cprZ * cosB * sinA) +
+                           (posY * sinB))) / 100D;
 
             var bodyFkPosZ = (cprZ -
-                          ((cprX * cosG * sinA) + (cprX * cosA * sinB * sinG) +
-                           (cprZ * cosA * cosG) - (cprZ * sinA * sinB * sinG) -
-                           (posY * cosB * sinG))) / 100;
+                          ((cprX * cosG * sinA) + 
+                           (cprX * cosA * sinB * sinG) +
+                           (cprZ * cosA * cosG) - 
+                           (cprZ * sinA * sinB * sinG) -
+                           (posY * cosB * sinG))) / 100D;
 
             var bodyFkPosY = (posY -
-                          ((cprX * sinA * sinG) - (cprX * cosA * cosG * sinB) +
-                           (cprZ * cosA * sinG) + (cprZ * cosG * sinA * sinB) +
-                           (posY * cosB * cosG))) / 100;
+                          ((cprX * sinA * sinG) - 
+                           (cprX * cosA * cosG * sinB) +
+                           (cprZ * cosA * sinG) + 
+                           (cprZ * cosG * sinA * sinB) +
+                           (posY * cosB * cosG))) / 100D;
 
             var coxaFemurTibiaAngle = new double[3];
 
-            var ikFeetPosX = 0d;
+            var ikFeetPosX = 0D;
             if (legIndex <= 2)
                 ikFeetPosX = legPosX - bodyPosX + bodyFkPosX - gaitPosX;
             else
@@ -538,15 +531,15 @@ namespace HexapiBackground.IK{
             double xyhyp2;
             var getatan = GetATan2(ikFeetPosX, ikFeetPosZ, out xyhyp2);
 
-            coxaFemurTibiaAngle[0] = ((getatan * 180) / _pi1K) + coxaAngle;
+            coxaFemurTibiaAngle[0] = ((getatan * 180D) / _pi1K) + coxaAngle;
 
-            var ikFeetPosXz = xyhyp2 / 100;
+            var ikFeetPosXz = xyhyp2 / 100D;
             var ika14 = GetATan2(ikFeetPosY, ikFeetPosXz - CoxaLength, out xyhyp2);
-            var ika24 = GetArcCos((((FemurLength * FemurLength) - (TibiaLength * TibiaLength)) * TenThousand + (xyhyp2 * xyhyp2)) / ((2 * FemurLength * 100 * xyhyp2) / TenThousand));
+            var ika24 = GetArcCos((((FemurLength * FemurLength) - (TibiaLength * TibiaLength)) * TenThousand + (xyhyp2 * xyhyp2)) / ((2 * FemurLength * 100D * xyhyp2) / TenThousand));
 
-            coxaFemurTibiaAngle[1] = -(ika14 + ika24) * 180 / _pi1K + 900;
+            coxaFemurTibiaAngle[1] = -(ika14 + ika24) * 180D / _pi1K + 900D;
 
-            coxaFemurTibiaAngle[2] = -(900 - GetArcCos((((FemurLength * FemurLength) + (TibiaLength * TibiaLength)) * TenThousand - (xyhyp2 * xyhyp2)) / (2 * FemurLength * TibiaLength)) * 180 / _pi1K);
+            coxaFemurTibiaAngle[2] = -(900D - GetArcCos((((FemurLength * FemurLength) + (TibiaLength * TibiaLength)) * TenThousand - (xyhyp2 * xyhyp2)) / (2D * FemurLength * TibiaLength)) * 180D / _pi1K);
 
             return coxaFemurTibiaAngle;
         }
@@ -592,18 +585,18 @@ namespace HexapiBackground.IK{
 
         private static void TurnOffServos()
         {
-            var stringBuilder = new StringBuilder();
+            StringBuilder.Clear();
 
             for (var legIndex = 0; legIndex <= 5; legIndex++)
             {
-                stringBuilder.Append($"#{LegServos[legIndex][0]}P0");
-                stringBuilder.Append($"#{LegServos[legIndex][1]}P0");
-                stringBuilder.Append($"#{LegServos[legIndex][2]}P0");
+                StringBuilder.Append($"#{LegServos[legIndex][0]}P0");
+                StringBuilder.Append($"#{LegServos[legIndex][1]}P0");
+                StringBuilder.Append($"#{LegServos[legIndex][2]}P0");
             }
 
-            stringBuilder.Append($"T0\r");
+            StringBuilder.Append($"T0\r");
 
-            SerialPort.Write(stringBuilder.ToString());
+            SerialPort.Write(StringBuilder.ToString());
         }
 
         private static async void LoadLegDefaults()
@@ -650,7 +643,7 @@ namespace HexapiBackground.IK{
         private static double GetArcCos(double cos)
         {
             var c = cos / TenThousand; //Wont work right unless you do / 10000 then * 10000
-            return (Math.Abs(Math.Abs(c) - 1.0) < .000001
+            return (Math.Abs(Math.Abs(c) - 1.0) < .00000000000001
                 ? (1 - c) * Math.PI / 2.0
                 : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * TenThousand;
         }

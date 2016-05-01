@@ -20,13 +20,6 @@
         </uap:DefaultTile>
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
-      <!--<Extensions>
-        <Extension Category="windows.backgroundTasks" EntryPoint="HexapiBackground.StartupTask">
-          <BackgroundTasks>
-            <iot:Task Type="startup" />
-          </BackgroundTasks>
-        </Extension>
-      </Extensions>-->
       <Extensions>
         <Extension Category="windows.backgroundTasks" EntryPoint="HexapiBackground.StartupTask">
           <BackgroundTasks>

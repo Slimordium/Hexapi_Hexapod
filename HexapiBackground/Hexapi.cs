@@ -1,5 +1,9 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Text;
 using System.Threading.Tasks;
+using Windows.Devices.Gpio;
+using Windows.Devices.I2c;
 using HexapiBackground.Enums;
 using HexapiBackground.Gps;
 using HexapiBackground.Hardware;
@@ -41,7 +45,7 @@ namespace HexapiBackground{
 
         private GaitType _gaitType = GaitType.Tripod8Steps;
 
-        private double _bodyPosY;
+        private double _bodyPosY = 45;
         private double _bodyRotX1;
         private double _bodyRotZ1;
         private double _bodyRotY1;
@@ -74,21 +78,33 @@ namespace HexapiBackground{
             _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
 
-            _gaitSpeed = 70;
+            _gaitSpeed = 50;
             GaitSpeedUpperLimit = 250;
-            GaitSpeedLowerLimit = 40;
-            TravelLengthZupperLimit = 170;
+            GaitSpeedLowerLimit = 25;
+            TravelLengthZupperLimit = 160;
             TravelLengthZlowerLimit = 80;
             TravelLengthXlimit = 40;
             TravelRotationYlimit = 2.5;
             LegLiftHeightUpperLimit = 100;
-            LegLiftHeightLowerLimit = 30;
+            LegLiftHeightLowerLimit = 20;
         }
+
+        private Mpr121 _mpr121;
 
         public void Start()
         {
             Task.Factory.StartNew(() =>
-            { _ik.Start(); }, TaskCreationOptions.LongRunning);
+            {
+                _mpr121 = new Mpr121();
+                _mpr121.Start();
+            }
+            , TaskCreationOptions.LongRunning);
+
+            Task.Factory.StartNew(() =>
+            {
+                _ik.Start(); 
+            }
+            , TaskCreationOptions.LongRunning);
         }
 
         #region XBox 360 Controller related...
@@ -238,7 +254,7 @@ namespace HexapiBackground{
                     }
                     break;
                 case ControllerDirection.Down:
-                    if (_bodyPosY > 5)
+                    if (_bodyPosY > 15)
                     {
                         _bodyPosY = _bodyPosY - 5;
                         _ik.RequestBodyPosition(_bodyRotX1, _bodyRotZ1, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY1);

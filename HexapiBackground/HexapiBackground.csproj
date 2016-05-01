@@ -108,6 +108,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Hardware\Mpr121.cs" />
     <Compile Include="Navigation\Avc.cs" />
     <Compile Include="Enums\ControllerDirection.cs" />
     <Compile Include="Gps\IGps.cs" />
