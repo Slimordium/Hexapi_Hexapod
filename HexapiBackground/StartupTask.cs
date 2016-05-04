@@ -32,6 +32,9 @@ namespace HexapiBackground
             //remoteArduino.Start();
             //--------------------------
 
+            var piezo = new Ads1115();
+            piezo.Start(0);  
+
             var hexapi = new Hexapi();//new Hexapi(gps, avc)
             hexapi.Start();
 

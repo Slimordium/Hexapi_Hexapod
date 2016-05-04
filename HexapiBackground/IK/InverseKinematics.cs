@@ -1,11 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using HexapiBackground.Enums;
 using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
-using HexapiBackground.Navigation;
 
 namespace HexapiBackground.IK{
     /// <summary>
@@ -101,7 +101,15 @@ namespace HexapiBackground.IK{
 
                     if (!_movementStarted)
                     {
-                        while (_sw.ElapsedMilliseconds < (startMs + 50)) { }
+                        //SerialPort.Write("VH\r");
+                        //var r = SerialPort.ReadByte().Result;
+
+                        //var level = MathHelpers.Map(r, 255, 0, 0, 255);
+
+                        //if (level > 5)
+                        //    Debug.WriteLine("Level " + level);
+
+                        while (_sw.ElapsedMilliseconds < (startMs + 10)) { }
                         startMs = _sw.ElapsedMilliseconds;
                         continue;
                     }
@@ -146,11 +154,11 @@ namespace HexapiBackground.IK{
                         _tibiaAngle1[legIndex] = angles[2];
                     }
 
+                    SerialPort.Write(UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1));
+
                     while (_sw.ElapsedMilliseconds <= (startMs + _gaitSpeedInMs)) { }
 
                     startMs = _sw.ElapsedMilliseconds;
-
-                    SerialPort.Write(UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1));
                 }
             }, TaskCreationOptions.LongRunning);
         }
@@ -158,8 +166,8 @@ namespace HexapiBackground.IK{
 
         #region Inverse Kinematics setup
         
-        private const double PfConst = 650; //old 650 ; 900*(1000/PwmDiv)+cPFConst must always be 1500 was 592
-        private const double PwmDiv = 1059; //old 1059, new 991;
+        private const double PfConst = 592; //old 650 ; 900*(1000/PwmDiv)+cPFConst must always be 1500 was 592
+        private const double PwmDiv = 991; //old 1059, new 991;
 
         private const double TravelDeadZone = 0;
 
@@ -485,15 +493,15 @@ namespace HexapiBackground.IK{
             double cosG; //Cos buffer for BodyRotZ calculations
 
             //Calculating totals from center of the body to the feet 
-            var cprX = (cOffsetX + posX) * 100D;
-            var cprZ = (cOffsetZ + posZ) * 100D;
+            var cprX = (cOffsetX + posX) * 100;
+            var cprZ = (cOffsetZ + posZ) * 100;
 
             posY = posY * 100;
 
             //Math shorts for rotation: Alfa [A] = Xrotate, Beta [B] = Zrotate, Gamma [G] = Yrotate 
             //Sinus Alfa = SinA, cosinus Alfa = cosA. and so on... 
 
-            GetSinCos(bodyRotY1 + (gaitRotY * 10D), out sinA, out cosA);
+            GetSinCos(bodyRotY1 + (gaitRotY * 10), out sinA, out cosA);
             GetSinCos(bodyRotZ1, out sinB, out cosB);
             GetSinCos(bodyRotX1, out sinG, out cosG);
 
@@ -501,21 +509,21 @@ namespace HexapiBackground.IK{
             var bodyFkPosX = (cprX -
                           ((cprX * cosA * cosB) - 
                            (cprZ * cosB * sinA) +
-                           (posY * sinB))) / 100D;
+                           (posY * sinB))) / 100;
 
             var bodyFkPosZ = (cprZ -
                           ((cprX * cosG * sinA) + 
                            (cprX * cosA * sinB * sinG) +
                            (cprZ * cosA * cosG) - 
                            (cprZ * sinA * sinB * sinG) -
-                           (posY * cosB * sinG))) / 100D;
+                           (posY * cosB * sinG))) / 100;
 
             var bodyFkPosY = (posY -
                           ((cprX * sinA * sinG) - 
                            (cprX * cosA * cosG * sinB) +
                            (cprZ * cosA * sinG) + 
                            (cprZ * cosG * sinA * sinB) +
-                           (posY * cosB * cosG))) / 100D;
+                           (posY * cosB * cosG))) / 100;
 
             var coxaFemurTibiaAngle = new double[3];
 
@@ -531,22 +539,22 @@ namespace HexapiBackground.IK{
             double xyhyp2;
             var getatan = GetATan2(ikFeetPosX, ikFeetPosZ, out xyhyp2);
 
-            coxaFemurTibiaAngle[0] = ((getatan * 180D) / _pi1K) + coxaAngle;
+            coxaFemurTibiaAngle[0] = ((getatan * 180) / _pi1K) + coxaAngle;
 
-            var ikFeetPosXz = xyhyp2 / 100D;
+            var ikFeetPosXz = xyhyp2 / 100;
             var ika14 = GetATan2(ikFeetPosY, ikFeetPosXz - CoxaLength, out xyhyp2);
-            var ika24 = GetArcCos((((FemurLength * FemurLength) - (TibiaLength * TibiaLength)) * TenThousand + (xyhyp2 * xyhyp2)) / ((2 * FemurLength * 100D * xyhyp2) / TenThousand));
+            var ika24 = GetArcCos((((FemurLength * FemurLength) - (TibiaLength * TibiaLength)) * TenThousand + (xyhyp2 * xyhyp2)) / ((2 * FemurLength * 100 * xyhyp2) / TenThousand));
 
-            coxaFemurTibiaAngle[1] = -(ika14 + ika24) * 180D / _pi1K + 900D;
+            coxaFemurTibiaAngle[1] = -(ika14 + ika24) * 180 / _pi1K + 900;
 
-            coxaFemurTibiaAngle[2] = -(900D - GetArcCos((((FemurLength * FemurLength) + (TibiaLength * TibiaLength)) * TenThousand - (xyhyp2 * xyhyp2)) / (2D * FemurLength * TibiaLength)) * 180D / _pi1K);
+            coxaFemurTibiaAngle[2] = -(900 - GetArcCos((((FemurLength * FemurLength) + (TibiaLength * TibiaLength)) * TenThousand - (xyhyp2 * xyhyp2)) / (2 * FemurLength * TibiaLength)) * 180 / _pi1K);
 
             return coxaFemurTibiaAngle;
         }
         #endregion
 
         #region Servo related, build various servo controller strings and read values
-        private static string UpdateServoPositions(double[] coxaAngles, double[] femurAngles, double[] tibiaAngles)
+        private static string UpdateServoPositions(IList<double> coxaAngles, IList<double> femurAngles, IList<double> tibiaAngles)
         {
             StringBuilder.Clear();
 
@@ -594,7 +602,7 @@ namespace HexapiBackground.IK{
                 StringBuilder.Append($"#{LegServos[legIndex][2]}P0");
             }
 
-            StringBuilder.Append($"T0\r");
+            StringBuilder.Append("T0\r");
 
             SerialPort.Write(StringBuilder.ToString());
         }
@@ -642,7 +650,7 @@ namespace HexapiBackground.IK{
 
         private static double GetArcCos(double cos)
         {
-            var c = cos / TenThousand; //Wont work right unless you do / 10000 then * 10000
+            var c = cos / TenThousand; 
             return (Math.Abs(Math.Abs(c) - 1.0) < .00000000000001
                 ? (1 - c) * Math.PI / 2.0
                 : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * TenThousand;
