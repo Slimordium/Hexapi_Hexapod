@@ -107,6 +107,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Ntrip.cs" />
     <Compile Include="HexapiController.cs" />
     <Compile Include="LeapHardware.cs" />
     <Compile Include="Program.cs" />

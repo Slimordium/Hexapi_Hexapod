@@ -11,6 +11,8 @@ namespace HexapiLeapMotion
     {
         static void Main(string[] args)
         {
+            var gps = Gps.Instance;
+
 
             using (WebApp.Start<Startup>("http://*:8080/"))
             {
