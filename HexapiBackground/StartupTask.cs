@@ -25,23 +25,21 @@ namespace HexapiBackground
             //These are all optional----
             //var remoteArduino = new RemoteArduino(); //Only need this if using the PingSensors, RemoteArduinoRtkGps or Rocket Launcher
             //var gps = new RemoteArduinoRtkGps(); //NavSparkRtkGps, UltimateGps
-            //var gps = new NavSparkGps(true); //NavSparkRtkGps, UltimateGps
+            var gps = new NavSparkGps(false); //NavSparkRtkGps, UltimateGps
             //var pingSensors = new PingSensors();
             //var avc = new Avc();
-            //gps.Start();
+            gps.Start();
             //remoteArduino.Start();
             //--------------------------
 
             //var piezo = new Ads1115();
             //piezo.Start(0);  
 
-            //var hexapi = new Hexapi();//new Hexapi(gps, avc)
-            //hexapi.Start();
+            var ntrip = new RtkGps();
 
-            var rtkGpsNtripClient = new RtkGps();
+            var hexapi = new Hexapi(gps);//new Hexapi(gps, avc)
+            hexapi.Start();
 
-            var gps = new NavSparkGps(false);
-            gps.Start();
             
         }
 

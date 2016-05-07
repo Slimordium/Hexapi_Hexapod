@@ -33,13 +33,11 @@ namespace HexapSignalRServer
 
         private async void UpdateGps(byte[] bytes)
         {
-            Debug.WriteLine($"SignalR client update called with {bytes.Length} to send");
+            Debug.WriteLine($"SignalR sending {bytes.Length}");
 
             var methodToCall = "updateGps";
             IClientProxy proxy = Clients.All;
             await proxy.Invoke(methodToCall, bytes);
-
-            //await Clients.All.updateGps(bytes);
         }
     }
 
@@ -76,7 +74,7 @@ namespace HexapSignalRServer
         {
             Task.Factory.StartNew(() =>
             {
-                _serialPort.ReceivedBytesThreshold = 200;
+                _serialPort.ReceivedBytesThreshold = 250;
                 _serialPort.DataReceived += _serialPort_DataReceived;
 
                 var buffer = new List<byte>();
@@ -93,9 +91,10 @@ namespace HexapSignalRServer
                         _serialPort.Read(readBuffer, 0, readBuffer.Length);
                         buffer.AddRange(readBuffer);
 
-                        if (buffer.Count > 200)
+                        Debug.WriteLine($"Received {buffer.Count}");
+
+                        if (buffer.Count > 250)
                         {
-                            Debug.WriteLine($"Sending {buffer.Count} to client");
                             UpdateClient?.Invoke(buffer.ToArray());
                             buffer = new List<byte>();
                         }
