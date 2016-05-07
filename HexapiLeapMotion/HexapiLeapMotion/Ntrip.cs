@@ -16,12 +16,12 @@ namespace HexapiLeapMotion
 
         public Ntrip()
         {
-            _gps.UpdateClient = UpdateClient;
         }
 
         public override Task OnConnected()
         {
             Debug.WriteLine("Client connected");
+            _gps.UpdateClient = UpdateGps;
             return base.OnConnected();
         }
 
@@ -31,11 +31,15 @@ namespace HexapiLeapMotion
             return base.OnDisconnected(stopCalled);
         }
 
-        private void UpdateClient(byte[] bytes)
+        private async void UpdateGps(byte[] bytes)
         {
             Debug.WriteLine($"SignalR client update called with {bytes.Length} to send");
 
-            Clients.All.UpdateGps<byte[]>(bytes);
+            var methodToCall = "updateGps";
+            IClientProxy proxy = Clients.All;
+            await proxy.Invoke(methodToCall, bytes);
+
+            //await Clients.All.updateGps(bytes);
         }
     }
 

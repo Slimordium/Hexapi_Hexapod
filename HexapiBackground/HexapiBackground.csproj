@@ -137,6 +137,7 @@
     <Compile Include="IK\InverseKinematics.cs" />
     <Compile Include="Hardware\PingSensors.cs" />
     <Compile Include="Hardware\SerialPort.cs" />
+    <Compile Include="SignalR\RtkGps.cs" />
     <Compile Include="SignalR\HexapiLeapMotionClient.cs" />
     <Compile Include="StartupTask.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
