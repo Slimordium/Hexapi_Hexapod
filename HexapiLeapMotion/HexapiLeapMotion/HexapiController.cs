@@ -7,7 +7,7 @@ using Leap;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
 
-namespace HexapiLeapMotion
+namespace HexapSignalRServer
 {
     [HubName("HexapiController")]
     public class HexapiController : Hub

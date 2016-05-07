@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Owin.Hosting;
 
-namespace HexapiLeapMotion
+namespace HexapSignalRServer
 {
     class Program
     {

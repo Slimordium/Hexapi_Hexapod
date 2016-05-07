@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Leap;
 
-namespace HexapiLeapMotion
+namespace HexapSignalRServer
 {
     internal static class LeapHardware
     {

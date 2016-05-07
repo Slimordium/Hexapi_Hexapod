@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Hubs;
 
-namespace HexapiLeapMotion
+namespace HexapSignalRServer
 {
     [HubName("Ntrip")]
     public class Ntrip : Hub

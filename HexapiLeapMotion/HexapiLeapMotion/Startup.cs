@@ -2,7 +2,7 @@
 using Microsoft.Owin.Cors;
 using Owin;
 
-namespace HexapiLeapMotion
+namespace HexapSignalRServer
 {
    
     public class Startup
