@@ -93,7 +93,7 @@ namespace HexapSignalRServer
 
                         Debug.WriteLine($"Received {buffer.Count}");
 
-                        if (buffer.Count > 250)
+                        if (buffer.Count > 200)
                         {
                             UpdateClient?.Invoke(buffer.ToArray());
                             buffer = new List<byte>();

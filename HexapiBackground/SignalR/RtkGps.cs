@@ -18,7 +18,7 @@ namespace HexapiBackground.SignalR
 
         internal RtkGps()
         {
-            _rtkGps = new HubConnection("http://localhost:8080/signalr");
+            _rtkGps = new HubConnection("http://172.16.0.224:8080/signalr");
 
             try
             {
