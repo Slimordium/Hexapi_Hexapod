@@ -34,6 +34,8 @@ namespace HexapiBackground.IK{
                 _legPosX[legIndex] = _initPosX[legIndex]; //Set start positions for each leg
                 _legPosY[legIndex] = _initPosY[legIndex];
                 _legPosZ[legIndex] = _initPosZ[legIndex];
+
+                LegYHeightCorrector[legIndex] = 0;
             }
 
             LoadLegDefaults();
@@ -77,11 +79,24 @@ namespace HexapiBackground.IK{
         {
             _movementStarted = enabled;
 
-            if (!enabled)
-            {
-                Task.Delay(500).Wait();
-                TurnOffServos();
-            }
+            if (enabled)
+                return;
+
+            Task.Delay(500).Wait();
+            TurnOffServos();
+        }
+
+        //The idea here, is that if a foot hits an object, the corrector is set to the negative value of the current foot height,
+        //then for that leg, the body height is adjusted accordingly. 
+        //So if a foot is half-way to the floor when it contacts something, it would adjust the body height by half for that leg.
+        //Not event sure if this will work!
+        //The value will be stored in LegYHeightCorrector
+        //IK Calculations will need to be modified to use this.
+        internal void RequestLegYHeightCorrector(int leg)
+        {
+            Debug.WriteLine($"gaitPosX = {_gaitPosX[leg]}");
+            Debug.WriteLine($"gaitPosY = {_gaitPosY[leg]}");
+            Debug.WriteLine($"gaitPosZ = {_gaitPosZ[leg]}");
         }
         #endregion
 
@@ -144,7 +159,7 @@ namespace HexapiBackground.IK{
 
                         var angles = BodyLegIk(legIndex,
                                             _legPosX[legIndex], _legPosY[legIndex], _legPosZ[legIndex],
-                                            _bodyPosX, _bodyPosY, _bodyPosZ,
+                                            _bodyPosX, _bodyPosY + LegYHeightCorrector[legIndex], _bodyPosZ,
                                             _gaitPosX[legIndex], _gaitPosY[legIndex], _gaitPosZ[legIndex], _gaitRotY[legIndex],
                                             _offsetX[legIndex], _offsetZ[legIndex],
                                             _bodyRotX1, _bodyRotZ1, _bodyRotY1, _cCoxaAngle1[legIndex]);
@@ -294,7 +309,8 @@ namespace HexapiBackground.IK{
         private double _travelLengthZ; //Current Travel length Z - Negative numbers = "forward" movement.
         private double _travelRotationY; //Current Travel Rotation Y 
 
-        private static readonly int[][] LegServos = new int[6][];
+        private static readonly int[][] LegServos = new int[6][]; //Leg index,
+        private static readonly double[] LegYHeightCorrector = new double[6]; //Leg index,
 
         private static double _pi1K;
 

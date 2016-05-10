@@ -1,5 +1,8 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using Windows.Devices.Gpio;
 using HexapiBackground.Enums;
 using HexapiBackground.Gps;
 using HexapiBackground.Hardware;
@@ -38,8 +41,28 @@ namespace HexapiBackground{
         private double _travelLengthZ;
         private double _travelRotationY;
 
+        private readonly GpioController _gpioController;
+        private readonly List<GpioPin> _legGpioPins = new List<GpioPin>();
+
         internal Hexapi(IGps gps = null)
         {
+            try
+            {
+                _gpioController = GpioController.GetDefault();
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+            }
+
+            for (var i = 3; i <= 8; i++)
+            {
+                var pin = _gpioController.OpenPin(i);
+                pin.ValueChanged += Pin_ValueChanged;
+                pin.SetDriveMode(GpioPinDriveMode.InputPullDown);
+                _legGpioPins.Add(pin);
+            }
+
             _gps = gps;
 
             _ik = new InverseKinematics();
@@ -69,6 +92,25 @@ namespace HexapiBackground{
             TravelRotationYlimit = 2.5;
             LegLiftHeightUpperLimit = 100;
             LegLiftHeightLowerLimit = 20;
+
+        }
+
+        private void Pin_ValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        {
+            Debug.WriteLine($"Pin {sender.PinNumber}, {args.Edge}");
+
+            if (sender.PinNumber == 3)
+                _ik.RequestLegYHeightCorrector(0);
+            if (sender.PinNumber == 4)
+                _ik.RequestLegYHeightCorrector(1);
+            if (sender.PinNumber == 5)
+                _ik.RequestLegYHeightCorrector(2);
+            if (sender.PinNumber == 6)
+                _ik.RequestLegYHeightCorrector(3);
+            if (sender.PinNumber == 7)
+                _ik.RequestLegYHeightCorrector(4);
+            if (sender.PinNumber == 8)
+                _ik.RequestLegYHeightCorrector(5);
         }
 
         internal static double LegLiftHeightUpperLimit { get; set; }
