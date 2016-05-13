@@ -45,7 +45,7 @@ namespace HexapSignalRServer
     {
         private static Gps _instance;
         private readonly SerialPort _serialPort;
-        private readonly ManualResetEventSlim _mre = new ManualResetEventSlim(false);
+        private readonly AutoResetEvent _readEvent = new AutoResetEvent(false);
         private static readonly object InstanceLock = new object();
 
         private Gps()
@@ -81,8 +81,8 @@ namespace HexapSignalRServer
 
                 while (true)
                 {
-                    _mre.Wait(15000);
-                    _mre.Reset();
+                    _readEvent.WaitOne(15000);
+                    _readEvent.Reset();
 
                     try
                     {
@@ -109,7 +109,7 @@ namespace HexapSignalRServer
 
         private void _serialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            _mre.Set();
+            _readEvent.Set();
         }
 
         internal Action<byte[]> UpdateClient { get; set; }

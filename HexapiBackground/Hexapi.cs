@@ -55,12 +55,16 @@ namespace HexapiBackground{
                 Debug.WriteLine(e);
             }
 
-            for (var i = 3; i <= 8; i++)
+            if (_gpioController != null)
             {
-                var pin = _gpioController.OpenPin(i);
+                var pin = _gpioController.OpenPin(21); //Just using leg six
+                pin.SetDriveMode(GpioPinDriveMode.InputPullUp); //Will this power an LED, as well as trigger the event?
                 pin.ValueChanged += Pin_ValueChanged;
-                pin.SetDriveMode(GpioPinDriveMode.InputPullDown);
                 _legGpioPins.Add(pin);
+            }
+            else
+            {
+                Debug.WriteLine("Could not find Gpio Controller");
             }
 
             _gps = gps;
@@ -83,7 +87,7 @@ namespace HexapiBackground{
             _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
 
-            _gaitSpeed = 60;
+            _gaitSpeed = 40;
             GaitSpeedUpperLimit = 350;
             GaitSpeedLowerLimit = 30;
             TravelLengthZupperLimit = 140;
@@ -93,24 +97,37 @@ namespace HexapiBackground{
             LegLiftHeightUpperLimit = 100;
             LegLiftHeightLowerLimit = 20;
 
+            _stopwatch.Start();
+
         }
+
+        readonly Stopwatch _stopwatch = new Stopwatch();
 
         private void Pin_ValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
-            Debug.WriteLine($"Pin {sender.PinNumber}, {args.Edge}");
+            if (_stopwatch.ElapsedMilliseconds < 10) //how in the world is this going to work for 6 legs
+                return;
 
-            if (sender.PinNumber == 3)
-                _ik.RequestLegYHeightCorrector(0);
-            if (sender.PinNumber == 4)
-                _ik.RequestLegYHeightCorrector(1);
-            if (sender.PinNumber == 5)
-                _ik.RequestLegYHeightCorrector(2);
-            if (sender.PinNumber == 6)
-                _ik.RequestLegYHeightCorrector(3);
-            if (sender.PinNumber == 7)
-                _ik.RequestLegYHeightCorrector(4);
-            if (sender.PinNumber == 8)
-                _ik.RequestLegYHeightCorrector(5);
+            if (args.Edge == GpioPinEdge.FallingEdge)
+                Debug.WriteLine($"6, Down, Elapsed {_stopwatch.ElapsedMilliseconds}ms");
+            else
+                Debug.WriteLine($"6, up, Elapsed {_stopwatch.ElapsedMilliseconds}ms");
+
+
+            _stopwatch.Restart();
+
+            //if (sender.PinNumber == 3)
+            //    _ik.RequestLegYHeightCorrector(0);
+            //if (sender.PinNumber == 4)
+            //    _ik.RequestLegYHeightCorrector(1);
+            //if (sender.PinNumber == 5)
+            //    _ik.RequestLegYHeightCorrector(2);
+            //if (sender.PinNumber == 6)
+            //    _ik.RequestLegYHeightCorrector(3);
+            //if (sender.PinNumber == 7)
+            //    _ik.RequestLegYHeightCorrector(4);
+            //if (sender.PinNumber == 8)
+               // _ik.RequestLegYHeightCorrector(5);
         }
 
         internal static double LegLiftHeightUpperLimit { get; set; }

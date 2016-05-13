@@ -171,7 +171,7 @@ namespace HexapiBackground.IK{
 
                     SerialPort.Write(UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1));
 
-                    while (_sw.ElapsedMilliseconds <= (startMs + _gaitSpeedInMs)) { }
+                    while (_sw.ElapsedMilliseconds <= (startMs + _gaitSpeedInMs + 30)) { }
 
                     startMs = _sw.ElapsedMilliseconds;
                 }
@@ -301,8 +301,8 @@ namespace HexapiBackground.IK{
         private double _legLiftHeight; //Current Travel height
 
         private static int _gaitStep = 1;
-        private GaitType _gaitType = GaitType.TripleTripod12Steps;
-        private GaitType _lastGaitType = GaitType.TripleTripod12Steps;
+        private GaitType _gaitType = GaitType.Tripod8Steps;
+        private GaitType _lastGaitType = GaitType.Tripod8Steps;
         private static double _gaitSpeedInMs = 50; //Nominal speed of the gait in ms
 
         private double _travelLengthX; //Current Travel length X - Left/Right
