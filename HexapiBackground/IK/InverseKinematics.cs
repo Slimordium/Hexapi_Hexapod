@@ -83,7 +83,7 @@ namespace HexapiBackground.IK{
             if (enabled)
                 return;
 
-            Task.Delay(500).Wait();
+            Task.Delay(200).Wait();
             TurnOffServos();
         }
 
@@ -101,30 +101,34 @@ namespace HexapiBackground.IK{
         }
         #endregion
 
-        internal static object waitshit = new object();
+
+        private readonly byte[] _querySsc = new byte[] { 0x51, 0x0d };
 
         #region Main logic loop 
         internal void Start()
         {
-            SerialPort = new SerialPort("BCM2836", 115200, 200, 200); //BCM2836 = Onboard UART on PI3 and IoT Core build 14322 (AI041V40A is the USB/Serial dongle)
+            SerialPort = new SerialPort("BCM2836", 115200, 2000, 2000); //BCM2836 = Onboard UART on PI3 and IoT Core build 14322 (AI041V40A is the USB/Serial dongle)
 
             Task.Delay(1000).Wait();
 
             //This works!!!!
-            SerialPort.ListenAction = b =>
-            {
-                if (b == 0x2e) 
-                {
-                    InverseKinematics.mre.Set();
-                    return;
-                }
-
-                SerialPort.Write("Q" + '\r');
-            };
-            SerialPort.Listen();
 
             Task.Factory.StartNew(() =>
             {
+                SerialPort.ListenAction = b =>
+                {
+                    if (b == 0x2e)
+                    {
+                        InverseKinematics.SscCommandCompleteEvent.Set();
+                        return;
+                    }
+
+                    SerialPort.Write(_querySsc).Wait();
+                };
+#pragma warning disable 4014
+                SerialPort.Listen();
+#pragma warning restore 4014
+
                 _sw.Start();
                 var startMs = _sw.ElapsedMilliseconds;
 
@@ -193,19 +197,19 @@ namespace HexapiBackground.IK{
 
                     SerialPort.Write(UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1) + 'Q' + '\r');
 
-                    mre.Wait(300);
-                    mre.Reset();
+                    SscCommandCompleteEvent.Wait((int)(_gaitSpeedInMs + 150));
+                    SscCommandCompleteEvent.Reset();
                 }
             }, TaskCreationOptions.LongRunning);
         }
         #endregion
 
-        internal static ManualResetEventSlim mre = new ManualResetEventSlim(false);
+        internal static ManualResetEventSlim SscCommandCompleteEvent = new ManualResetEventSlim(false);
 
         #region Inverse Kinematics setup
         
-        private const double PfConst = 592; //old 650 ; 900*(1000/PwmDiv)+cPFConst must always be 1500 was 592
-        private const double PwmDiv = 991; //old 1059, new 991;
+        private const double PfConst = 650; //old 650 ; 900*(1000/PwmDiv)+cPFConst must always be 1500 was 592
+        private const double PwmDiv = 1059; //old 1059, new 991;
 
         private const double TravelDeadZone = 0;
 
@@ -221,10 +225,10 @@ namespace HexapiBackground.IK{
 
         private const double CoxaMin = -590; //
         private const double CoxaMax = 590; //
-        private const double FemurMin = -590; //
-        private const double FemurMax = 590; //
-        private const double TibiaMin = -590; //
-        private const double TibiaMax = 590; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double FemurMin = -550; //
+        private const double FemurMax = 550; //
+        private const double TibiaMin = -550; //
+        private const double TibiaMax = 550; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double RrCoxaAngle = -450; //45 degrees
         private const double RmCoxaAngle = 0;

@@ -46,26 +46,26 @@ namespace HexapiBackground{
 
         internal Hexapi(IGps gps = null)
         {
-            try
-            {
-                _gpioController = GpioController.GetDefault();
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e);
-            }
+            //try
+            //{
+            //    _gpioController = GpioController.GetDefault();
+            //}
+            //catch (Exception e)
+            //{
+            //    Debug.WriteLine(e);
+            //}
 
-            if (_gpioController != null)
-            {
-                var pin = _gpioController.OpenPin(21); //Just using leg six
-                pin.SetDriveMode(GpioPinDriveMode.InputPullUp); //Will this power an LED, as well as trigger the event?
-                pin.ValueChanged += Pin_ValueChanged;
-                _legGpioPins.Add(pin);
-            }
-            else
-            {
-                Debug.WriteLine("Could not find Gpio Controller");
-            }
+            //if (_gpioController != null)
+            //{
+            //    var pin = _gpioController.OpenPin(21); //Just using leg six
+            //    pin.SetDriveMode(GpioPinDriveMode.InputPullUp); //Will this power an LED, as well as trigger the event?
+            //    pin.ValueChanged += Pin_ValueChanged;
+            //    _legGpioPins.Add(pin);
+            //}
+            //else
+            //{
+            //    Debug.WriteLine("Could not find Gpio Controller");
+            //}
 
             _gps = gps;
 
@@ -87,17 +87,17 @@ namespace HexapiBackground{
             _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
 
-            _gaitSpeed = 55;
+            _gaitSpeed = 65;
             GaitSpeedUpperLimit = 350;
-            GaitSpeedLowerLimit = 40;
-            TravelLengthZupperLimit = 140;
+            GaitSpeedLowerLimit = 65;
+            TravelLengthZupperLimit = 130;
             TravelLengthZlowerLimit = 80;
             TravelLengthXlimit = 40;
-            TravelRotationYlimit = 2.5;
-            LegLiftHeightUpperLimit = 100;
-            LegLiftHeightLowerLimit = 20;
+            TravelRotationYlimit = 2.1;
+            LegLiftHeightUpperLimit = 80;
+            LegLiftHeightLowerLimit = 25;
 
-            _stopwatch.Start();
+            //_stopwatch.Start();
 
         }
 
@@ -145,7 +145,7 @@ namespace HexapiBackground{
 
         public void Start()
         {
-            _routeFinder = new RouteFinder(_ik, _gps);
+            //_routeFinder = new RouteFinder(_ik, _gps);
 
             Task.Factory.StartNew(() => { _ik.Start(); }, TaskCreationOptions.LongRunning);
         }

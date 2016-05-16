@@ -100,13 +100,12 @@ namespace HexapiBackground.Hardware
             await _serialPort.OutputStream.WriteAsync(buffer).AsTask();
         }
 
-        internal async void Write(byte[] data)
+        internal async Task Write(byte[] data)
         {
             if (_serialPort == null)
                 return;
 
-            var buffer = data.AsBuffer();
-            await _serialPort.OutputStream.WriteAsync(buffer).AsTask();
+            await _serialPort.OutputStream.WriteAsync(data.AsBuffer()).AsTask();
         }
 
         internal Action<byte> ListenAction { get; set; }
