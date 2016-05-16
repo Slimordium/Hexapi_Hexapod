@@ -19,7 +19,7 @@ namespace HexapiBackground{
         private readonly XboxController _xboxController;
         private double _bodyPosX;
 
-        private double _bodyPosY = 45;
+        private double _bodyPosY = 50; //45
         private double _bodyPosZ;
         private double _bodyRotX;
         private double _bodyRotY;
@@ -30,7 +30,7 @@ namespace HexapiBackground{
 
         private bool _isMovementStarted;
 
-        private double _legLiftHeight = 30;
+        private double _legLiftHeight = 35;
 
         private Mpr121 _mpr121;
 
@@ -87,9 +87,9 @@ namespace HexapiBackground{
             _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
 
-            _gaitSpeed = 40;
+            _gaitSpeed = 55;
             GaitSpeedUpperLimit = 350;
-            GaitSpeedLowerLimit = 30;
+            GaitSpeedLowerLimit = 40;
             TravelLengthZupperLimit = 140;
             TravelLengthZlowerLimit = 80;
             TravelLengthXlimit = 40;
@@ -145,6 +145,8 @@ namespace HexapiBackground{
 
         public void Start()
         {
+            _routeFinder = new RouteFinder(_ik, _gps);
+
             Task.Factory.StartNew(() => { _ik.Start(); }, TaskCreationOptions.LongRunning);
         }
 
@@ -210,61 +212,64 @@ namespace HexapiBackground{
                     break;
                 case 2: //X
 
+                    _routeFinder.DisableGpsNavigation();
+
                     break;
                 case 3: //Y
 
-                    switch (_posture)
-                    {
-                        case 0:
-                            _ik.RequestBodyPosition(7, 0, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
-                            break;
-                        case 1:
-                            _ik.RequestBodyPosition(-7, 0, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
-                            break;
-                        case 2:
-                            _ik.RequestBodyPosition(-7, 0, 0, -30, _bodyPosY, _bodyRotY);
-                            break;
-                        case 3:
-                            _ik.RequestBodyPosition(7, 0, 0, 30, _bodyPosY, _bodyRotY);
-                            break;
-                        case 4:
-                            _ik.RequestBodyPosition(-7, 0, 0, 30, _bodyPosY, _bodyRotY);
-                            break;
-                        case 5:
-                            _ik.RequestBodyPosition(7, 0, 0, -30, _bodyPosY, _bodyRotY);
-                            break;
-                        case 6:
-                            _ik.RequestBodyPosition(0, 0, 0, 0, _bodyPosY, _bodyRotY);
-                            Task.Factory.StartNew(async() =>
-                            {
-                                for (; _bodyPosY < 90; _bodyPosY++)
-                                {
-                                    _ik.RequestBodyPosition(0, 0, 0, 0, _bodyPosY, _bodyRotY);
-                                    await Task.Delay(50);
-                                }
-                            });
-                            break;
-                        case 7:
-                            _ik.RequestBodyPosition(0, 0, 0, 0, _bodyPosY, _bodyRotY);
-                            Task.Factory.StartNew(async() =>
-                            {
-                                for (; _bodyPosY > 20; _bodyPosY--)
-                                {
-                                    _ik.RequestBodyPosition(0, 0, 0, 0, _bodyPosY, _bodyRotY);
-                                    await Task.Delay(50);
-                                }
-                            });
-                            break;
-                        case 8:
-                            _ik.RequestBodyPosition(0, 0, 0, 0, _bodyPosY, _bodyRotY);
-                            _posture = 0;
-                            return;
-                    }
-
-                    _posture++;
-
+                    _routeFinder.EnableGpsNavigation();
 
                     break;
+                    //switch (_posture)
+                    //{
+                    //    case 0:
+                    //        _ik.RequestBodyPosition(7, 0, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
+                    //        break;
+                    //    case 1:
+                    //        _ik.RequestBodyPosition(-7, 0, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
+                    //        break;
+                    //    case 2:
+                    //        _ik.RequestBodyPosition(-7, 0, 0, -30, _bodyPosY, _bodyRotY);
+                    //        break;
+                    //    case 3:
+                    //        _ik.RequestBodyPosition(7, 0, 0, 30, _bodyPosY, _bodyRotY);
+                    //        break;
+                    //    case 4:
+                    //        _ik.RequestBodyPosition(-7, 0, 0, 30, _bodyPosY, _bodyRotY);
+                    //        break;
+                    //    case 5:
+                    //        _ik.RequestBodyPosition(7, 0, 0, -30, _bodyPosY, _bodyRotY);
+                    //        break;
+                    //    case 6:
+                    //        _ik.RequestBodyPosition(0, 0, 0, 0, _bodyPosY, _bodyRotY);
+                    //        Task.Factory.StartNew(async() =>
+                    //        {
+                    //            for (; _bodyPosY < 90; _bodyPosY++)
+                    //            {
+                    //                _ik.RequestBodyPosition(0, 0, 0, 0, _bodyPosY, _bodyRotY);
+                    //                await Task.Delay(50);
+                    //            }
+                    //        });
+                    //        break;
+                    //    case 7:
+                    //        _ik.RequestBodyPosition(0, 0, 0, 0, _bodyPosY, _bodyRotY);
+                    //        Task.Factory.StartNew(async() =>
+                    //        {
+                    //            for (; _bodyPosY > 20; _bodyPosY--)
+                    //            {
+                    //                _ik.RequestBodyPosition(0, 0, 0, 0, _bodyPosY, _bodyRotY);
+                    //                await Task.Delay(50);
+                    //            }
+                    //        });
+                    //        break;
+                    //    case 8:
+                    //        _ik.RequestBodyPosition(0, 0, 0, 0, _bodyPosY, _bodyRotY);
+                    //        _posture = 0;
+                    //        return;
+                    //}
+
+                    //_posture++;
+                    //break;
                 case 7: //Start button
                     _isMovementStarted = !_isMovementStarted;
 

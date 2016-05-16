@@ -25,7 +25,7 @@ namespace HexapiBackground
             //These are all optional----
             //var remoteArduino = new RemoteArduino(); //Only need this if using the PingSensors, RemoteArduinoRtkGps or Rocket Launcher
             //var gps = new RemoteArduinoRtkGps(); //NavSparkRtkGps, UltimateGps
-            //var gps = new NavSparkGps(false); //NavSparkRtkGps, UltimateGps
+            //var gps = new NavSparkGps(true); //NavSparkRtkGps, UltimateGps
             //var pingSensors = new PingSensors();
             //var avc = new Avc();
             //gps.Start();

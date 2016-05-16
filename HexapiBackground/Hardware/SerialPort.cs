@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
@@ -18,6 +19,9 @@ namespace HexapiBackground.Hardware
         private static IBuffer _buffer;
         private SerialDevice _serialPort;
         internal SerialError LastError { get; private set; }
+
+        private DataReader _dataReader;
+        private DataReader _dataWriter;
 
         internal SerialPort(string identifier, int baudRate, int readTimeoutMs, int writeTimeoutMs)
         {
@@ -48,7 +52,8 @@ namespace HexapiBackground.Hardware
 
                     Debug.WriteLine($"Found - {identifier} as {selectedPort.Id}");
 
-                    _serialPort.ReadTimeout = TimeSpan.FromMilliseconds(readTimeoutMs);
+                    //_serialPort.ReadTimeout = TimeSpan.FromMilliseconds(readTimeoutMs);
+                    _serialPort.ReadTimeout = TimeSpan.MaxValue;
                     _serialPort.WriteTimeout = TimeSpan.FromMilliseconds(writeTimeoutMs);
                     _serialPort.BaudRate = (uint) baudRate;
                     _serialPort.Parity = SerialParity.None;
@@ -56,6 +61,8 @@ namespace HexapiBackground.Hardware
                     _serialPort.DataBits = 8;
                     _serialPort.Handshake = SerialHandshake.None;
                     //_serialPort.ErrorReceived += _serialPort_ErrorReceived;
+
+                    _dataReader = new DataReader(_serialPort.InputStream);
                 }
             });
         }
@@ -102,16 +109,19 @@ namespace HexapiBackground.Hardware
             await _serialPort.OutputStream.WriteAsync(buffer).AsTask();
         }
 
-        internal async Task<byte> ReadByte()
+        internal Action<byte> ListenAction { get; set; }
+
+        internal async Task Listen()
         {
-            if (_serialPort == null)
-                return new byte();
+            while (true)
+            {
+                var incomingByte = await _dataReader.LoadAsync(1).AsTask();
 
-            _singleByteBuffer = new Buffer(1);
+                var buffer = new byte[incomingByte];
+                _dataReader.ReadBytes(buffer);
 
-            var r = await _serialPort.InputStream.ReadAsync(_singleByteBuffer, 1, InputStreamOptions.Partial).AsTask();
-
-            return r.GetByte(0u);
+                ListenAction?.Invoke(buffer[0]);
+            }
         }
 
         internal byte[] ReadBytes()

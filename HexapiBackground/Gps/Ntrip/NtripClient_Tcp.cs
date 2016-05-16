@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Networking;
 using HexapiBackground.Hardware;
 
 namespace HexapiBackground.Gps.Ntrip
@@ -36,7 +37,7 @@ namespace HexapiBackground.Gps.Ntrip
         public NtripClientTcp(string ntripIpAddress, int ntripPort, string ntripMountPoint, string userName,
             string password, SerialPort serialPort)
         {
-            Debug.WriteLine($"Using http:\\\\{ntripIpAddress}:{ntripPort}\\{ntripMountPoint}");
+            //Debug.WriteLine($"Using http:\\\\{ntripIpAddress}:{ntripPort}\\{ntripMountPoint}");
 
             _serialPort = serialPort;
             //_serialPort = new SerialPort("AH03F3RYA", 57600, 1000, 1000); //Used for testing, allows forwarding RTK data via a seperate serial port.
@@ -57,7 +58,7 @@ namespace HexapiBackground.Gps.Ntrip
                     return;
                 }
 
-                _endPoint = new IPEndPoint(IPAddress.Parse(ntripIpAddress), ntripPort);
+                _endPoint = new IPEndPoint(ip, ntripPort);
 
                 Connect();
             }
@@ -96,7 +97,7 @@ namespace HexapiBackground.Gps.Ntrip
             {
                 if (((Socket) sender).Connected)
                 {
-                    Debug.WriteLine($"Connected to NTRIP feed at {_ntripMountPoint}");
+                    Debug.WriteLine($"Connected to NTRIP feed at {_endPoint.Address}\\{_ntripMountPoint}");
 
                     Task.Delay(500).Wait();
 
@@ -159,7 +160,7 @@ namespace HexapiBackground.Gps.Ntrip
 
                 SendToGps(data);
 
-                Debug.WriteLine($"Bytes : {eventArgs.BytesTransferred}");
+                //Debug.WriteLine($"Bytes : {eventArgs.BytesTransferred}");
 
                 _manualResetEventSlim.Set();
             };
@@ -175,7 +176,7 @@ namespace HexapiBackground.Gps.Ntrip
 
                 while (true)
                 {
-                    _manualResetEventSlim.Wait();
+                    _manualResetEventSlim.Wait(5000);
                     _manualResetEventSlim.Reset();
 
                     ReadData();

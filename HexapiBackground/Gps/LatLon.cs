@@ -66,7 +66,7 @@ namespace HexapiBackground.Gps
 
         public override string ToString()
         {
-            return $"{DateTime},{Lat},{Lon},{Heading},{FeetPerSecond},{Quality} {'\n'}";
+            return $"{DateTime},{Lat},{Lon},{Heading},{FeetPerSecond},{Quality}{'\n'}";
         }
     }
 }

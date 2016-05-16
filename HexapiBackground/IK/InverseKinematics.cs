@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using HexapiBackground.Enums;
 using HexapiBackground.Hardware;
@@ -100,10 +101,27 @@ namespace HexapiBackground.IK{
         }
         #endregion
 
+        internal static object waitshit = new object();
+
         #region Main logic loop 
         internal void Start()
         {
             SerialPort = new SerialPort("BCM2836", 115200, 200, 200); //BCM2836 = Onboard UART on PI3 and IoT Core build 14322 (AI041V40A is the USB/Serial dongle)
+
+            Task.Delay(1000).Wait();
+
+            //This works!!!!
+            SerialPort.ListenAction = b =>
+            {
+                if (b == 0x2e) 
+                {
+                    InverseKinematics.mre.Set();
+                    return;
+                }
+
+                SerialPort.Write("Q" + '\r');
+            };
+            SerialPort.Listen();
 
             Task.Factory.StartNew(() =>
             {
@@ -116,6 +134,8 @@ namespace HexapiBackground.IK{
 
                     if (!_movementStarted)
                     {
+                        GaitSelect();
+
                         //SerialPort.Write("VH\r");
                         //var r = SerialPort.ReadByte().Result;
 
@@ -124,7 +144,7 @@ namespace HexapiBackground.IK{
                         //if (level > 5)
                         //    Debug.WriteLine("Level " + level);
 
-                        while (_sw.ElapsedMilliseconds < (startMs + 10)) { }
+                        while (_sw.ElapsedMilliseconds < (startMs + 100)) { }
                         startMs = _sw.ElapsedMilliseconds;
                         continue;
                     }
@@ -143,6 +163,8 @@ namespace HexapiBackground.IK{
 
                     for (var legIndex = 0; legIndex < 6; legIndex++)
                     {
+                    // var legIndex = 3;
+
                         if (legIndex == 5)
                             _lastLeg = 1;
 
@@ -169,15 +191,16 @@ namespace HexapiBackground.IK{
                         _tibiaAngle1[legIndex] = angles[2];
                     }
 
-                    SerialPort.Write(UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1));
+                    SerialPort.Write(UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1) + 'Q' + '\r');
 
-                    while (_sw.ElapsedMilliseconds <= (startMs + _gaitSpeedInMs + 30)) { }
-
-                    startMs = _sw.ElapsedMilliseconds;
+                    mre.Wait(300);
+                    mre.Reset();
                 }
             }, TaskCreationOptions.LongRunning);
         }
         #endregion
+
+        internal static ManualResetEventSlim mre = new ManualResetEventSlim(false);
 
         #region Inverse Kinematics setup
         
@@ -231,7 +254,7 @@ namespace HexapiBackground.IK{
         private const double HexInitXz = CoxaLength + FemurLength;
         private const double HexInitXzCos45 = HexInitXz * .7071; //http://www.math.com/tables/trig/tables.htm
         private const double HexInitXzSin45 = HexInitXz * .7071; 
-        private const double HexInitY = 70; 
+        private const double HexInitY = 50; //70
          
         private const double RfInitPosX = HexInitXzCos45;
         private const double RfInitPosY = HexInitY;
@@ -602,7 +625,7 @@ namespace HexapiBackground.IK{
                 StringBuilder.Append($"#{LegServos[legIndex][2]}P{tibiaPosition}");
             }
 
-            StringBuilder.Append($"T{_gaitSpeedInMs}\r");
+            StringBuilder.Append($"T{_gaitSpeedInMs - 5}\r");
 
             return StringBuilder.ToString();
         }

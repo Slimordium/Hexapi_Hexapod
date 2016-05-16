@@ -27,11 +27,12 @@ namespace HexapiBackground.Helpers
 
                 await stream.ReadAsync(buffer, (uint)stream.Size, InputStreamOptions.None);
 
-                text = Encoding.UTF8.GetString(buffer.ToArray());
+                if (buffer.Length > 0)
+                    text = Encoding.UTF8.GetString(buffer.ToArray());
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e);
+                Debug.WriteLine($"Read failed {filename}, {e}");
             }
 
             return text;
@@ -56,9 +57,9 @@ namespace HexapiBackground.Helpers
                         stream.Write(bytesToAppend, 0, bytesToAppend.Length);
                     }
                 }
-                catch
+                catch (Exception e)
                 {
-                    Debug.WriteLine("Save failed for " + filename);
+                    Debug.WriteLine($"Save failed {filename}, {e}");
                 }
             });
         }

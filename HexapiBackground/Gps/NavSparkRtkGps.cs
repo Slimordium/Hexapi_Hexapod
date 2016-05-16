@@ -18,12 +18,14 @@ namespace HexapiBackground.Gps
         //So we don't have to add another USB/Serial adapter, we are not going to configure the GPS from here. 
         //We will pre-configure while connected to a PC. The RX will be connected to the TX pin of the GPS.
         //The TX will be connected to the RX2 pin on the GPS. NTRIP data will be sent over this 
-        private readonly SerialPort _serialPort;
+        private readonly SerialPort _serialPortForRtkCorrectionData;
+        private readonly SerialPort _serialPortForGps;
         private readonly bool _useRtk;
 
         public NavSparkGps(bool useRtk)
         {
-            _serialPort = new SerialPort("AH03F3RY", 57600, 2000, 2000); 
+            _serialPortForRtkCorrectionData = new SerialPort("A104OHRX", 57600, 2000, 2000);  //FTDIBUS\VID_0403+PID_6001+A104OHRXA\0000
+            _serialPortForGps = new SerialPort("AH03F3RY", 57600, 2000, 2000);  
 
             _useRtk = useRtk;
 
@@ -53,18 +55,21 @@ namespace HexapiBackground.Gps
 
                 try
                 {
-                    var settings = config.Split(',');
+                    var ntripClient = new NtripClientTcp("172.16.0.229", 8181, "", "", "", _serialPortForRtkCorrectionData);
+                    ntripClient.Start();
 
-                    if (settings[5] != null && settings[5].Equals("serial", StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        var ntripClient = new NtripClientFona(settings[0], int.Parse(settings[1]), settings[2], settings[3], settings[4], _serialPort);
-                        ntripClient.Start();
-                    }
-                    else
-                    {
-                        var ntripClient = new NtripClientTcp(settings[0], int.Parse(settings[1]), settings[2], settings[3], settings[4], _serialPort);
-                        ntripClient.Start();
-                    }
+                    //var settings = config.Split(',');
+
+                    //if (settings[5] != null && settings[5].Equals("serial", StringComparison.CurrentCultureIgnoreCase))
+                    //{
+                    //    var ntripClient = new NtripClientFona(settings[0], int.Parse(settings[1]), settings[2], settings[3], settings[4], _serialPort);
+                    //    ntripClient.Start();
+                    //}
+                    //else
+                    //{
+                    //    var ntripClient = new NtripClientTcp(settings[0], int.Parse(settings[1]), settings[2], settings[3], settings[4], _serialPort);
+                    //    ntripClient.Start();
+                    //}
                 }
                 catch (Exception e)
                 {
@@ -78,7 +83,7 @@ namespace HexapiBackground.Gps
 
                 while (true)
                 {
-                    var sentences = _serialPort.ReadString();
+                    var sentences = _serialPortForGps.ReadString();
 
                     foreach (var s in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
                     {
