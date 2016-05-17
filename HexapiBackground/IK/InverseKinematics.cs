@@ -249,15 +249,15 @@ namespace HexapiBackground.IK{
         private const double LmOffsetZ = 0;
         private const double LmOffsetX = 135;
 
-        private const double CoxaLength = 33; //mm
-        private const double FemurLength = 70; //mm
-        private const double TibiaLength = 130; //mm
+        private const double CoxaLengthInMm = 33; //mm
+        private const double FemurLengthInMm = 70; //mm
+        private const double TibiaLengthInMm = 130; //mm
 
         //Foot start positions
-        private const double HexInitXz = CoxaLength + FemurLength - 2; //foot is about 2mm inset from femur/tibia joint
+        private const double HexInitXz = CoxaLengthInMm + FemurLengthInMm - 2; //foot is about 2mm inset from femur/tibia joint
         private const double HexInitXzCos45 = HexInitXz * .7071; //http://www.math.com/tables/trig/tables.htm
         private const double HexInitXzSin45 = HexInitXz * .7071; 
-        private const double HexInitY = 90; //70
+        private const double HexInitY = 90; //
          
         private const double RfInitPosX = HexInitXzCos45;
         private const double RfInitPosY = HexInitY;
@@ -307,15 +307,15 @@ namespace HexapiBackground.IK{
         private readonly double[] _legPosY = new double[6]; //Actual Y Position of the Leg
         private readonly double[] _legPosZ = new double[6]; //Actual Z Position of the Leg
 
-        private static int _lastLeg; //true = the current leg is the last leg of the sequence
+        private static int _lastLeg;
 
         private int _liftDivFactor; //Normaly: 2, when NrLiftedPos=5: 4
         private int _numberOfLiftedPositions; //Number of positions that a single leg is lifted [1-3]
         private int _stepsInGait; //Number of steps in gait
         private int _tlDivFactor; //Number of steps that a leg is on the floor while walking
-        private bool _travelRequest; //Temp to check if the gait is in motion
+        private bool _travelRequest; //is the gait is in motion
 
-        private double _bodyPosX; //Global Input for the position of the body
+        private double _bodyPosX; 
         private double _bodyPosY; //Controls height of the body from the ground
         private double _bodyPosZ;
 
@@ -323,7 +323,7 @@ namespace HexapiBackground.IK{
         private double _bodyRotY; //Global Input rotation of the body
         private double _bodyRotZ; //Global Input roll of the body
 
-        private int _halfLiftHeight; //If true the outer positions of the ligted legs will be half height    
+        private int _halfLiftHeight; //If true the outer positions of the lifted legs will be half height    
         private double _legLiftHeight; //Current Travel height
 
         private static int _gaitStep = 1;
@@ -496,13 +496,11 @@ namespace HexapiBackground.IK{
 
             if (_lastLeg != 1)
                 return gaitXyZrotY;
-
-            //The last leg in this step
+            
             _gaitStep = _gaitStep + 1;
-            if (_gaitStep > stepsInGait)
-            {
+
+            if (_gaitStep > stepsInGait)//The last leg in this step
                 _gaitStep = 1;
-            }
 
             return gaitXyZrotY;
         }
@@ -515,81 +513,71 @@ namespace HexapiBackground.IK{
                                             double bodyPosX, double bodyPosY, double bodyPosZ, 
                                             double gaitPosX, double gaitPosY, double gaitPosZ, double gaitRotY, 
                                             double cOffsetX, double cOffsetZ,
-                                            double bodyRotX1, double bodyRotZ1, double bodyRotY1,
+                                            double bodyRotX, double bodyRotZ, double bodyRotY,
                                             double coxaAngle)
         {
             var posX = 0D;
-            if (legIndex <= 2)
+            if (legIndex <= 2) 
                 posX = -legPosX + bodyPosX + gaitPosX;
             else
                 posX = legPosX - bodyPosX + gaitPosX;
 
-            var posY = legPosY + bodyPosY + gaitPosY;
+            var posY = (legPosY + bodyPosY + gaitPosY) * 100;
             var posZ = legPosZ + bodyPosZ + gaitPosZ;
-
-            double sinA; //Sin buffer for BodyRotX calculations
-            double cosA; //Cos buffer for BodyRotX calculations
-            double sinB; //Sin buffer for BodyRotX calculations
-            double cosB; //Cos buffer for BodyRotX calculations
-            double sinG; //Sin buffer for BodyRotZ calculations
-            double cosG; //Cos buffer for BodyRotZ calculations
 
             //Calculating totals from center of the body to the feet 
             var cprX = (cOffsetX + posX) * 100;
             var cprZ = (cOffsetZ + posZ) * 100;
 
-            posY = posY * 100;
+            double bodyRotYSin, bodyRotYCos, bodyRotZSin, bodyRotZCos, bodyRotXSin, bodyRotXCos;
 
-            //Math shorts for rotation: Alfa [A] = Xrotate, Beta [B] = Zrotate, Gamma [G] = Yrotate 
-            //Sinus Alfa = SinA, cosinus Alfa = cosA. and so on... 
-
-            GetSinCos(bodyRotY1 + (gaitRotY * 10), out sinA, out cosA);
-            GetSinCos(bodyRotZ1, out sinB, out cosB);
-            GetSinCos(bodyRotX1, out sinG, out cosG);
+            GetSinCos(bodyRotY + (gaitRotY * 10), out bodyRotYSin, out bodyRotYCos);
+            GetSinCos(bodyRotZ, out bodyRotZSin, out bodyRotZCos);
+            GetSinCos(bodyRotX, out bodyRotXSin, out bodyRotXCos);
 
             //Calculation of rotation matrix: 
             var bodyFkPosX = (cprX -
-                          ((cprX * cosA * cosB) - 
-                           (cprZ * cosB * sinA) +
-                           (posY * sinB))) / 100;
+                          ((cprX * bodyRotYCos * bodyRotZCos) - 
+                           (cprZ * bodyRotZCos * bodyRotYSin) +
+                           (posY * bodyRotZSin))) / 100;
 
             var bodyFkPosZ = (cprZ -
-                          ((cprX * cosG * sinA) + 
-                           (cprX * cosA * sinB * sinG) +
-                           (cprZ * cosA * cosG) - 
-                           (cprZ * sinA * sinB * sinG) -
-                           (posY * cosB * sinG))) / 100;
+                          ((cprX * bodyRotXCos * bodyRotYSin) + 
+                           (cprX * bodyRotYCos * bodyRotZSin * bodyRotXSin) +
+                           (cprZ * bodyRotYCos * bodyRotXCos) - 
+                           (cprZ * bodyRotYSin * bodyRotZSin * bodyRotXSin) -
+                           (posY * bodyRotZCos * bodyRotXSin))) / 100;
 
             var bodyFkPosY = (posY -
-                          ((cprX * sinA * sinG) - 
-                           (cprX * cosA * cosG * sinB) +
-                           (cprZ * cosA * sinG) + 
-                           (cprZ * cosG * sinA * sinB) +
-                           (posY * cosB * cosG))) / 100;
+                          ((cprX * bodyRotYSin * bodyRotXSin) - 
+                           (cprX * bodyRotYCos * bodyRotXCos * bodyRotZSin) +
+                           (cprZ * bodyRotYCos * bodyRotXSin) + 
+                           (cprZ * bodyRotXCos * bodyRotYSin * bodyRotZSin) +
+                           (posY * bodyRotZCos * bodyRotXCos))) / 100;
 
             var coxaFemurTibiaAngle = new double[3];
 
-            var ikFeetPosX = 0D;
+            var feetPosX = 0D;
             if (legIndex <= 2)
-                ikFeetPosX = legPosX - bodyPosX + bodyFkPosX - gaitPosX;
+                feetPosX = legPosX - bodyPosX + bodyFkPosX - gaitPosX;
             else
-                ikFeetPosX = legPosX + bodyPosX - bodyFkPosX + gaitPosX;
+                feetPosX = legPosX + bodyPosX - bodyFkPosX + gaitPosX;
 
-            var ikFeetPosY = legPosY + bodyPosY - bodyFkPosY + gaitPosY;
-            var ikFeetPosZ = legPosZ + bodyPosZ - bodyFkPosZ + gaitPosZ;
+            var feetPosY = legPosY + bodyPosY - bodyFkPosY + gaitPosY;
+            var feetPosZ = legPosZ + bodyPosZ - bodyFkPosZ + gaitPosZ;
 
-            double xyhyp2;
-            var getatan = GetATan2(ikFeetPosX, ikFeetPosZ, out xyhyp2);
+            double xyhyp;
+            var atan2 = GetATan2(feetPosX, feetPosZ, out xyhyp);
 
-            coxaFemurTibiaAngle[0] = ((getatan * 180) / _pi1K) + coxaAngle;
+            coxaFemurTibiaAngle[0] = ((atan2 * 180) / _pi1K) + coxaAngle;
 
-            var ikFeetPosXz = xyhyp2 / 100;
-            var ika14 = GetATan2(ikFeetPosY, ikFeetPosXz - CoxaLength, out xyhyp2);
-            var ika24 = GetArcCos((((FemurLength * FemurLength) - (TibiaLength * TibiaLength)) * TenThousand + (xyhyp2 * xyhyp2)) / ((2 * FemurLength * 100 * xyhyp2) / TenThousand));
+            var ikFeetPosXz = xyhyp / 100;
+            var ika14 = GetATan2(feetPosY, ikFeetPosXz - CoxaLengthInMm, out xyhyp);
+            var ika24 = GetArcCos((((FemurLengthInMm * FemurLengthInMm) - (TibiaLengthInMm * TibiaLengthInMm)) * TenThousand + (xyhyp * xyhyp)) / ((2 * FemurLengthInMm * 100 * xyhyp) / TenThousand));
 
             coxaFemurTibiaAngle[1] = -(ika14 + ika24) * 180 / _pi1K + 900;
 
-            coxaFemurTibiaAngle[2] = -(900 - GetArcCos((((FemurLength * FemurLength) + (TibiaLength * TibiaLength)) * TenThousand - (xyhyp2 * xyhyp2)) / (2 * FemurLength * TibiaLength)) * 180 / _pi1K);
+            coxaFemurTibiaAngle[2] = -(900 - GetArcCos((((FemurLengthInMm * FemurLengthInMm) + (TibiaLengthInMm * TibiaLengthInMm)) * TenThousand - (xyhyp * xyhyp)) / (2 * FemurLengthInMm * TibiaLengthInMm)) * 180 / _pi1K);
 
             return coxaFemurTibiaAngle;
         }
