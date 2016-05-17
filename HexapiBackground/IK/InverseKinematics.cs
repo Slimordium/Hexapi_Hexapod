@@ -20,6 +20,7 @@ namespace HexapiBackground.IK{
         internal static SerialPort SerialPort { get; private set; }
         private readonly Stopwatch _sw = new Stopwatch();
         private static readonly StringBuilder StringBuilder = new StringBuilder();
+        internal static ManualResetEventSlim SscCommandCompleteEvent = new ManualResetEventSlim(false);
 
         internal InverseKinematics()
         {
@@ -55,13 +56,13 @@ namespace HexapiBackground.IK{
 
         internal void RequestBodyPosition(double bodyRotX1, double bodyRotZ1, double bodyPosX, double bodyPosZ, double bodyPosY, double bodyRotY1)
         {
-            _bodyRotX1 = bodyRotX1;
-            _bodyRotZ1 = bodyRotZ1;
+            _bodyRotX = bodyRotX1;
+            _bodyRotZ = bodyRotZ1;
 
             _bodyPosX = bodyPosX;
             _bodyPosZ = bodyPosZ;
             _bodyPosY = bodyPosY;
-            _bodyRotY1 = bodyRotY1; //body rotation
+            _bodyRotY = bodyRotY1; //body rotation
         }
 
         internal void RequestSetGaitOptions(double gaitSpeed, double legLiftHeight)
@@ -101,8 +102,7 @@ namespace HexapiBackground.IK{
         }
         #endregion
 
-
-        private readonly byte[] _querySsc = new byte[] { 0x51, 0x0d };
+        private readonly byte[] _querySsc = { 0x51, 0x0d }; //0x51 = Q, 0x0d = carriage return
 
         #region Main logic loop 
         internal void Start()
@@ -126,7 +126,7 @@ namespace HexapiBackground.IK{
                     SerialPort.Write(_querySsc).Wait();
                 };
 #pragma warning disable 4014
-                SerialPort.Listen();
+                SerialPort.ListenForSscCommandComplete();
 #pragma warning restore 4014
 
                 _sw.Start();
@@ -159,10 +159,11 @@ namespace HexapiBackground.IK{
 
                     //Only switch the gait after the previous one is complete
                     if (_gaitStep == 1 && _lastGaitType != _gaitType)
+                    {
                         GaitSelect();
-
-                    _liftDivFactor = _numberOfLiftedPositions == 5 ? 4 : 2;
-
+                        _liftDivFactor = _numberOfLiftedPositions == 5 ? 4 : 2;
+                    }
+                
                     _lastLeg = 0;
 
                     for (var legIndex = 0; legIndex < 6; legIndex++)
@@ -188,14 +189,14 @@ namespace HexapiBackground.IK{
                                             _bodyPosX, _bodyPosY + LegYHeightCorrector[legIndex], _bodyPosZ,
                                             _gaitPosX[legIndex], _gaitPosY[legIndex], _gaitPosZ[legIndex], _gaitRotY[legIndex],
                                             _offsetX[legIndex], _offsetZ[legIndex],
-                                            _bodyRotX1, _bodyRotZ1, _bodyRotY1, _cCoxaAngle1[legIndex]);
+                                            _bodyRotX, _bodyRotZ, _bodyRotY, _cCoxaAngle[legIndex]);
 
-                        _coxaAngle1[legIndex] = angles[0];
-                        _femurAngle1[legIndex] = angles[1];
-                        _tibiaAngle1[legIndex] = angles[2];
+                        _coxaAngle[legIndex] = angles[0];
+                        _femurAngle[legIndex] = angles[1];
+                        _tibiaAngle[legIndex] = angles[2];
                     }
 
-                    SerialPort.Write(UpdateServoPositions(_coxaAngle1, _femurAngle1, _tibiaAngle1) + 'Q' + '\r');
+                    SerialPort.Write(UpdateServoPositions(_coxaAngle, _femurAngle, _tibiaAngle));
 
                     SscCommandCompleteEvent.Wait((int)(_gaitSpeedInMs + 150));
                     SscCommandCompleteEvent.Reset();
@@ -203,8 +204,6 @@ namespace HexapiBackground.IK{
             }, TaskCreationOptions.LongRunning);
         }
         #endregion
-
-        internal static ManualResetEventSlim SscCommandCompleteEvent = new ManualResetEventSlim(false);
 
         #region Inverse Kinematics setup
         
@@ -216,21 +215,21 @@ namespace HexapiBackground.IK{
         private const double TenThousand = 10000;
         private const double OneMillion = 1000000;
 
-        private const int Lf = 5;
+        private const int Lf = 3; //Not sure why 3 and 5 are swapped... yet.
         private const int Lm = 4;
-        private const int Lr = 3;
+        private const int Lr = 5;
         private const int Rf = 2;
         private const int Rm = 1;
         private const int Rr = 0;
 
-        private const double CoxaMin = -590; //
-        private const double CoxaMax = 590; //
-        private const double FemurMin = -550; //
-        private const double FemurMax = 550; //
-        private const double TibiaMin = -550; //
-        private const double TibiaMax = 550; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -585; //
+        private const double CoxaMax = 585; //
+        private const double FemurMin = -560; //
+        private const double FemurMax = 560; //
+        private const double TibiaMin = -560; //
+        private const double TibiaMax = 560; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
-        private const double RrCoxaAngle = -450; //45 degrees
+        private const double RrCoxaAngle = -450; //450 = 45 degrees from center
         private const double RmCoxaAngle = 0;
         private const double RfCoxaAngle = 450;
         private const double LrCoxaAngle = -450;
@@ -255,10 +254,10 @@ namespace HexapiBackground.IK{
         private const double TibiaLength = 130; //mm
 
         //Foot start positions
-        private const double HexInitXz = CoxaLength + FemurLength;
+        private const double HexInitXz = CoxaLength + FemurLength - 2; //foot is about 2mm inset from femur/tibia joint
         private const double HexInitXzCos45 = HexInitXz * .7071; //http://www.math.com/tables/trig/tables.htm
         private const double HexInitXzSin45 = HexInitXz * .7071; 
-        private const double HexInitY = 50; //70
+        private const double HexInitY = 90; //70
          
         private const double RfInitPosX = HexInitXzCos45;
         private const double RfInitPosY = HexInitY;
@@ -291,11 +290,11 @@ namespace HexapiBackground.IK{
         private readonly double[] _offsetX = { RrOffsetX, RmOffsetX, RfOffsetX, LrOffsetX, LmOffsetX, LfOffsetX };
         private readonly double[] _offsetZ = { RrOffsetZ, RmOffsetZ, RfOffsetZ, LrOffsetZ, LmOffsetZ, LfOffsetZ };
 
-        private readonly double[] _cCoxaAngle1 = { RrCoxaAngle, RmCoxaAngle, RfCoxaAngle, LrCoxaAngle, LmCoxaAngle, LfCoxaAngle };
+        private readonly double[] _cCoxaAngle = { RrCoxaAngle, RmCoxaAngle, RfCoxaAngle, LrCoxaAngle, LmCoxaAngle, LfCoxaAngle };
 
-        private readonly double[] _coxaAngle1 = new double[6];
-        private readonly double[] _femurAngle1 = new double[6]; //Actual Angle of the vertical hip, decimals = 1
-        private readonly double[] _tibiaAngle1 = new double[6]; //Actual Angle of the knee, decimals = 1
+        private readonly double[] _coxaAngle = new double[6];
+        private readonly double[] _femurAngle = new double[6]; //Actual Angle of the vertical hip, decimals = 1
+        private readonly double[] _tibiaAngle = new double[6]; //Actual Angle of the knee, decimals = 1
 
         private readonly int[] _gaitLegNr = new int[6]; //Initial position of the leg
 
@@ -320,9 +319,9 @@ namespace HexapiBackground.IK{
         private double _bodyPosY; //Controls height of the body from the ground
         private double _bodyPosZ;
 
-        private double _bodyRotX1; //Global Input pitch of the body
-        private double _bodyRotY1; //Global Input rotation of the body
-        private double _bodyRotZ1; //Global Input roll of the body
+        private double _bodyRotX; //Global Input pitch of the body
+        private double _bodyRotY; //Global Input rotation of the body
+        private double _bodyRotZ; //Global Input roll of the body
 
         private int _halfLiftHeight; //If true the outer positions of the ligted legs will be half height    
         private double _legLiftHeight; //Current Travel height
@@ -330,7 +329,7 @@ namespace HexapiBackground.IK{
         private static int _gaitStep = 1;
         private GaitType _gaitType = GaitType.Tripod8Steps;
         private GaitType _lastGaitType = GaitType.Tripod8Steps;
-        private static double _gaitSpeedInMs = 50; //Nominal speed of the gait in ms
+        private static double _gaitSpeedInMs = 60; //Nominal speed of the gait in ms
 
         private double _travelLengthX; //Current Travel length X - Left/Right
         private double _travelLengthZ; //Current Travel length Z - Negative numbers = "forward" movement.
@@ -629,7 +628,7 @@ namespace HexapiBackground.IK{
                 StringBuilder.Append($"#{LegServos[legIndex][2]}P{tibiaPosition}");
             }
 
-            StringBuilder.Append($"T{_gaitSpeedInMs - 5}\r");
+            StringBuilder.Append($"T{_gaitSpeedInMs - 5}\rQ\r");
 
             return StringBuilder.ToString();
         }
@@ -694,7 +693,7 @@ namespace HexapiBackground.IK{
         private static double GetArcCos(double cos)
         {
             var c = cos / TenThousand; 
-            return (Math.Abs(Math.Abs(c) - 1.0) < .00000000000001
+            return (Math.Abs(Math.Abs(c) - 1.0) < .000000000000001
                 ? (1 - c) * Math.PI / 2.0
                 : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * TenThousand;
         }

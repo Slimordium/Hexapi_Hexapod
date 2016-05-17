@@ -110,14 +110,13 @@ namespace HexapiBackground.Hardware
 
         internal Action<byte> ListenAction { get; set; }
 
-        internal async Task Listen()
+        internal async Task ListenForSscCommandComplete()
         {
+            var buffer = new byte[1];
+
             while (true)
             {
-                var incomingByte = await _dataReader.LoadAsync(1).AsTask();
-
-                var buffer = new byte[incomingByte];
-                _dataReader.ReadBytes(buffer);
+                await _serialPort.InputStream.ReadAsync(buffer.AsBuffer(), 1, InputStreamOptions.Partial);
 
                 ListenAction?.Invoke(buffer[0]);
             }
