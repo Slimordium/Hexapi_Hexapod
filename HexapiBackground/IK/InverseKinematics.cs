@@ -24,7 +24,7 @@ namespace HexapiBackground.IK{
 
         internal InverseKinematics()
         {
-            _pi1K = Math.PI*1000;
+            _pi1K = Math.PI*1000D;
 
             for (var i = 0; i < 6; i++)
                 LegServos[i] = new int[3];
@@ -117,7 +117,7 @@ namespace HexapiBackground.IK{
             {
                 SerialPort.ListenAction = b =>
                 {
-                    if (b == 0x2e)
+                    if (b == 0x2e) //0x2e = .
                     {
                         InverseKinematics.SscCommandCompleteEvent.Set();
                         return;
@@ -189,7 +189,7 @@ namespace HexapiBackground.IK{
                                             _bodyPosX, _bodyPosY + LegYHeightCorrector[legIndex], _bodyPosZ,
                                             _gaitPosX[legIndex], _gaitPosY[legIndex], _gaitPosZ[legIndex], _gaitRotY[legIndex],
                                             _offsetX[legIndex], _offsetZ[legIndex],
-                                            _bodyRotX, _bodyRotZ, _bodyRotY, _cCoxaAngle[legIndex]);
+                                            _bodyRotX, _bodyRotZ, _bodyRotY, _calculatedCoxaAngle[legIndex]);
 
                         _coxaAngle[legIndex] = angles[0];
                         _femurAngle[legIndex] = angles[1];
@@ -215,9 +215,9 @@ namespace HexapiBackground.IK{
         private const double TenThousand = 10000;
         private const double OneMillion = 1000000;
 
-        private const int Lf = 3; //Not sure why 3 and 5 are swapped... yet.
+        private const int Lf = 5; 
         private const int Lm = 4;
-        private const int Lr = 5;
+        private const int Lr = 3;
         private const int Rf = 2;
         private const int Rm = 1;
         private const int Rr = 0;
@@ -254,7 +254,7 @@ namespace HexapiBackground.IK{
         private const double TibiaLengthInMm = 130; //mm
 
         //Foot start positions
-        private const double HexInitXz = CoxaLengthInMm + FemurLengthInMm - 2; //foot is about 2mm inset from femur/tibia joint
+        private const double HexInitXz = CoxaLengthInMm + FemurLengthInMm - 3; //foot is about 2mm? inset from femur/tibia joint
         private const double HexInitXzCos45 = HexInitXz * .7071; //http://www.math.com/tables/trig/tables.htm
         private const double HexInitXzSin45 = HexInitXz * .7071; 
         private const double HexInitY = 90; //
@@ -290,7 +290,7 @@ namespace HexapiBackground.IK{
         private readonly double[] _offsetX = { RrOffsetX, RmOffsetX, RfOffsetX, LrOffsetX, LmOffsetX, LfOffsetX };
         private readonly double[] _offsetZ = { RrOffsetZ, RmOffsetZ, RfOffsetZ, LrOffsetZ, LmOffsetZ, LfOffsetZ };
 
-        private readonly double[] _cCoxaAngle = { RrCoxaAngle, RmCoxaAngle, RfCoxaAngle, LrCoxaAngle, LmCoxaAngle, LfCoxaAngle };
+        private readonly double[] _calculatedCoxaAngle = { RrCoxaAngle, RmCoxaAngle, RfCoxaAngle, LrCoxaAngle, LmCoxaAngle, LfCoxaAngle };
 
         private readonly double[] _coxaAngle = new double[6];
         private readonly double[] _femurAngle = new double[6]; //Actual Angle of the vertical hip, decimals = 1
@@ -512,7 +512,7 @@ namespace HexapiBackground.IK{
                                             double legPosX, double legPosY, double legPosZ, 
                                             double bodyPosX, double bodyPosY, double bodyPosZ, 
                                             double gaitPosX, double gaitPosY, double gaitPosZ, double gaitRotY, 
-                                            double cOffsetX, double cOffsetZ,
+                                            double offsetX, double offsetZ,
                                             double bodyRotX, double bodyRotZ, double bodyRotY,
                                             double coxaAngle)
         {
@@ -525,34 +525,33 @@ namespace HexapiBackground.IK{
             var posY = (legPosY + bodyPosY + gaitPosY) * 100;
             var posZ = legPosZ + bodyPosZ + gaitPosZ;
 
-            //Calculating totals from center of the body to the feet 
-            var cprX = (cOffsetX + posX) * 100;
-            var cprZ = (cOffsetZ + posZ) * 100;
+            var centerOfBodyToFeetX = (offsetX + posX) * 100;
+            var centerOfBodyToFeetZ = (offsetZ + posZ) * 100;
 
             double bodyRotYSin, bodyRotYCos, bodyRotZSin, bodyRotZCos, bodyRotXSin, bodyRotXCos;
 
-            GetSinCos(bodyRotY + (gaitRotY * 10), out bodyRotYSin, out bodyRotYCos);
+            GetSinCos(bodyRotY + gaitRotY, out bodyRotYSin, out bodyRotYCos);
             GetSinCos(bodyRotZ, out bodyRotZSin, out bodyRotZCos);
             GetSinCos(bodyRotX, out bodyRotXSin, out bodyRotXCos);
 
             //Calculation of rotation matrix: 
-            var bodyFkPosX = (cprX -
-                          ((cprX * bodyRotYCos * bodyRotZCos) - 
-                           (cprZ * bodyRotZCos * bodyRotYSin) +
+            var bodyFkPosX = (centerOfBodyToFeetX -
+                          ((centerOfBodyToFeetX * bodyRotYCos * bodyRotZCos) - 
+                           (centerOfBodyToFeetZ * bodyRotZCos * bodyRotYSin) +
                            (posY * bodyRotZSin))) / 100;
 
-            var bodyFkPosZ = (cprZ -
-                          ((cprX * bodyRotXCos * bodyRotYSin) + 
-                           (cprX * bodyRotYCos * bodyRotZSin * bodyRotXSin) +
-                           (cprZ * bodyRotYCos * bodyRotXCos) - 
-                           (cprZ * bodyRotYSin * bodyRotZSin * bodyRotXSin) -
+            var bodyFkPosZ = (centerOfBodyToFeetZ -
+                          ((centerOfBodyToFeetX * bodyRotXCos * bodyRotYSin) + 
+                           (centerOfBodyToFeetX * bodyRotYCos * bodyRotZSin * bodyRotXSin) +
+                           (centerOfBodyToFeetZ * bodyRotYCos * bodyRotXCos) - 
+                           (centerOfBodyToFeetZ * bodyRotYSin * bodyRotZSin * bodyRotXSin) -
                            (posY * bodyRotZCos * bodyRotXSin))) / 100;
 
             var bodyFkPosY = (posY -
-                          ((cprX * bodyRotYSin * bodyRotXSin) - 
-                           (cprX * bodyRotYCos * bodyRotXCos * bodyRotZSin) +
-                           (cprZ * bodyRotYCos * bodyRotXSin) + 
-                           (cprZ * bodyRotXCos * bodyRotYSin * bodyRotZSin) +
+                          ((centerOfBodyToFeetX * bodyRotYSin * bodyRotXSin) - 
+                           (centerOfBodyToFeetX * bodyRotYCos * bodyRotXCos * bodyRotZSin) +
+                           (centerOfBodyToFeetZ * bodyRotYCos * bodyRotXSin) + 
+                           (centerOfBodyToFeetZ * bodyRotXCos * bodyRotYSin * bodyRotZSin) +
                            (posY * bodyRotZCos * bodyRotXCos))) / 100;
 
             var coxaFemurTibiaAngle = new double[3];

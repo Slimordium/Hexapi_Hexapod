@@ -87,13 +87,13 @@ namespace HexapiBackground{
             _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
 
-            _gaitSpeed = 60;
+            _gaitSpeed = 65;
             GaitSpeedUpperLimit = 400;
-            GaitSpeedLowerLimit = 60;
-            TravelLengthZupperLimit = 130;
+            GaitSpeedLowerLimit = 65;
+            TravelLengthZupperLimit = 140;
             TravelLengthZlowerLimit = 80;
             TravelLengthXlimit = 40;
-            TravelRotationYlimit = 1.9;
+            TravelRotationYlimit = 18;
             LegLiftHeightUpperLimit = 80;
             LegLiftHeightLowerLimit = 25;
 
