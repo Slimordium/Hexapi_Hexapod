@@ -164,14 +164,14 @@ namespace HexapiBackground.IK{
                         _liftDivFactor = _numberOfLiftedPositions == 5 ? 4 : 2;
                     }
                 
-                    _lastLeg = 0;
+                    _lastLeg = false;
 
                     for (var legIndex = 0; legIndex < 6; legIndex++)
                     {
                     // var legIndex = 3;
 
                         if (legIndex == 5)
-                            _lastLeg = 1;
+                            _lastLeg = true;
 
                         var gaitPosXyZrotY = Gait(legIndex, _travelRequest, _travelLengthX,
                                              _travelLengthZ, _travelRotationY,
@@ -206,14 +206,18 @@ namespace HexapiBackground.IK{
         #endregion
 
         #region Inverse Kinematics setup
-        
+
+        private const double CoxaLengthInMm = 33; //mm
+        private const double FemurLengthInMm = 70; //mm
+        private const double TibiaLengthInMm = 130; //mm
+
+        private const double HexInitXz = CoxaLengthInMm + FemurLengthInMm - 3; //foot is about 2mm? inset from femur/tibia joint
+        private const double HexInitXzCos45 = HexInitXz * .7071; //http://www.math.com/tables/trig/tables.htm
+        private const double HexInitXzSin45 = HexInitXz * .7071;
+        private const double HexInitY = 95; //
+
         private const double PfConst = 650; //old 650 ; 900*(1000/PwmDiv)+cPFConst must always be 1500 was 592
         private const double PwmDiv = 1059; //old 1059, new 991;
-
-        private const double TravelDeadZone = 0;
-
-        private const double TenThousand = 10000;
-        private const double OneMillion = 1000000;
 
         private const int Lf = 5; 
         private const int Lm = 4;
@@ -249,16 +253,11 @@ namespace HexapiBackground.IK{
         private const double LmOffsetZ = 0;
         private const double LmOffsetX = 135;
 
-        private const double CoxaLengthInMm = 33; //mm
-        private const double FemurLengthInMm = 70; //mm
-        private const double TibiaLengthInMm = 130; //mm
+        private const double TravelDeadZone = 0;
 
-        //Foot start positions
-        private const double HexInitXz = CoxaLengthInMm + FemurLengthInMm - 3; //foot is about 2mm? inset from femur/tibia joint
-        private const double HexInitXzCos45 = HexInitXz * .7071; //http://www.math.com/tables/trig/tables.htm
-        private const double HexInitXzSin45 = HexInitXz * .7071; 
-        private const double HexInitY = 90; //
-         
+        private const double TenThousand = 10000;
+        private const double OneMillion = 1000000;
+
         private const double RfInitPosX = HexInitXzCos45;
         private const double RfInitPosY = HexInitY;
         private const double RfInitPosZ = -HexInitXzSin45;
@@ -307,7 +306,7 @@ namespace HexapiBackground.IK{
         private readonly double[] _legPosY = new double[6]; //Actual Y Position of the Leg
         private readonly double[] _legPosZ = new double[6]; //Actual Z Position of the Leg
 
-        private static int _lastLeg;
+        private static bool _lastLeg;
 
         private int _liftDivFactor; //Normaly: 2, when NrLiftedPos=5: 4
         private int _numberOfLiftedPositions; //Number of positions that a single leg is lifted [1-3]
@@ -494,7 +493,7 @@ namespace HexapiBackground.IK{
             gaitXyZrotY[2] = gaitPosZ;
             gaitXyZrotY[3] = gaitRotY;
 
-            if (_lastLeg != 1)
+            if (!_lastLeg)
                 return gaitXyZrotY;
             
             _gaitStep = _gaitStep + 1;

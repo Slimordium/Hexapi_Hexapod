@@ -57,10 +57,10 @@ namespace HexapiBackground{
 
             //if (_gpioController != null)
             //{
-            //    var pin = _gpioController.OpenPin(21); //Just using leg six
-            //    pin.SetDriveMode(GpioPinDriveMode.InputPullUp); //Will this power an LED, as well as trigger the event?
-            //    pin.ValueChanged += Pin_ValueChanged;
-            //    _legGpioPins.Add(pin);
+            //var pin = _gpioController.OpenPin(21); //Just using leg six
+            //pin.SetDriveMode(GpioPinDriveMode.InputPullUp); //Will this power an LED, as well as trigger the event?
+            //pin.ValueChanged += Pin_ValueChanged;
+            //_legGpioPins.Add(pin);
             //}
             //else
             //{
