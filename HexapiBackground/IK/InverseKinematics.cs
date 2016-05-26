@@ -37,7 +37,10 @@ namespace HexapiBackground.IK{
                 _legPosY[legIndex] = _initPosY[legIndex];
                 _legPosZ[legIndex] = _initPosZ[legIndex];
 
-                LegYHeightCorrector[legIndex] = 0;
+                //if (legIndex == 3)
+                //    LegYHeightCorrector[legIndex] = 5;
+                //else
+                //    LegYHeightCorrector[legIndex] = 0;
             }
 
             LoadLegDefaults();
@@ -211,13 +214,13 @@ namespace HexapiBackground.IK{
         private const double FemurLengthInMm = 70; //mm
         private const double TibiaLengthInMm = 130; //mm
 
-        private const double HexInitXz = CoxaLengthInMm + FemurLengthInMm - 3; //foot is about 2mm? inset from femur/tibia joint
+        private const double HexInitXz = CoxaLengthInMm + FemurLengthInMm - 2; //foot is about 2mm? inset from femur/tibia joint
         private const double HexInitXzCos45 = HexInitXz * .7071; //http://www.math.com/tables/trig/tables.htm
         private const double HexInitXzSin45 = HexInitXz * .7071;
-        private const double HexInitY = 95; //
+        private const double HexInitY = 55; //
 
-        private const double PfConst = 650; //old 650 ; 900*(1000/PwmDiv)+cPFConst must always be 1500 was 592
-        private const double PwmDiv = 1059; //old 1059, new 991;
+        private const double PfConst = 900; //old 650 ; 900*(1000/PwmDiv)+cPFConst must always be 1500 was 592
+        private const double PwmDiv = 1500; //old 1059, new 991;
 
         private const int Lf = 5; 
         private const int Lm = 4;

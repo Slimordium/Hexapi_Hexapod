@@ -19,7 +19,7 @@ namespace HexapiBackground{
         private readonly XboxController _xboxController;
         private double _bodyPosX;
 
-        private double _bodyPosY = 0; //45
+        private double _bodyPosY = 30; //45
         private double _bodyPosZ;
         private double _bodyRotX;
         private double _bodyRotY;
@@ -30,7 +30,7 @@ namespace HexapiBackground{
 
         private bool _isMovementStarted;
 
-        private double _legLiftHeight = 30;
+        private double _legLiftHeight = 35;
 
         private Mpr121 _mpr121;
 
@@ -87,9 +87,9 @@ namespace HexapiBackground{
             _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
 
-            _gaitSpeed = 65;
+            _gaitSpeed = 55;
             GaitSpeedUpperLimit = 400;
-            GaitSpeedLowerLimit = 65;
+            GaitSpeedLowerLimit = 45;
             TravelLengthZupperLimit = 140;
             TravelLengthZlowerLimit = 80;
             TravelLengthXlimit = 40;
