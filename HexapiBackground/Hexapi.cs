@@ -205,10 +205,21 @@ namespace HexapiBackground{
                         _selectedFunction = SelectedFunction.GaitSpeed;
                     break;
                 case 1: //B
-                    if (_selectedFunction == SelectedFunction.TranslateHorizontal)
-                        _selectedFunction = SelectedFunction.Translate3D;
+                        //if (_selectedFunction == SelectedFunction.TranslateHorizontal)
+                        //    _selectedFunction = SelectedFunction.Translate3D;
+                        //else
+                        //    _selectedFunction = SelectedFunction.TranslateHorizontal;
+                    if (_selectedFunction == SelectedFunction.Translate3D)
+                    {
+                        _selectedFunction = SelectedFunction.SetSingleLegLiftOffset;
+                        _ik.RequestSetFunction(_selectedFunction, 2);
+                    }
                     else
-                        _selectedFunction = SelectedFunction.TranslateHorizontal;
+                    {
+                        _selectedFunction = SelectedFunction.Translate3D;
+                        _ik.RequestSetFunction(_selectedFunction);
+                    }
+                    
                     break;
                 case 2: //X
 
