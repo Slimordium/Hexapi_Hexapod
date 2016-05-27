@@ -5,6 +5,8 @@
         GaitSpeed,
         LegHeight,
         TranslateHorizontal,
-        Translate3D
+        Translate3D,
+        SingleLeg,
+        SetSingleLegLiftOffset
     }
 }

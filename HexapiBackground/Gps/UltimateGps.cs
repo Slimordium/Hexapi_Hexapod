@@ -35,7 +35,8 @@ namespace HexapiBackground.Gps
         //Sets up GPS to opperate at 115200
         internal void SetGpsBaudRate()
         {
-            _serialPort = new SerialPort("A104OHRXA", 115200, 2000, 2000);
+            _serialPort = new SerialPort();
+            _serialPort.Open("A104OHRXA", 115200, 2000, 2000).Wait();
 
             //Task.Delay(500).Wait();
 
@@ -82,10 +83,13 @@ namespace HexapiBackground.Gps
 
         public void Start()
         {
-            Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(async() =>
             {
                 if (_serialPort == null)
-                    _serialPort = new SerialPort("A104OHRXA", 115200, 2000, 2000);
+                {
+                    _serialPort = new SerialPort();
+                    await _serialPort.Open("A104OHRXA", 115200, 2000, 2000);
+                }
 
                 //Debug.WriteLine("Configuring GPS, please wait...");
 
@@ -104,7 +108,7 @@ namespace HexapiBackground.Gps
                 
                 while (true)
                 {
-                    var sentences = _serialPort.ReadString();
+                    var sentences = await _serialPort.ReadString();
 
                     foreach (var s in sentences.Split('$').Where(s => s.Length > 15))
                     {

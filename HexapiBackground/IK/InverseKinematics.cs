@@ -18,9 +18,12 @@ namespace HexapiBackground.IK{
     {
         private bool _movementStarted;
         internal static SerialPort SerialPort { get; private set; }
-        private readonly Stopwatch _sw = new Stopwatch();
         private static readonly StringBuilder StringBuilder = new StringBuilder();
         internal static ManualResetEventSlim SscCommandCompleteEvent = new ManualResetEventSlim(false);
+        private SelectedFunction _selectedFunction = SelectedFunction.Translate3D;
+        private SelectedFunction _lastSelectedFunction = SelectedFunction.Translate3D;
+        private int _selectedFunctionLeg = -1;
+        private int _lastSelectedFunctionLeg = -1;
 
         internal InverseKinematics()
         {
@@ -88,6 +91,12 @@ namespace HexapiBackground.IK{
             TurnOffServos();
         }
 
+        internal void RequestSetFunction(SelectedFunction selectedFunction, int leg = -1)
+        {
+            _selectedFunction = selectedFunction;
+            _selectedFunctionLeg = leg;
+        }
+
         //The idea here, is that if a foot hits an object, the corrector is set to the negative value of the current foot height,
         //then for that leg, the body height is adjusted accordingly. 
         //So if a foot is half-way to the floor when it contacts something, it would adjust the body height by half for that leg.
@@ -107,30 +116,29 @@ namespace HexapiBackground.IK{
         #region Main logic loop 
         internal void Start()
         {
-            SerialPort = new SerialPort("BCM2836", 115200, 2000, 2000); //BCM2836 = Onboard UART on PI3 and IoT Core build 14322 (AI041V40A is the USB/Serial dongle)
-
-            Task.Delay(1000).Wait();
-
-            //This works!!!!
-
-            Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(async() =>
             {
+                SerialPort = new SerialPort(); //BCM2836 = Onboard UART on PI3 and IoT Core build 14322 (AI041V40A is the USB/Serial dongle)
+                await SerialPort.Open("BCM2836", 115200, 2000, 2000);
+
+                await Task.Delay(1000);
+
                 SerialPort.ListenAction = b =>
                 {
-                    if (b == 0x2e) //0x2e = .
+                    Task.Factory.StartNew(async () =>
                     {
-                        InverseKinematics.SscCommandCompleteEvent.Set();
-                        return;
-                    }
+                        if (b == 0x2e) //0x2e = .
+                        {
+                            InverseKinematics.SscCommandCompleteEvent.Set();
+                            return;
+                        }
 
-                    SerialPort.Write(_querySsc).Wait();
+                        await SerialPort.Write(_querySsc);
+                    });
                 };
 #pragma warning disable 4014
                 SerialPort.ListenForSscCommandComplete();
 #pragma warning restore 4014
-
-                _sw.Start();
-                var startMs = _sw.ElapsedMilliseconds;
 
                 while (true)
                 {
@@ -148,61 +156,93 @@ namespace HexapiBackground.IK{
                         //if (level > 5)
                         //    Debug.WriteLine("Level " + level);
 
-                        while (_sw.ElapsedMilliseconds < (startMs + 100)) { }
-                        startMs = _sw.ElapsedMilliseconds;
+                        await Task.Delay(100);
                         continue;
                     }
 
-                    _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) ||
-                                     (Math.Abs(_travelLengthZ) > TravelDeadZone) ||
-                                     (Math.Abs(_travelRotationY) > TravelDeadZone);
+                    if (_selectedFunction != SelectedFunction.SetSingleLegLiftOffset)
+                    {
+                        _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) ||
+                                         (Math.Abs(_travelLengthZ) > TravelDeadZone) ||
+                                         (Math.Abs(_travelRotationY) > TravelDeadZone);
+                    }
+                    else
+                        _travelRequest = false;
 
                     //Only switch the gait after the previous one is complete
                     if (_gaitStep == 1 && _lastGaitType != _gaitType)
                     {
                         GaitSelect();
-                        _liftDivFactor = _numberOfLiftedPositions == 5 ? 4 : 2;
+                        _liftDivisionFactor = _numberOfLiftedPositions == 5 ? 4 : 2;
                     }
                 
                     _lastLeg = false;
 
-                    for (var legIndex = 0; legIndex < 6; legIndex++)
+                    if (_lastSelectedFunction == SelectedFunction.SetSingleLegLiftOffset && _selectedFunction != _lastSelectedFunction)
                     {
-                    // var legIndex = 3;
-
-                        if (legIndex == 5)
-                            _lastLeg = true;
-
-                        var gaitPosXyZrotY = Gait(legIndex, _travelRequest, _travelLengthX,
-                                             _travelLengthZ, _travelRotationY,
-                                             _gaitPosX, _gaitPosY, _gaitPosZ, _gaitRotY,
-                                             _numberOfLiftedPositions, _gaitLegNr[legIndex],
-                                             _legLiftHeight, _liftDivFactor, _halfLiftHeight, _stepsInGait, _tlDivFactor);
-
-                        _gaitPosX = gaitPosXyZrotY[0];
-                        _gaitPosY = gaitPosXyZrotY[1];
-                        _gaitPosZ = gaitPosXyZrotY[2];
-                        _gaitRotY = gaitPosXyZrotY[3];
-
-                        var angles = BodyLegIk(legIndex,
-                                            _legPosX[legIndex], _legPosY[legIndex], _legPosZ[legIndex],
-                                            _bodyPosX, _bodyPosY + LegYHeightCorrector[legIndex], _bodyPosZ,
-                                            _gaitPosX[legIndex], _gaitPosY[legIndex], _gaitPosZ[legIndex], _gaitRotY[legIndex],
-                                            _offsetX[legIndex], _offsetZ[legIndex],
-                                            _bodyRotX, _bodyRotZ, _bodyRotY, _calculatedCoxaAngle[legIndex]);
-
-                        _coxaAngle[legIndex] = angles[0];
-                        _femurAngle[legIndex] = angles[1];
-                        _tibiaAngle[legIndex] = angles[2];
+                        LegYHeightCorrector[_lastSelectedFunctionLeg] = _bodyPosY - _lastBodyPosY;
+                    }
+                    else
+                    {
+                        
                     }
 
-                    SerialPort.Write(UpdateServoPositions(_coxaAngle, _femurAngle, _tibiaAngle));
+                    if (_selectedFunction != SelectedFunction.SetSingleLegLiftOffset && _selectedFunctionLeg == -1)
+                    {
+                        IkLoop();
+                    }
+                    else
+                    {
+                        _lastBodyPosY = _bodyPosY;
+                        _lastSelectedFunction = _selectedFunction;
+                        _lastSelectedFunctionLeg = _selectedFunctionLeg;
+                        IkCalculation(_selectedFunctionLeg);
+                    }
 
-                    SscCommandCompleteEvent.Wait((int)(_gaitSpeedInMs + 150));
+                    await SerialPort.Write(UpdateServoPositions(_coxaAngle, _femurAngle, _tibiaAngle));
+
+                    SscCommandCompleteEvent.Wait((int)(_gaitSpeedInMs + 75));
                     SscCommandCompleteEvent.Reset();
                 }
             }, TaskCreationOptions.LongRunning);
         }
+
+        private void IkCalculation(int legIndex)
+        {
+            if (legIndex == 5)
+                _lastLeg = true;
+
+            var gaitPosXyZrotY = Gait(legIndex, _travelRequest, _travelLengthX,
+                                 _travelLengthZ, _travelRotationY,
+                                 _gaitPosX, _gaitPosY, _gaitPosZ, _gaitRotY,
+                                 _numberOfLiftedPositions, _gaitLegNumber[legIndex],
+                                 _legLiftHeight, _liftDivisionFactor, _halfLiftHeight, _stepsInGait, _tlDivisionFactor);
+
+            _gaitPosX = gaitPosXyZrotY[0];
+            _gaitPosY = gaitPosXyZrotY[1];
+            _gaitPosZ = gaitPosXyZrotY[2];
+            _gaitRotY = gaitPosXyZrotY[3];
+
+            var angles = BodyLegIk(legIndex,
+                                _legPosX[legIndex], _legPosY[legIndex], _legPosZ[legIndex],
+                                _bodyPosX, _bodyPosY + LegYHeightCorrector[legIndex], _bodyPosZ,
+                                _gaitPosX[legIndex], _gaitPosY[legIndex], _gaitPosZ[legIndex], _gaitRotY[legIndex],
+                                _offsetX[legIndex], _offsetZ[legIndex],
+                                _bodyRotX, _bodyRotZ, _bodyRotY, _calculatedCoxaAngle[legIndex]);
+
+            _coxaAngle[legIndex] = angles[0];
+            _femurAngle[legIndex] = angles[1];
+            _tibiaAngle[legIndex] = angles[2];
+        }
+
+        private void IkLoop()
+        {
+            for (var legIndex = 0; legIndex < 6; legIndex++)
+            {
+                IkCalculation(legIndex);
+            }
+        }
+
         #endregion
 
         #region Inverse Kinematics setup
@@ -211,13 +251,13 @@ namespace HexapiBackground.IK{
         private const double FemurLengthInMm = 70; //mm
         private const double TibiaLengthInMm = 130; //mm
 
-        private const double HexInitXz = CoxaLengthInMm + FemurLengthInMm - 3; //foot is about 2mm? inset from femur/tibia joint
+        private const double HexInitXz = CoxaLengthInMm + FemurLengthInMm; //foot is about 2mm? inset from femur/tibia joint
         private const double HexInitXzCos45 = HexInitXz * .7071; //http://www.math.com/tables/trig/tables.htm
         private const double HexInitXzSin45 = HexInitXz * .7071;
-        private const double HexInitY = 95; //
+        private const double HexInitY = 55; //
 
-        private const double PfConst = 650; //old 650 ; 900*(1000/PwmDiv)+cPFConst must always be 1500 was 592
-        private const double PwmDiv = 1059; //old 1059, new 991;
+        private const double PfConst = 900; //old 650 ; 900*(1000/PwmDiv)+cPFConst must always be 1500 was 592
+        private const double PwmDiv = 1500; //old 1059, new 991;
 
         private const int Lf = 5; 
         private const int Lm = 4;
@@ -295,7 +335,7 @@ namespace HexapiBackground.IK{
         private readonly double[] _femurAngle = new double[6]; //Actual Angle of the vertical hip, decimals = 1
         private readonly double[] _tibiaAngle = new double[6]; //Actual Angle of the knee, decimals = 1
 
-        private readonly int[] _gaitLegNr = new int[6]; //Initial position of the leg
+        private readonly int[] _gaitLegNumber = new int[6]; //Initial position of the leg
 
         private double[] _gaitPosX = new double[6];//Array containing Relative X position corresponding to the Gait
         private double[] _gaitPosY = new double[6];//Array containing Relative Y position corresponding to the Gait
@@ -308,14 +348,15 @@ namespace HexapiBackground.IK{
 
         private static bool _lastLeg;
 
-        private int _liftDivFactor; //Normaly: 2, when NrLiftedPos=5: 4
+        private int _liftDivisionFactor; //Normaly: 2, when NrLiftedPos=5: 4
         private int _numberOfLiftedPositions; //Number of positions that a single leg is lifted [1-3]
         private int _stepsInGait; //Number of steps in gait
-        private int _tlDivFactor; //Number of steps that a leg is on the floor while walking
+        private int _tlDivisionFactor; //Number of steps that a leg is on the floor while walking
         private bool _travelRequest; //is the gait is in motion
 
         private double _bodyPosX; 
         private double _bodyPosY; //Controls height of the body from the ground
+        private double _lastBodyPosY;
         private double _bodyPosZ;
 
         private double _bodyRotX; //Global Input pitch of the body
@@ -347,69 +388,69 @@ namespace HexapiBackground.IK{
             switch (_gaitType)
             {
                 case GaitType.RippleGait12Steps:
-                    _gaitLegNr[Lr] = 1;
-                    _gaitLegNr[Rf] = 3;
-                    _gaitLegNr[Lm] = 5;
-                    _gaitLegNr[Rr] = 7;
-                    _gaitLegNr[Lf] = 9;
-                    _gaitLegNr[Rm] = 11;
+                    _gaitLegNumber[Lr] = 1;
+                    _gaitLegNumber[Rf] = 3;
+                    _gaitLegNumber[Lm] = 5;
+                    _gaitLegNumber[Rr] = 7;
+                    _gaitLegNumber[Lf] = 9;
+                    _gaitLegNumber[Rm] = 11;
 
                     _numberOfLiftedPositions = 3;
                     _halfLiftHeight = 3;
-                    _tlDivFactor = 8;
+                    _tlDivisionFactor = 8;
                     _stepsInGait = 12;
                     break;
                 case GaitType.Tripod8Steps:
-                    _gaitLegNr[Lr] = 5;
-                    _gaitLegNr[Rf] = 1;
-                    _gaitLegNr[Lm] = 1;
-                    _gaitLegNr[Rr] = 1;
-                    _gaitLegNr[Lf] = 5;
-                    _gaitLegNr[Rm] = 5;
+                    _gaitLegNumber[Lr] = 5;
+                    _gaitLegNumber[Rf] = 1;
+                    _gaitLegNumber[Lm] = 1;
+                    _gaitLegNumber[Rr] = 1;
+                    _gaitLegNumber[Lf] = 5;
+                    _gaitLegNumber[Rm] = 5;
 
                     _numberOfLiftedPositions = 3;
                     _halfLiftHeight = 3;
-                    _tlDivFactor = 4;
+                    _tlDivisionFactor = 4;
                     _stepsInGait = 8;
                     break;
                 case GaitType.TripleTripod12Steps:
-                    _gaitLegNr[Rf] = 3;
-                    _gaitLegNr[Lm] = 4;
-                    _gaitLegNr[Rr] = 5;
-                    _gaitLegNr[Lf] = 9;
-                    _gaitLegNr[Rm] = 10;
-                    _gaitLegNr[Lr] = 11;
+                    _gaitLegNumber[Rf] = 3;
+                    _gaitLegNumber[Lm] = 4;
+                    _gaitLegNumber[Rr] = 5;
+                    _gaitLegNumber[Lf] = 9;
+                    _gaitLegNumber[Rm] = 10;
+                    _gaitLegNumber[Lr] = 11;
 
                     _numberOfLiftedPositions = 3;
                     _halfLiftHeight = 3;
-                    _tlDivFactor = 8;
+                    _tlDivisionFactor = 8;
                     _stepsInGait = 12;
                     break;
                 case GaitType.TripleTripod16Steps:
-                    _gaitLegNr[Rf] = 4;
-                    _gaitLegNr[Lm] = 5;
-                    _gaitLegNr[Rr] = 6;
-                    _gaitLegNr[Lf] = 12;
-                    _gaitLegNr[Rm] = 13;
-                    _gaitLegNr[Lr] = 14;
+                    _gaitLegNumber[Rf] = 4;
+                    _gaitLegNumber[Lm] = 5;
+                    _gaitLegNumber[Rr] = 6;
+                    _gaitLegNumber[Lf] = 12;
+                    _gaitLegNumber[Rm] = 13;
+                    _gaitLegNumber[Lr] = 14;
 
                     _numberOfLiftedPositions = 5;
                     _halfLiftHeight = 1;
-                    _tlDivFactor = 10;
+                    _tlDivisionFactor = 10;
                     _stepsInGait = 16;
                     break;
                 case GaitType.Wave24Steps:
-                    _gaitLegNr[Lr] = 1;
-                    _gaitLegNr[Rf] = 21;
-                    _gaitLegNr[Lm] = 5;
+                    _gaitLegNumber[Lr] = 1;
+                    _gaitLegNumber[Rf] = 21;
+                    _gaitLegNumber[Lm] = 5;
 
-                    _gaitLegNr[Rr] = 13;
-                    _gaitLegNr[Lf] = 9;
-                    _gaitLegNr[Rm] = 17;
+                    _gaitLegNumber[Rr] = 13;
+                    _gaitLegNumber[Lf] = 9;
+                    _gaitLegNumber[Rm] = 17;
 
                     _numberOfLiftedPositions = 3;
                     _halfLiftHeight = 3;
-                    _tlDivFactor = 20;
+                    _tlDivisionFactor = 20;
                     _stepsInGait = 24;
                     break;
             }

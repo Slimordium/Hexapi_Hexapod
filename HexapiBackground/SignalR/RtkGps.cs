@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using HexapiBackground.Enums;
 using HexapiBackground.Hardware;
 using HexapiBackground.IK;
@@ -14,7 +15,7 @@ namespace HexapiBackground.SignalR
     {
         private readonly IHubProxy _hubProxy;
         private readonly HubConnection _rtkGps;
-        private readonly SerialPort _serialPort;
+        private SerialPort _serialPort;
 
         internal RtkGps()
         {
@@ -33,15 +34,12 @@ namespace HexapiBackground.SignalR
             {
                 Debug.WriteLine(e);
             }
+        }
 
-            try
-            {
-                _serialPort = new SerialPort("A104OHRX", 57600, 2000, 2000);
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e);
-            }
+        internal async Task Start()
+        {
+            _serialPort = new SerialPort();
+            await _serialPort.Open("A104OHRX", 57600, 2000, 2000);
         }
 
         private void HexapiControllerConnectionStateChanged(StateChange obj)

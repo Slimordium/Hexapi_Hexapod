@@ -19,7 +19,7 @@ namespace HexapiBackground{
         private readonly XboxController _xboxController;
         private double _bodyPosX;
 
-        private double _bodyPosY = 0; //45
+        private double _bodyPosY = 30; //45
         private double _bodyPosZ;
         private double _bodyRotX;
         private double _bodyRotY;
@@ -30,7 +30,7 @@ namespace HexapiBackground{
 
         private bool _isMovementStarted;
 
-        private double _legLiftHeight = 30;
+        private double _legLiftHeight = 35;
 
         private Mpr121 _mpr121;
 
@@ -44,7 +44,7 @@ namespace HexapiBackground{
         private readonly GpioController _gpioController;
         private readonly List<GpioPin> _legGpioPins = new List<GpioPin>();
 
-        internal Hexapi(IGps gps = null)
+        internal Hexapi(InverseKinematics inverseKinematics = null, IGps gps = null, RouteFinder routeFinder = null)
         {
             //try
             //{
@@ -68,13 +68,13 @@ namespace HexapiBackground{
             //}
 
             _gps = gps;
-
-            _ik = new InverseKinematics();
+            _ik = inverseKinematics;
+            _routeFinder = routeFinder;
 
             //var asdf = new HexapiLeapMotionClient(_ik);
 
-            if (_gps != null)
-                _routeFinder = new RouteFinder(_ik, gps);
+            //if (_gps != null)
+            //    _routeFinder = new RouteFinder(_ik, gps);
 
             _xboxController = new XboxController();
             _xboxController.Open();
@@ -87,9 +87,9 @@ namespace HexapiBackground{
             _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
 
-            _gaitSpeed = 65;
+            _gaitSpeed = 55;
             GaitSpeedUpperLimit = 400;
-            GaitSpeedLowerLimit = 65;
+            GaitSpeedLowerLimit = 45;
             TravelLengthZupperLimit = 140;
             TravelLengthZlowerLimit = 80;
             TravelLengthXlimit = 40;
@@ -145,9 +145,7 @@ namespace HexapiBackground{
 
         public void Start()
         {
-            //_routeFinder = new RouteFinder(_ik, _gps);
 
-            Task.Factory.StartNew(() => { _ik.Start(); }, TaskCreationOptions.LongRunning);
         }
 
         #region XBox 360 Controller related...
@@ -205,10 +203,21 @@ namespace HexapiBackground{
                         _selectedFunction = SelectedFunction.GaitSpeed;
                     break;
                 case 1: //B
-                    if (_selectedFunction == SelectedFunction.TranslateHorizontal)
-                        _selectedFunction = SelectedFunction.Translate3D;
+                        //if (_selectedFunction == SelectedFunction.TranslateHorizontal)
+                        //    _selectedFunction = SelectedFunction.Translate3D;
+                        //else
+                        //    _selectedFunction = SelectedFunction.TranslateHorizontal;
+                    if (_selectedFunction == SelectedFunction.Translate3D)
+                    {
+                        _selectedFunction = SelectedFunction.SetSingleLegLiftOffset;
+                        _ik.RequestSetFunction(_selectedFunction, 2);
+                    }
                     else
-                        _selectedFunction = SelectedFunction.TranslateHorizontal;
+                    {
+                        _selectedFunction = SelectedFunction.Translate3D;
+                        _ik.RequestSetFunction(_selectedFunction);
+                    }
+                    
                     break;
                 case 2: //X
 
