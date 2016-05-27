@@ -5,7 +5,7 @@
     <UseEmulator>false</UseEmulator>
     <RemoteDebugEnabled>true</RemoteDebugEnabled>
     <AuthenticationMode>Universal</AuthenticationMode>
-    <RemoteDebugMachine>hexapi</RemoteDebugMachine>
+    <RemoteDebugMachine>rtkgpsbase</RemoteDebugMachine>
     <DoNotLaunchApp>false</DoNotLaunchApp>
     <AllowLocalNetworkLoopback>true</AllowLocalNetworkLoopback>
   </PropertyGroup>

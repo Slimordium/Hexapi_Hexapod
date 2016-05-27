@@ -16345,16 +16345,14 @@
       ]
     },
     "Windows-Remote-Arduino/1.3.0": {
-      "sha512": "jWMo12DJa3bJhWgxzV07z+Drrhm97RFuWJabPu/Z1AVEUuW+ugptVXB67UFhgJUl7RKI7H82PuXcQ971B0YB6A==",
-      "type": "Package",
+      "sha512": "FwXPfmTnjqWOuIEbi3TQve09k90+dVdd2Na/PfckcXoxYObR0X1stUMEKsMme1p2NcW03a8MUrc8VFY/d9ACIA==",
+      "type": "package",
       "files": [
+        "Windows-Remote-Arduino.1.3.0.nupkg.sha512",
         "Windows-Remote-Arduino.nuspec",
-        "[Content_Types].xml",
-        "_rels/.rels",
         "lib/uap10.0/Microsoft.Maker.Firmata.winmd",
         "lib/uap10.0/Microsoft.Maker.RemoteWiring.winmd",
         "lib/uap10.0/Microsoft.Maker.Serial.winmd",
-        "package/services/metadata/core-properties/8583c7d5ffaf475bbc1b04b8bc83596f.psmdcp",
         "runtimes/win10-arm/native/Microsoft.Maker.Firmata.dll",
         "runtimes/win10-arm/native/Microsoft.Maker.RemoteWiring.dll",
         "runtimes/win10-arm/native/Microsoft.Maker.Serial.dll",
