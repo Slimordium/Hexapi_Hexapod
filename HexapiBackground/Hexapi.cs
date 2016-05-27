@@ -44,7 +44,7 @@ namespace HexapiBackground{
         private readonly GpioController _gpioController;
         private readonly List<GpioPin> _legGpioPins = new List<GpioPin>();
 
-        internal Hexapi(IGps gps = null)
+        internal Hexapi(InverseKinematics inverseKinematics = null, IGps gps = null, RouteFinder routeFinder = null)
         {
             //try
             //{
@@ -68,13 +68,13 @@ namespace HexapiBackground{
             //}
 
             _gps = gps;
-
-            _ik = new InverseKinematics();
+            _ik = inverseKinematics;
+            _routeFinder = routeFinder;
 
             //var asdf = new HexapiLeapMotionClient(_ik);
 
-            if (_gps != null)
-                _routeFinder = new RouteFinder(_ik, gps);
+            //if (_gps != null)
+            //    _routeFinder = new RouteFinder(_ik, gps);
 
             _xboxController = new XboxController();
             _xboxController.Open();
@@ -145,9 +145,7 @@ namespace HexapiBackground{
 
         public void Start()
         {
-            //_routeFinder = new RouteFinder(_ik, _gps);
 
-            Task.Factory.StartNew(() => { _ik.Start(); }, TaskCreationOptions.LongRunning);
         }
 
         #region XBox 360 Controller related...

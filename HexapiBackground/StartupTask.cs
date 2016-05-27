@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Windows.ApplicationModel.Background;
 using HexapiBackground.Gps;
 using HexapiBackground.Hardware;
+using HexapiBackground.IK;
 using HexapiBackground.Navigation;
 using HexapiBackground.SignalR;
 
@@ -37,7 +38,10 @@ namespace HexapiBackground
 
             //var ntrip = new RtkGps();
 
-            var hexapi = new Hexapi();//new Hexapi(gps, avc)
+            var ik = new InverseKinematics();
+            ik.Start();
+
+            var hexapi = new Hexapi(ik);//new Hexapi(gps, avc)
             hexapi.Start();
 
             
