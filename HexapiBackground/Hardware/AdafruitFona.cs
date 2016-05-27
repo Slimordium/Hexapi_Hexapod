@@ -10,33 +10,34 @@ namespace HexapiBackground.Hardware
 
         internal AdafruitFona()
         {
-            _serialPort = new SerialPort("AH03F3RYA", 115200, 1000, 1000); //FTDIBUS\VID_0403+PID_6001+AH03F3RYA\0000
+            _serialPort = new SerialPort(); //FTDIBUS\VID_0403+PID_6001+AH03F3RYA\0000
+            _serialPort.Open("AH03F3RYA", 115200, 1000, 1000).Wait();
         }
 
-        internal void Start()
+        internal async void Start()
         {
-            _serialPort.Write($"ATE0\r");
+            await _serialPort.Write($"ATE0\r");
             Debug.WriteLine($"Turn echo off: {_serialPort.ReadFonaLine()}");
 
             //GetSignalStrength();
             //CloseTcpConnection(); 
         }
 
-        internal string ReadSms()
+        internal async Task<string> ReadSms()
         {
-            _serialPort.Write("AT+CMGR=0,0\r");
-            var sms = _serialPort.ReadString();
+            await _serialPort.Write("AT+CMGR=0,0\r");
+            var sms = await _serialPort.ReadString();
 
             return sms;
         }
 
-        internal int GetSignalStrength()
+        internal async Task<int> GetSignalStrength()
         {
             try
             {
-                _serialPort.Write("at+csq\r");
+                await _serialPort.Write("at+csq\r");
 
-                var r = _serialPort.ReadString();
+                var r = await _serialPort.ReadString();
                 var n = r.Split(':')[1].Trim();
 
                 Debug.WriteLine($"Signal Strength: {n}");

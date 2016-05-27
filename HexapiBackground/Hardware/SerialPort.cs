@@ -23,10 +23,10 @@ namespace HexapiBackground.Hardware
         private DataReader _dataReader;
         private DataReader _dataWriter;
 
-        internal SerialPort(string identifier, int baudRate, int readTimeoutMs, int writeTimeoutMs)
+        internal async Task Open(string identifier, int baudRate, int readTimeoutMs, int writeTimeoutMs)
         {
-            Task.Factory.StartNew(async () =>
-            {
+            //Task.Factory.StartNew(async () =>
+            //{
                 while (_serialPort == null)
                 {
                     var deviceInformationCollection = await DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector());
@@ -64,7 +64,7 @@ namespace HexapiBackground.Hardware
 
                     _dataReader = new DataReader(_serialPort.InputStream);
                 }
-            });
+           // });
         }
 
         internal static void ListAvailablePorts()
@@ -91,7 +91,7 @@ namespace HexapiBackground.Hardware
             _serialPort = null;
         }
 
-        internal async void Write(string data)
+        internal async Task Write(string data)
         {
             if (_serialPort == null)
                 return;
@@ -102,10 +102,7 @@ namespace HexapiBackground.Hardware
 
         internal async Task Write(byte[] data)
         {
-            if (_serialPort == null)
-                return;
-
-            await _serialPort.OutputStream.WriteAsync(data.AsBuffer()).AsTask();
+            await _serialPort.OutputStream.WriteAsync(data.AsBuffer());
         }
 
         internal Action<byte> ListenAction { get; set; }
@@ -134,24 +131,24 @@ namespace HexapiBackground.Hardware
             return buffer.ToArray();
         }
 
-        internal string ReadString()
+        internal async Task<string> ReadString()
         {
             if (_serialPort == null)
                 return string.Empty;
 
             _buffer = new Buffer(256);
 
-            Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    _serialPort.InputStream.ReadAsync(_buffer, 256, InputStreamOptions.Partial).AsTask().Wait();
-                }
-                catch (TimeoutException)
-                {
+            //Task.Factory.StartNew(() =>
+            //{
+            //    try
+            //    {
+            await _serialPort.InputStream.ReadAsync(_buffer, 256, InputStreamOptions.Partial);
+            //    }
+            //    catch (TimeoutException)
+            //    {
                     
-                }
-            }).Wait();
+            //    }
+            //}).Wait();
 
             return AsciiEncoding.GetString(_buffer.ToArray());
         }

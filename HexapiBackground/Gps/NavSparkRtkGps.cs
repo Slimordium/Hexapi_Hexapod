@@ -24,8 +24,11 @@ namespace HexapiBackground.Gps
 
         public NavSparkGps(bool useRtk)
         {
-            _serialPortForRtkCorrectionData = new SerialPort("A104OHRX", 57600, 2000, 2000);  //FTDIBUS\VID_0403+PID_6001+A104OHRXA\0000
-            _serialPortForGps = new SerialPort("AH03F3RY", 57600, 2000, 2000);  
+            _serialPortForRtkCorrectionData = new SerialPort();  //FTDIBUS\VID_0403+PID_6001+A104OHRXA\0000
+            _serialPortForRtkCorrectionData.Open("A104OHRX", 57600, 2000, 2000).Wait();
+
+            _serialPortForGps = new SerialPort();
+            _serialPortForGps.Open("AH03F3RY", 57600, 2000, 2000).Wait();
 
             _useRtk = useRtk;
 
@@ -77,13 +80,13 @@ namespace HexapiBackground.Gps
                 }
             }
 
-            Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(async() =>
             {
                 Debug.WriteLine("NavSpark RTK GPS Started...");
 
                 while (true)
                 {
-                    var sentences = _serialPortForGps.ReadString();
+                    var sentences = await _serialPortForGps.ReadString();
 
                     foreach (var s in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
                     {

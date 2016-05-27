@@ -34,14 +34,8 @@ namespace HexapiBackground.SignalR
                 Debug.WriteLine(e);
             }
 
-            try
-            {
-                _serialPort = new SerialPort("A104OHRX", 57600, 2000, 2000);
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine(e);
-            }
+            _serialPort = new SerialPort();
+            _serialPort.Open("A104OHRX", 57600, 2000, 2000).Wait();
         }
 
         private void HexapiControllerConnectionStateChanged(StateChange obj)

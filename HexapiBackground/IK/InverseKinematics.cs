@@ -18,7 +18,6 @@ namespace HexapiBackground.IK{
     {
         private bool _movementStarted;
         internal static SerialPort SerialPort { get; private set; }
-        private readonly Stopwatch _sw = new Stopwatch();
         private static readonly StringBuilder StringBuilder = new StringBuilder();
         internal static ManualResetEventSlim SscCommandCompleteEvent = new ManualResetEventSlim(false);
         private SelectedFunction _selectedFunction = SelectedFunction.Translate3D;
@@ -117,30 +116,29 @@ namespace HexapiBackground.IK{
         #region Main logic loop 
         internal void Start()
         {
-            SerialPort = new SerialPort("BCM2836", 115200, 2000, 2000); //BCM2836 = Onboard UART on PI3 and IoT Core build 14322 (AI041V40A is the USB/Serial dongle)
-
-            Task.Delay(1000).Wait();
-
-            //This works!!!!
-
-            Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(async() =>
             {
+                SerialPort = new SerialPort(); //BCM2836 = Onboard UART on PI3 and IoT Core build 14322 (AI041V40A is the USB/Serial dongle)
+                await SerialPort.Open("BCM2836", 115200, 2000, 2000);
+
+                await Task.Delay(1000);
+
                 SerialPort.ListenAction = b =>
                 {
-                    if (b == 0x2e) //0x2e = .
+                    Task.Factory.StartNew(async () =>
                     {
-                        InverseKinematics.SscCommandCompleteEvent.Set();
-                        return;
-                    }
+                        if (b == 0x2e) //0x2e = .
+                        {
+                            InverseKinematics.SscCommandCompleteEvent.Set();
+                            return;
+                        }
 
-                    SerialPort.Write(_querySsc).Wait();
+                        await SerialPort.Write(_querySsc);
+                    });
                 };
 #pragma warning disable 4014
                 SerialPort.ListenForSscCommandComplete();
 #pragma warning restore 4014
-
-                _sw.Start();
-                var startMs = _sw.ElapsedMilliseconds;
 
                 while (true)
                 {
@@ -158,8 +156,7 @@ namespace HexapiBackground.IK{
                         //if (level > 5)
                         //    Debug.WriteLine("Level " + level);
 
-                        while (_sw.ElapsedMilliseconds < (startMs + 100)) { }
-                        startMs = _sw.ElapsedMilliseconds;
+                        await Task.Delay(100);
                         continue;
                     }
 
@@ -202,7 +199,7 @@ namespace HexapiBackground.IK{
                         IkCalculation(_selectedFunctionLeg);
                     }
 
-                    SerialPort.Write(UpdateServoPositions(_coxaAngle, _femurAngle, _tibiaAngle));
+                    await SerialPort.Write(UpdateServoPositions(_coxaAngle, _femurAngle, _tibiaAngle));
 
                     SscCommandCompleteEvent.Wait((int)(_gaitSpeedInMs + 75));
                     SscCommandCompleteEvent.Reset();
@@ -254,7 +251,7 @@ namespace HexapiBackground.IK{
         private const double FemurLengthInMm = 70; //mm
         private const double TibiaLengthInMm = 130; //mm
 
-        private const double HexInitXz = CoxaLengthInMm + FemurLengthInMm - 2; //foot is about 2mm? inset from femur/tibia joint
+        private const double HexInitXz = CoxaLengthInMm + FemurLengthInMm; //foot is about 2mm? inset from femur/tibia joint
         private const double HexInitXzCos45 = HexInitXz * .7071; //http://www.math.com/tables/trig/tables.htm
         private const double HexInitXzSin45 = HexInitXz * .7071;
         private const double HexInitY = 55; //
