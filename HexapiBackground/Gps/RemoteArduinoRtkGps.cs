@@ -41,7 +41,7 @@ namespace HexapiBackground.Gps
                 if (latLon == null)
                     continue;
 
-                CurrentLatLon = latLon;
+                //CurrentLatLon = latLon;
             }
         }
     }

@@ -113,7 +113,7 @@
     <Compile Include="Enums\Ads1115\Pointer.cs" />
     <Compile Include="Hardware\Ads1115.cs" />
     <Compile Include="Hardware\Mpr121.cs" />
-    <Compile Include="Hardware\Mpu9150New.cs" />
+    <Compile Include="Hardware\Mpu\Mpu9150.cs" />
     <Compile Include="Navigation\Avc.cs" />
     <Compile Include="Enums\ControllerDirection.cs" />
     <Compile Include="Gps\IGps.cs" />
@@ -134,7 +134,7 @@
     <Compile Include="Helpers\MathHelpers.cs" />
     <Compile Include="Hexapi.cs" />
     <Compile Include="Hardware\I2CDevice.cs" />
-    <Compile Include="Hardware\Mpu9150.cs" />
+    <Compile Include="Hardware\Mpu\Mpu9150Old.cs" />
     <Compile Include="IK\InverseKinematics.cs" />
     <Compile Include="Hardware\PingSensors.cs" />
     <Compile Include="Hardware\SerialPort.cs" />

@@ -123,7 +123,7 @@ namespace HexapiBackground.IK{
 
                 await Task.Delay(1000);
 
-                SerialPort.ListenAction = b =>
+                SerialPort.ReplyCallback = b =>
                 {
                     Task.Factory.StartNew(async () =>
                     {
@@ -660,7 +660,7 @@ namespace HexapiBackground.IK{
             return StringBuilder.ToString();
         }
 
-        private static void TurnOffServos()
+        private static async void TurnOffServos()
         {
             StringBuilder.Clear();
 
@@ -673,7 +673,7 @@ namespace HexapiBackground.IK{
 
             StringBuilder.Append("T0\r");
 
-            SerialPort.Write(StringBuilder.ToString());
+            await SerialPort.Write(StringBuilder.ToString());
         }
 
         private static async void LoadLegDefaults()

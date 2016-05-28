@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using HexapiBackground.Enums;
 using HexapiBackground.Gps;
 
@@ -163,132 +164,135 @@ namespace HexapiBackground.Helpers
         private static int _satellitesInView;
         private static int _signalToNoiseRatio;
 
-        internal static LatLon NmeaParse(string data)
+        internal static Task<LatLon> NmeaParse(string data)
         {
-            try
+            return Task.Factory.StartNew(() =>
             {
-                var tokens = data.Split(',');
-                var type = tokens[0];
-
-                switch (type)
+                try
                 {
-                    case "GPGGA": //Global Positioning System Fix Data
-                        if (tokens.Length < 10)
+                    var tokens = data.Split(',');
+                    var type = tokens[0];
+
+                    switch (type)
+                    {
+                        case "GPGGA": //Global Positioning System Fix Data
+                            if (tokens.Length < 10)
+                                return null;
+
+                            var st = tokens[1];
+
+                            _dateTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
+                                                Convert.ToInt32(st.Substring(0, 2)), Convert.ToInt32(st.Substring(2, 2)),
+                                                Convert.ToInt32(st.Substring(4, 2)), DateTimeKind.Local);
+
+                            _lat = Latitude2Double(tokens[2], tokens[3]);
+                            _lon = Longitude2Double(tokens[4], tokens[5]);
+
+                            int quality;
+                            if (int.TryParse(tokens[6], out quality))
+                                _quality = (GpsFixQuality)quality;
+
+                            if (float.TryParse(tokens[9], out _altitude))
+                                _altitude = _altitude * 3.28084f;
+
+                            break;
+                        case "GPGLL": //Global Positioning System Fix Data
+                            if (tokens.Length < 8)
+                                return null;
+
+                            _lat = Latitude2Double(tokens[1], tokens[2]);
+                            _lon = Longitude2Double(tokens[3], tokens[4]);
+
+                            break;
+                        case "GPRMC": //Recommended minimum specific GPS/Transit data
+
+                            if (tokens.Length < 9)
+                                return null;
+
+                            _lat = Latitude2Double(tokens[3], tokens[4]);
+                            _lon = Longitude2Double(tokens[5], tokens[6]);
+
+                            double fps = 0;
+                            if (double.TryParse(tokens[7], out fps))
+                                _feetPerSecond = Math.Round(fps * 1.68781, 2); //Convert knots to feet per second or "Speed over ground"
+
+                            double dir = 0;
+                            if (double.TryParse(tokens[8], out dir))
+                                _heading = dir; //angle from true north that you are traveling or "Course made good"
+
+                            break;
+                        case "GPGSV": //Satellites in View
+
+                            if (tokens.Length < 8)
+                                return null;
+
+                            int satellitesInView;
+                            if (int.TryParse(tokens[3], out satellitesInView))
+                                _satellitesInView = satellitesInView;
+
+                            int signalToNoiseRatio;
+                            if (int.TryParse(tokens[7], out signalToNoiseRatio))
+                                _signalToNoiseRatio = signalToNoiseRatio;
+
+                            break;
+                        case "GPGSA": //dilution of precision and active satellites
+
+                            var fix3d = tokens[2]; //1 no fix, 2 = 2d fix, 3 = 3d fix
+                                                   //var PRNs OfSatsUsedForFix = tokens 3 + 11 total 12
+
+                            //                        GSA Satellite status
+                            //A        Auto selection of 2D or 3D fix(M = manual)
+                            //     3        3D fix - values include: 1 = no fix
+                            //                                       2 = 2D fix
+                            //                                       3 = 3D fix
+                            //     04,05...PRNs of satellites used for fix(space for 12)
+                            //                                2.5      PDOP(dilution of precision)
+                            //     1.3      Horizontal dilution of precision (HDOP)
+                            //     2.1      Vertical dilution of precision(VDOP)
+
+                            break;
+                        default:
                             return null;
+                    }
 
-                        var st = tokens[1];
-
-                        _dateTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
-                                            Convert.ToInt32(st.Substring(0, 2)), Convert.ToInt32(st.Substring(2, 2)),
-                                            Convert.ToInt32(st.Substring(4, 2)), DateTimeKind.Local);
-
-                        _lat = Latitude2Double(tokens[2], tokens[3]);
-                        _lon = Longitude2Double(tokens[4], tokens[5]);
-
-                        int quality;
-                        if (int.TryParse(tokens[6], out quality))
-                            _quality = (GpsFixQuality) quality;
-
-                        if (float.TryParse(tokens[9], out _altitude))
-                            _altitude = _altitude*3.28084f;
-
-                        break;
-                    case "GPGLL": //Global Positioning System Fix Data
-                        if (tokens.Length < 8)
-                            return null;
-
-                        _lat = Latitude2Double(tokens[1], tokens[2]);
-                        _lon = Longitude2Double(tokens[3], tokens[4]);
-
-                        break;
-                    case "GPRMC": //Recommended minimum specific GPS/Transit data
-
-                        if (tokens.Length < 9)
-                            return null;
-
-                        _lat = Latitude2Double(tokens[3], tokens[4]);
-                        _lon = Longitude2Double(tokens[5], tokens[6]);
-
-                        double fps = 0;
-                        if (double.TryParse(tokens[7], out fps))
-                            _feetPerSecond = Math.Round(fps*1.68781, 2); //Convert knots to feet per second or "Speed over ground"
-
-                        double dir = 0;
-                        if (double.TryParse(tokens[8], out dir))
-                            _heading = dir; //angle from true north that you are traveling or "Course made good"
-
-                        break;
-                    case "GPGSV": //Satellites in View
-
-                        if (tokens.Length < 8)
-                            return null;
-
-                        int satellitesInView;
-                        if (int.TryParse(tokens[3], out satellitesInView))
-                            _satellitesInView = satellitesInView;
-
-                        int signalToNoiseRatio;
-                        if (int.TryParse(tokens[7], out signalToNoiseRatio))
-                            _signalToNoiseRatio = signalToNoiseRatio;
-
-                        break;
-                    case "GPGSA": //dilution of precision and active satellites
-
-                        var fix3d = tokens[2]; //1 no fix, 2 = 2d fix, 3 = 3d fix
-                                               //var PRNs OfSatsUsedForFix = tokens 3 + 11 total 12
-
-                        //                        GSA Satellite status
-                        //A        Auto selection of 2D or 3D fix(M = manual)
-                        //     3        3D fix - values include: 1 = no fix
-                        //                                       2 = 2D fix
-                        //                                       3 = 3D fix
-                        //     04,05...PRNs of satellites used for fix(space for 12)
-                        //                                2.5      PDOP(dilution of precision)
-                        //     1.3      Horizontal dilution of precision (HDOP)
-                        //     2.1      Vertical dilution of precision(VDOP)
-
-                        break;
-                    default:
+                    if (Math.Abs(_lat) < .1 || Math.Abs(_lon) < .1)
                         return null;
+
                 }
-
-                if (Math.Abs(_lat) < .1 || Math.Abs(_lon) < .1)
-                    return null;
-
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                //No fix yet
-            }
-            catch (IndexOutOfRangeException)
-            {
-                //No fix yet
-            }
-            catch (Exception e)
-            {
-                if (_quality != GpsFixQuality.NoFix)
+                catch (ArgumentOutOfRangeException)
                 {
-                    Debug.WriteLine(e);
-                    Debug.WriteLine(data);
+                    //No fix yet
                 }
-            }
+                catch (IndexOutOfRangeException)
+                {
+                    //No fix yet
+                }
+                catch (Exception e)
+                {
+                    if (_quality != GpsFixQuality.NoFix)
+                    {
+                        Debug.WriteLine(e);
+                        Debug.WriteLine(data);
+                    }
+                }
 
-            var latLon = new LatLon
-            {
-                Lat = _lat,
-                Lon = _lon,
-                Altitude = _altitude,
-                FeetPerSecond = _feetPerSecond,
-                Quality = _quality,
-                SatellitesInView = _satellitesInView,
-                Heading = _heading,
-                DateTime = _dateTime
-            };
+                var latLon = new LatLon
+                {
+                    Lat = _lat,
+                    Lon = _lon,
+                    Altitude = _altitude,
+                    FeetPerSecond = _feetPerSecond,
+                    Quality = _quality,
+                    SatellitesInView = _satellitesInView,
+                    Heading = _heading,
+                    DateTime = _dateTime
+                };
 
-            //if (_quality > GpsFixQuality.NoFix)
-            //    Debug.WriteLine($"Lat, Lon : {_lat}, {_lon}, {_quality}, Heading {_heading}, Alt {_altitude}, Sats {_satellitesInView}, SignalToNoise {_signalToNoiseRatio}");
+                //if (_quality > GpsFixQuality.NoFix)
+                //    Debug.WriteLine($"Lat, Lon : {_lat}, {_lon}, {_quality}, Heading {_heading}, Alt {_altitude}, Sats {_satellitesInView}, SignalToNoise {_signalToNoiseRatio}");
 
-            return latLon;
+                return latLon;
+            });
         }
     }
 }

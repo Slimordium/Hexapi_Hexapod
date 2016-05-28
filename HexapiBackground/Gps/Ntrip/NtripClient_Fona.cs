@@ -38,23 +38,23 @@ namespace HexapiBackground.Gps.Ntrip
             Task.Factory.StartNew(async() =>
             {
                 await Task.Delay(2000);
-                _adafruitFona.Start();
+                await _adafruitFona.Start();
                 await Task.Delay(2000);
 
-                if (!_adafruitFona.OpenTcpConnection(_ntripIpAddress, _ntripPort))//Request Fona to connect to IP and port
+                if (!await _adafruitFona.OpenTcpConnection(_ntripIpAddress, _ntripPort))//Request Fona to connect to IP and port
                 {
                     return;
                 }
 
-                _adafruitFona.WriteTcpData(CreateAuthRequest()); //Authenticate and connect to feed
+                await _adafruitFona.WriteTcpData(CreateAuthRequest()); //Authenticate and connect to feed
 
                 while (true)
                 {
                     await Task.Delay(800);
-                    var r = _adafruitFona.ReadTcpData();
+                    var r = await _adafruitFona.ReadTcpData();
 
                     if (r.Length > 140)
-                        _serialPort.Write(r); //Write to GPS
+                        await _serialPort.Write(r); //Write to GPS
                 }
             }, TaskCreationOptions.LongRunning);
         }

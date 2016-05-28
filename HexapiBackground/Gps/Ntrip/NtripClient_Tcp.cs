@@ -148,21 +148,24 @@ namespace HexapiBackground.Gps.Ntrip
 
             args.Completed += (sender, eventArgs) =>
             {
-                var data = new byte[eventArgs.BytesTransferred];
-
-                Array.Copy(eventArgs.BufferList[0].Array, data, eventArgs.BytesTransferred);
-
-                if (eventArgs.BytesTransferred == 0)
+                Task.Factory.StartNew(async () =>
                 {
+                    var data = new byte[eventArgs.BytesTransferred];
+
+                    Array.Copy(eventArgs.BufferList[0].Array, data, eventArgs.BytesTransferred);
+
+                    if (eventArgs.BytesTransferred == 0)
+                    {
+                        _manualResetEventSlim.Set();
+                        return;
+                    }
+
+                    await SendToGps(data);
+
+                    //Debug.WriteLine($"Bytes : {eventArgs.BytesTransferred}");
+
                     _manualResetEventSlim.Set();
-                    return;
-                }
-
-                SendToGps(data);
-
-                //Debug.WriteLine($"Bytes : {eventArgs.BytesTransferred}");
-
-                _manualResetEventSlim.Set();
+                });
             };
 
             _socket.ReceiveAsync(args);
@@ -184,12 +187,12 @@ namespace HexapiBackground.Gps.Ntrip
             }, TaskCreationOptions.LongRunning);
         }
 
-        private void SendToGps(byte[] data)
+        private async Task SendToGps(byte[] data)
         {
             if (data.Length < 10 || _serialPort == null)
                 return;
 
-            _serialPort.Write(data);
+            await _serialPort.Write(data);
         }
 
         internal static string ToBase64(string str)

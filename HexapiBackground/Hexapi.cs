@@ -19,7 +19,7 @@ namespace HexapiBackground{
         private readonly XboxController _xboxController;
         private double _bodyPosX;
 
-        private double _bodyPosY = 30; //45
+        private double _bodyPosY = 50; //45
         private double _bodyPosZ;
         private double _bodyRotX;
         private double _bodyRotY;
@@ -89,13 +89,13 @@ namespace HexapiBackground{
 
             _gaitSpeed = 55;
             GaitSpeedUpperLimit = 400;
-            GaitSpeedLowerLimit = 45;
-            TravelLengthZupperLimit = 140;
+            GaitSpeedLowerLimit = 25;
+            TravelLengthZupperLimit = 180;
             TravelLengthZlowerLimit = 80;
             TravelLengthXlimit = 40;
             TravelRotationYlimit = 18;
-            LegLiftHeightUpperLimit = 80;
-            LegLiftHeightLowerLimit = 25;
+            LegLiftHeightUpperLimit = 90;
+            LegLiftHeightLowerLimit = 5;
 
             //_stopwatch.Start();
 
@@ -302,11 +302,11 @@ namespace HexapiBackground{
                         Task.Factory.StartNew(async () => //This fires a dart from the Dream Cheeky (thinkgeek) usb nerf dart launcher. 
                         {
                             //RemoteArduino.Arduino.digitalWrite(7, PinState.HIGH);
-                            InverseKinematics.SerialPort.Write("#5H\r"); //On the SSC-32U, it sets channel 5 HIGH for 3 seconds
+                            await InverseKinematics.SerialPort.Write("#5H\r"); //On the SSC-32U, it sets channel 5 HIGH for 3 seconds
 
                             await Task.Delay(3000);
 
-                            InverseKinematics.SerialPort.Write("#5L\r"); //On the SSC-32U, it sets channel 5 LOW
+                            await InverseKinematics.SerialPort.Write("#5L\r"); //On the SSC-32U, it sets channel 5 LOW
                             //RemoteArduino.Arduino.digitalWrite(7, PinState.LOW);
                         });
                     break;

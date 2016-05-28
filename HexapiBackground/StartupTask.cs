@@ -44,7 +44,20 @@ namespace HexapiBackground
             var hexapi = new Hexapi(ik);//new Hexapi(gps, avc)
             hexapi.Start();
 
-            
+            //var mpu = new Mpu9150New();
+            //mpu.InitHardware();
+
+            //var mpu = new Mpu9150();
+
+            //double[] things;
+            //mpu.InitHardware();
+
+            //Task.Delay(250).Wait();
+
+            //mpu.Mpu9150SelfTest(out things);
+
+           // mpu.InitHardware();
+
         }
 
         internal static void Complete()
