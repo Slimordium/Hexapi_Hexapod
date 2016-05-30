@@ -35,7 +35,7 @@ namespace HexapiBackground.Hardware
         /// </summary>
         /// <param name="deadZoneTolerance">The amount the stick needs to be moved before movement is registered</param>
         /// <returns></returns>
-        internal void Open(int deadZoneTolerance = 3000)
+        internal void Open(int deadZoneTolerance = 9000)
         {
             _deadzoneTolerance = deadZoneTolerance; 
 

@@ -41,31 +41,11 @@ namespace HexapiBackground{
         private double _travelLengthZ;
         private double _travelRotationY;
 
-        private readonly GpioController _gpioController;
-        private readonly List<GpioPin> _legGpioPins = new List<GpioPin>();
+
 
         internal Hexapi(InverseKinematics inverseKinematics = null, IGps gps = null, RouteFinder routeFinder = null)
         {
-            //try
-            //{
-            //    _gpioController = GpioController.GetDefault();
-            //}
-            //catch (Exception e)
-            //{
-            //    Debug.WriteLine(e);
-            //}
-
-            //if (_gpioController != null)
-            //{
-            //var pin = _gpioController.OpenPin(21); //Just using leg six
-            //pin.SetDriveMode(GpioPinDriveMode.InputPullUp); //Will this power an LED, as well as trigger the event?
-            //pin.ValueChanged += Pin_ValueChanged;
-            //_legGpioPins.Add(pin);
-            //}
-            //else
-            //{
-            //    Debug.WriteLine("Could not find Gpio Controller");
-            //}
+           
 
             _gps = gps;
             _ik = inverseKinematics;
@@ -87,18 +67,15 @@ namespace HexapiBackground{
             _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
 
-            _gaitSpeed = 55;
+            _gaitSpeed = 50;
             GaitSpeedUpperLimit = 400;
-            GaitSpeedLowerLimit = 25;
+            GaitSpeedLowerLimit = 35;
             TravelLengthZupperLimit = 180;
             TravelLengthZlowerLimit = 80;
             TravelLengthXlimit = 40;
             TravelRotationYlimit = 18;
             LegLiftHeightUpperLimit = 90;
             LegLiftHeightLowerLimit = 5;
-
-            //_stopwatch.Start();
-
         }
 
         readonly Stopwatch _stopwatch = new Stopwatch();
@@ -221,12 +198,12 @@ namespace HexapiBackground{
                     break;
                 case 2: //X
 
-                    _routeFinder.DisableGpsNavigation();
+                    _routeFinder?.DisableGpsNavigation();
 
                     break;
                 case 3: //Y
 
-                    _routeFinder.EnableGpsNavigation();
+                    _routeFinder?.EnableGpsNavigation();
 
                     break;
                     //switch (_posture)

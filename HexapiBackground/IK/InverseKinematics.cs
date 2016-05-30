@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Devices.Gpio;
 using HexapiBackground.Enums;
 using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
@@ -24,9 +25,14 @@ namespace HexapiBackground.IK{
         private SelectedFunction _lastSelectedFunction = SelectedFunction.Translate3D;
         private int _selectedFunctionLeg = -1;
         private int _lastSelectedFunctionLeg = -1;
+        private GpioController _gpioController;
+        private readonly GpioPin[] _legGpioPins = new GpioPin[6];
+        private readonly Pca9685 _pca9685;
 
-        internal InverseKinematics()
+        internal InverseKinematics(Pca9685 pca9685 = null)
         {
+            _pca9685 = pca9685;
+
             _pi1K = Math.PI*1000D;
 
             for (var i = 0; i < 6; i++)
@@ -46,6 +52,104 @@ namespace HexapiBackground.IK{
             LoadLegDefaults();
 
             GaitSelect();
+
+            ConfigureFootSwitches();
+        }
+
+        private void ConfigureFootSwitches()
+        {
+            Debug.WriteLine("Configuring foot sensors....");
+            try
+            {
+                _gpioController = GpioController.GetDefault();
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+            }
+
+            if (_gpioController != null)
+            {
+                _legGpioPins[0] = _gpioController.OpenPin(26);
+                _legGpioPins[1] = _gpioController.OpenPin(19);
+                _legGpioPins[2] = _gpioController.OpenPin(13);
+                _legGpioPins[3] = _gpioController.OpenPin(16);
+                _legGpioPins[4] = _gpioController.OpenPin(20);
+                _legGpioPins[5] = _gpioController.OpenPin(21);
+
+                foreach (var legGpioPin in _legGpioPins)
+                {
+                    legGpioPin.DebounceTimeout = new TimeSpan(0,0,0,0,1);
+                    legGpioPin.SetDriveMode(GpioPinDriveMode.InputPullUp);
+                    legGpioPin.ValueChanged += Pin_ValueChanged;
+                }
+            }
+            else
+            {
+                Debug.WriteLine("Could not find Gpio Controller");
+            }
+        }
+
+        private readonly StringBuilder _pinChangedStringBuilder = new StringBuilder();
+
+        private void Pin_ValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
+        {
+            _pinChangedStringBuilder.Clear();
+
+            if (args.Edge == GpioPinEdge.FallingEdge)
+            {
+                switch (sender.PinNumber)
+                {
+                    case 26:
+                        _pca9685?.SetPin(5, 4090);
+
+                        //_pinChangedStringBuilder.Append($"#{LegServos[0][1]}P{FemurServoAngles[0]}#{LegServos[0][2]}P{TibiaServoAngles[0]}{(char)27}");
+                        //await SerialPort.Write(_pinChangedStringBuilder.ToString());
+                        break;
+                    case 19:
+                        _pca9685?.SetPin(4, 4090);
+                        break;
+                    case 13:
+                        _pca9685?.SetPin(3, 4090);
+                        break;
+                    case 16:
+                        _pca9685?.SetPin(2, 4090);
+                        break;
+                    case 20:
+                        _pca9685?.SetPin(1, 4090);
+                        break;
+                    case 21:
+                        _pca9685?.SetPin(0, 4090);
+                        break;
+                }
+            }
+            else
+            {
+                switch (sender.PinNumber)
+                {
+                    case 26:
+                        _pca9685?.SetPin(5, 64);
+
+                        //_pinChangedStringBuilder.Append($"#{LegServos[0][1]}P{FemurServoAngles[0]}#{LegServos[0][2]}P{TibiaServoAngles[0]}{(char)27}");
+                        //await SerialPort.Write(_pinChangedStringBuilder.ToString());
+                        break;
+                    case 19:
+                        _pca9685?.SetPin(4, 64);
+                        break;
+                    case 13:
+                        _pca9685?.SetPin(3, 64);
+                        break;
+                    case 16:
+                        _pca9685?.SetPin(2, 64);
+                        break;
+                    case 20:
+                        _pca9685?.SetPin(1, 64);
+                        break;
+                    case 21:
+                        _pca9685?.SetPin(0, 64);
+                        break;
+                }
+            }
         }
 
         #region Request movement
@@ -147,15 +251,6 @@ namespace HexapiBackground.IK{
                     if (!_movementStarted)
                     {
                         GaitSelect();
-
-                        //SerialPort.Write("VH\r");
-                        //var r = SerialPort.ReadByte().Result;
-
-                        //var level = MathHelpers.Map(r, 255, 0, 0, 255);
-
-                        //if (level > 5)
-                        //    Debug.WriteLine("Level " + level);
-
                         await Task.Delay(100);
                         continue;
                     }
@@ -171,10 +266,7 @@ namespace HexapiBackground.IK{
 
                     //Only switch the gait after the previous one is complete
                     if (_gaitStep == 1 && _lastGaitType != _gaitType)
-                    {
                         GaitSelect();
-                        _liftDivisionFactor = _numberOfLiftedPositions == 5 ? 4 : 2;
-                    }
                 
                     _lastLeg = false;
 
@@ -251,13 +343,14 @@ namespace HexapiBackground.IK{
         private const double FemurLengthInMm = 70; //mm
         private const double TibiaLengthInMm = 130; //mm
 
-        private const double HexInitXz = CoxaLengthInMm + FemurLengthInMm; //foot is about 2mm? inset from femur/tibia joint
+        private const double HexInitXz = CoxaLengthInMm + FemurLengthInMm;
         private const double HexInitXzCos45 = HexInitXz * .7071; //http://www.math.com/tables/trig/tables.htm
         private const double HexInitXzSin45 = HexInitXz * .7071;
-        private const double HexInitY = 55; //
+        private const double HexInitY = 55;
 
-        private const double PfConst = 900; //old 650 ; 900*(1000/PwmDiv)+cPFConst must always be 1500 was 592
-        private const double PwmDiv = 1500; //old 1059, new 991;
+        //For the Solar 772 or 771, PwmDiv = 1500 and PfConst = 900 works well. Not sure what this should be on any other servo
+        private const double PfConst = 900; 
+        private const double PwmDiv = 1500 ;
 
         private const int Lf = 5; 
         private const int Lm = 4;
@@ -266,14 +359,14 @@ namespace HexapiBackground.IK{
         private const int Rm = 1;
         private const int Rr = 0;
 
-        private const double CoxaMin = -585; //
-        private const double CoxaMax = 585; //
-        private const double FemurMin = -560; //
-        private const double FemurMax = 560; //
-        private const double TibiaMin = -560; //
-        private const double TibiaMax = 560; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -585; 
+        private const double CoxaMax = 585; 
+        private const double FemurMin = -580;
+        private const double FemurMax = 580;
+        private const double TibiaMin = -500;
+        private const double TibiaMax = 580; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
-        private const double RrCoxaAngle = -450; //450 = 45 degrees from center
+        private const double RrCoxaAngle = -450; //450 = 45 degrees off center
         private const double RmCoxaAngle = 0;
         private const double RfCoxaAngle = 450;
         private const double LrCoxaAngle = -450;
@@ -334,6 +427,10 @@ namespace HexapiBackground.IK{
         private readonly double[] _coxaAngle = new double[6];
         private readonly double[] _femurAngle = new double[6]; //Actual Angle of the vertical hip, decimals = 1
         private readonly double[] _tibiaAngle = new double[6]; //Actual Angle of the knee, decimals = 1
+
+        private static readonly double[] CoxaServoAngles = new double[6];
+        private static readonly double[] FemurServoAngles = new double[6];
+        private static readonly double[] TibiaServoAngles = new double[6];
 
         private readonly int[] _gaitLegNumber = new int[6]; //Initial position of the leg
 
@@ -454,6 +551,8 @@ namespace HexapiBackground.IK{
                     _stepsInGait = 24;
                     break;
             }
+
+            _liftDivisionFactor = _numberOfLiftedPositions == 5 ? 4 : 2;
         }
 
         private static double[][] Gait(int legIndex, bool travelRequest, double travelLengthX, double travelLengthZ, double travelRotationY,
@@ -650,6 +749,10 @@ namespace HexapiBackground.IK{
                     tibiaPosition = Math.Round((tibiaAngles[legIndex] + 900) * 1000 / PwmDiv + PfConst);
                 }
 
+                CoxaServoAngles[legIndex] = coxaPosition;
+                FemurServoAngles[legIndex] = coxaPosition;
+                TibiaServoAngles[legIndex] = coxaPosition;
+
                 StringBuilder.Append($"#{LegServos[legIndex][0]}P{coxaPosition}");
                 StringBuilder.Append($"#{LegServos[legIndex][1]}P{femurPosition}");
                 StringBuilder.Append($"#{LegServos[legIndex][2]}P{tibiaPosition}");
@@ -659,6 +762,8 @@ namespace HexapiBackground.IK{
 
             return StringBuilder.ToString();
         }
+
+
 
         private static async void TurnOffServos()
         {

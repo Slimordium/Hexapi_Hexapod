@@ -112,6 +112,7 @@
     <Compile Include="Enums\Ads1115\Gain.cs" />
     <Compile Include="Enums\Ads1115\Pointer.cs" />
     <Compile Include="Hardware\Ads1115.cs" />
+    <Compile Include="Hardware\Pca9685.cs" />
     <Compile Include="Hardware\Mpr121.cs" />
     <Compile Include="Hardware\Mpu\Mpu9150.cs" />
     <Compile Include="Navigation\Avc.cs" />

@@ -18,19 +18,27 @@ namespace HexapiBackground.Hardware
             _busSpeed = busSpeed;
         }
 
-        public async Task Open()
+        public async Task<bool> Open()
         {
             var settings = new I2cConnectionSettings(BaseAddress) { BusSpeed = _busSpeed };
             var aqs = I2cDevice.GetDeviceSelector();
             var devices = await DeviceInformation.FindAllAsync(aqs);
 
             if (!devices.Any())
+            {
                 Debug.WriteLine($"Could not find I2C device at {BaseAddress}");
+                return false;
+            }
 
             _i2CDevice = await I2cDevice.FromIdAsync(devices[0].Id, settings);
 
             if (_i2CDevice == null)
+            {
                 Debug.WriteLine($"Could not create I2C conection from device at {BaseAddress}");
+                return false;
+            }
+
+            return true;
         }
 
         internal byte BaseAddress { get; }
@@ -69,7 +77,8 @@ namespace HexapiBackground.Hardware
         {
             try
             {
-                var r = _i2CDevice.WritePartial(dataBytes);
+                var r = _i2CDevice.WritePartial(new[] { register });
+                r = _i2CDevice.WritePartial(dataBytes);
 
                 return r.BytesTransferred == dataBytes.Length;
             }
@@ -84,9 +93,9 @@ namespace HexapiBackground.Hardware
         {
             try
             {
-                var r = _i2CDevice.WritePartial(new [] { dataByte });
+                var r = _i2CDevice.WritePartial(new [] { register, dataByte });
 
-                return r.BytesTransferred == 1;
+                return r.BytesTransferred == 2;
             }
             catch (Exception e)
             {

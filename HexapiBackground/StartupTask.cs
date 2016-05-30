@@ -36,28 +36,14 @@ namespace HexapiBackground
             //var piezo = new Ads1115();
             //piezo.Start(0);  
 
-            //var ntrip = new RtkGps();
+            var pca9685 = new Pca9685();
+            pca9685.Start();
 
-            var ik = new InverseKinematics();
+            var ik = new InverseKinematics(pca9685);
             ik.Start();
 
             var hexapi = new Hexapi(ik);//new Hexapi(gps, avc)
             hexapi.Start();
-
-            //var mpu = new Mpu9150New();
-            //mpu.InitHardware();
-
-            //var mpu = new Mpu9150();
-
-            //double[] things;
-            //mpu.InitHardware();
-
-            //Task.Delay(250).Wait();
-
-            //mpu.Mpu9150SelfTest(out things);
-
-           // mpu.InitHardware();
-
         }
 
         internal static void Complete()
