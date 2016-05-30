@@ -169,6 +169,8 @@ namespace HexapiBackground{
 
         private int _posture;
 
+        private int _selectedLeg = 0;
+
         private void XboxController_FunctionButtonChanged(int button)
         {
             switch (button)
@@ -187,7 +189,7 @@ namespace HexapiBackground{
                     if (_selectedFunction == SelectedFunction.Translate3D)
                     {
                         _selectedFunction = SelectedFunction.SetSingleLegLiftOffset;
-                        _ik.RequestSetFunction(_selectedFunction, 2);
+                        _ik.RequestSetFunction(_selectedFunction, _selectedLeg);
                     }
                     else
                     {
@@ -310,7 +312,9 @@ namespace HexapiBackground{
             switch (sender.Direction)
             {
                 case ControllerDirection.Left:
-                    if (_gaitType > 0 && _selectedFunction != SelectedFunction.TranslateHorizontal)
+                case ControllerDirection.DownLeft:
+                case ControllerDirection.UpLeft:
+                    if (_gaitType > 0 && _selectedFunction != SelectedFunction.TranslateHorizontal && _selectedFunction != SelectedFunction.SetSingleLegLiftOffset)
                     {
                         _gaitType--;
                         _ik.RequestSetGaitType(_gaitType);
@@ -320,9 +324,20 @@ namespace HexapiBackground{
                         _bodyRotY = _bodyRotY - 2;
                         _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                     }
+                    else if (_selectedFunction == SelectedFunction.SetSingleLegLiftOffset)
+                    {
+                        _selectedLeg--;
+                        if (_selectedLeg < 0)
+                            _selectedLeg = 5;
+
+                        _ik.RequestSetFunction(_selectedFunction, _selectedLeg);
+                    }
+
                     break;
                 case ControllerDirection.Right:
-                    if ((int) _gaitType < 4 && _selectedFunction != SelectedFunction.TranslateHorizontal)
+                case ControllerDirection.DownRight:
+                case ControllerDirection.UpRight:
+                    if ((int) _gaitType < 4 && _selectedFunction != SelectedFunction.TranslateHorizontal && _selectedFunction != SelectedFunction.SetSingleLegLiftOffset)
                     {
                         _gaitType++;
                         _ik.RequestSetGaitType(_gaitType);
@@ -332,18 +347,34 @@ namespace HexapiBackground{
                         _bodyRotY = _bodyRotY + 2;
                         _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                     }
+                    else if (_selectedFunction == SelectedFunction.SetSingleLegLiftOffset)
+                    {
+                        _selectedLeg++;
+                        if (_selectedLeg > 5)
+                            _selectedLeg = 0;
+
+                        _ik.RequestSetFunction(_selectedFunction, _selectedLeg);
+                    }
                     break;
                 case ControllerDirection.Up:
                     if (_bodyPosY < 75)
                     {
-                        _bodyPosY = _bodyPosY + 5;
+                        if (_selectedFunction == SelectedFunction.SetSingleLegLiftOffset)
+                            _bodyPosY = _bodyPosY + 1;
+                        else
+                            _bodyPosY = _bodyPosY + 5;
+
                         _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                     }
                     break;
                 case ControllerDirection.Down:
                     if (_bodyPosY > 5)
                     {
-                        _bodyPosY = _bodyPosY - 5;
+                        if (_selectedFunction == SelectedFunction.SetSingleLegLiftOffset)
+                            _bodyPosY = _bodyPosY - 1;
+                        else
+                            _bodyPosY = _bodyPosY - 5;
+
                         _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                     }
                     break;
@@ -352,6 +383,9 @@ namespace HexapiBackground{
 
         private void XboxController_RightDirectionChanged(ControllerVector sender)
         {
+            if (_selectedFunction == SelectedFunction.LegHeight)
+                return;
+
             switch (sender.Direction)
             {
                 case ControllerDirection.Left:

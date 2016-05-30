@@ -28,6 +28,7 @@ namespace HexapiBackground.IK{
         private GpioController _gpioController;
         private readonly GpioPin[] _legGpioPins = new GpioPin[6];
         private readonly Pca9685 _pca9685;
+        private readonly byte[] _querySsc = { 0x51, 0x0d }; //0x51 = Q, 0x0d = carriage return
 
         internal InverseKinematics(Pca9685 pca9685 = null)
         {
@@ -94,61 +95,67 @@ namespace HexapiBackground.IK{
 
         private void Pin_ValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
-            _pinChangedStringBuilder.Clear();
-
-            if (args.Edge == GpioPinEdge.FallingEdge)
+            //_pinChangedStringBuilder.Clear();
+            if (_selectedFunction != SelectedFunction.SetSingleLegLiftOffset)
             {
-                switch (sender.PinNumber)
+                if (args.Edge == GpioPinEdge.FallingEdge)
                 {
-                    case 26:
-                        _pca9685?.SetPin(5, 4090);
+                    switch (sender.PinNumber)
+                    {
+                        case 26:
+                            _pca9685?.SetPin(5, 4090);
 
-                        //_pinChangedStringBuilder.Append($"#{LegServos[0][1]}P{FemurServoAngles[0]}#{LegServos[0][2]}P{TibiaServoAngles[0]}{(char)27}");
-                        //await SerialPort.Write(_pinChangedStringBuilder.ToString());
-                        break;
-                    case 19:
-                        _pca9685?.SetPin(4, 4090);
-                        break;
-                    case 13:
-                        _pca9685?.SetPin(3, 4090);
-                        break;
-                    case 16:
-                        _pca9685?.SetPin(2, 4090);
-                        break;
-                    case 20:
-                        _pca9685?.SetPin(1, 4090);
-                        break;
-                    case 21:
-                        _pca9685?.SetPin(0, 4090);
-                        break;
+                            //_pinChangedStringBuilder.Append($"#{LegServos[0][1]}P{FemurServoAngles[0]}#{LegServos[0][2]}P{TibiaServoAngles[0]}{(char)27}");
+                            //await SerialPort.Write(_pinChangedStringBuilder.ToString());
+                            break;
+                        case 19:
+                            _pca9685?.SetPin(4, 4090);
+                            break;
+                        case 13:
+                            _pca9685?.SetPin(3, 4090);
+                            break;
+                        case 16:
+                            _pca9685?.SetPin(2, 4090);
+                            break;
+                        case 20:
+                            _pca9685?.SetPin(1, 4090);
+                            break;
+                        case 21:
+                            _pca9685?.SetPin(0, 4090);
+                            break;
+                    }
+                }
+                else
+                {
+                    switch (sender.PinNumber)
+                    {
+                        case 26:
+                            _pca9685?.SetPin(5, 64);
+
+                            //_pinChangedStringBuilder.Append($"#{LegServos[0][1]}P{FemurServoAngles[0]}#{LegServos[0][2]}P{TibiaServoAngles[0]}{(char)27}");
+                            //await SerialPort.Write(_pinChangedStringBuilder.ToString());
+                            break;
+                        case 19:
+                            _pca9685?.SetPin(4, 64);
+                            break;
+                        case 13:
+                            _pca9685?.SetPin(3, 64);
+                            break;
+                        case 16:
+                            _pca9685?.SetPin(2, 64);
+                            break;
+                        case 20:
+                            _pca9685?.SetPin(1, 64);
+                            break;
+                        case 21:
+                            _pca9685?.SetPin(0, 64);
+                            break;
+                    }
                 }
             }
             else
             {
-                switch (sender.PinNumber)
-                {
-                    case 26:
-                        _pca9685?.SetPin(5, 64);
-
-                        //_pinChangedStringBuilder.Append($"#{LegServos[0][1]}P{FemurServoAngles[0]}#{LegServos[0][2]}P{TibiaServoAngles[0]}{(char)27}");
-                        //await SerialPort.Write(_pinChangedStringBuilder.ToString());
-                        break;
-                    case 19:
-                        _pca9685?.SetPin(4, 64);
-                        break;
-                    case 13:
-                        _pca9685?.SetPin(3, 64);
-                        break;
-                    case 16:
-                        _pca9685?.SetPin(2, 64);
-                        break;
-                    case 20:
-                        _pca9685?.SetPin(1, 64);
-                        break;
-                    case 21:
-                        _pca9685?.SetPin(0, 64);
-                        break;
-                }
+                _pca9685.SetPin(_selectedFunctionLeg, 4090);
             }
         }
 
@@ -197,6 +204,13 @@ namespace HexapiBackground.IK{
 
         internal void RequestSetFunction(SelectedFunction selectedFunction, int leg = -1)
         {
+            if (selectedFunction == SelectedFunction.SetSingleLegLiftOffset)
+            {
+                _pca9685.SetAllPwm(4096, 0);
+                if (leg >= 0)
+                    _pca9685.SetPin(leg, 4090);
+            }
+
             _selectedFunction = selectedFunction;
             _selectedFunctionLeg = leg;
         }
@@ -215,7 +229,7 @@ namespace HexapiBackground.IK{
         }
         #endregion
 
-        private readonly byte[] _querySsc = { 0x51, 0x0d }; //0x51 = Q, 0x0d = carriage return
+        
 
         #region Main logic loop 
         internal void Start()
@@ -480,7 +494,7 @@ namespace HexapiBackground.IK{
         #endregion
 
         #region Gait calculations and logic
-        public void GaitSelect()
+        public bool GaitSelect()
         {
             switch (_gaitType)
             {
@@ -553,6 +567,8 @@ namespace HexapiBackground.IK{
             }
 
             _liftDivisionFactor = _numberOfLiftedPositions == 5 ? 4 : 2;
+
+            return true;
         }
 
         private static double[][] Gait(int legIndex, bool travelRequest, double travelLengthX, double travelLengthZ, double travelRotationY,
@@ -763,8 +779,6 @@ namespace HexapiBackground.IK{
             return StringBuilder.ToString();
         }
 
-
-
         private static async void TurnOffServos()
         {
             StringBuilder.Clear();
@@ -776,7 +790,7 @@ namespace HexapiBackground.IK{
                 StringBuilder.Append($"#{LegServos[legIndex][2]}P0");
             }
 
-            StringBuilder.Append("T0\r");
+            StringBuilder.Append("T0\rQ\r");
 
             await SerialPort.Write(StringBuilder.ToString());
         }
