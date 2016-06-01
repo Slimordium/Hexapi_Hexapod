@@ -20,6 +20,7 @@ namespace HexapiBackground{
         private double _bodyPosX;
 
         private double _bodyPosY = 50; //45
+        private double _legPosY = 0;
         private double _bodyPosZ;
         private double _bodyRotX;
         private double _bodyRotY;
@@ -189,7 +190,8 @@ namespace HexapiBackground{
                     if (_selectedFunction == SelectedFunction.Translate3D)
                     {
                         _selectedFunction = SelectedFunction.SetSingleLegLiftOffset;
-                        _ik.RequestSetFunction(_selectedFunction, _selectedLeg);
+                        _legPosY = 0;
+                        _ik.RequestSetFunction(_selectedFunction);
                     }
                     else
                     {
@@ -200,12 +202,14 @@ namespace HexapiBackground{
                     break;
                 case 2: //X
 
-                    _routeFinder?.DisableGpsNavigation();
+                   // _routeFinder?.DisableGpsNavigation();
 
                     break;
                 case 3: //Y
 
-                    _routeFinder?.EnableGpsNavigation();
+                    //_routeFinder?.EnableGpsNavigation();
+
+                    _ik.RequestSaveLegYHeightCorrector();
 
                     break;
                     //switch (_posture)
@@ -261,17 +265,19 @@ namespace HexapiBackground{
                 case 7: //Start button
                     _isMovementStarted = !_isMovementStarted;
 
+                    _ik.RequestSetMovement(_isMovementStarted);
+
                     if (_isMovementStarted)
                     {
-                        _ik.RequestSetGaitType(GaitType.TripleTripod12Steps);
+                        _ik.RequestSetFunction(SelectedFunction.GaitSpeed);
                         _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                         _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
+                        _ik.RequestSetGaitType(GaitType.Tripod8Steps);
                         _ik.RequestMovement(_gaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
                     }
                     else
                         _ik.RequestMovement(_gaitSpeed, 0, 0, 0);
-
-                    _ik.RequestSetMovement(_isMovementStarted);
+                    
                     Debug.WriteLine("setting movement to  " + _isMovementStarted);
                     break;
                 case 6: //back button
@@ -312,8 +318,6 @@ namespace HexapiBackground{
             switch (sender.Direction)
             {
                 case ControllerDirection.Left:
-                case ControllerDirection.DownLeft:
-                case ControllerDirection.UpLeft:
                     if (_gaitType > 0 && _selectedFunction != SelectedFunction.TranslateHorizontal && _selectedFunction != SelectedFunction.SetSingleLegLiftOffset)
                     {
                         _gaitType--;
@@ -330,13 +334,12 @@ namespace HexapiBackground{
                         if (_selectedLeg < 0)
                             _selectedLeg = 5;
 
-                        _ik.RequestSetFunction(_selectedFunction, _selectedLeg);
+                        _ik.RequestLegYHeight(_selectedLeg, 0);
+                        _ik.RequestSetFunction(_selectedFunction);
                     }
 
                     break;
                 case ControllerDirection.Right:
-                case ControllerDirection.DownRight:
-                case ControllerDirection.UpRight:
                     if ((int) _gaitType < 4 && _selectedFunction != SelectedFunction.TranslateHorizontal && _selectedFunction != SelectedFunction.SetSingleLegLiftOffset)
                     {
                         _gaitType++;
@@ -353,29 +356,38 @@ namespace HexapiBackground{
                         if (_selectedLeg > 5)
                             _selectedLeg = 0;
 
-                        _ik.RequestSetFunction(_selectedFunction, _selectedLeg);
+                        _ik.RequestLegYHeight(_selectedLeg, 0);
+                        _ik.RequestSetFunction(_selectedFunction);
                     }
                     break;
                 case ControllerDirection.Up:
-                    if (_bodyPosY < 75)
+                    if (_bodyPosY < 95)
                     {
                         if (_selectedFunction == SelectedFunction.SetSingleLegLiftOffset)
-                            _bodyPosY = _bodyPosY + 1;
+                        {
+                            _legPosY = _legPosY + 2;
+                            _ik.RequestLegYHeight(_selectedLeg, _legPosY);
+                        }
                         else
+                        {
                             _bodyPosY = _bodyPosY + 5;
-
-                        _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
+                            _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
+                        }
                     }
                     break;
                 case ControllerDirection.Down:
-                    if (_bodyPosY > 5)
+                    if (_bodyPosY > 15)
                     {
                         if (_selectedFunction == SelectedFunction.SetSingleLegLiftOffset)
-                            _bodyPosY = _bodyPosY - 1;
+                        {
+                            _legPosY = _legPosY - 2;
+                            _ik.RequestLegYHeight(_selectedLeg, _legPosY);
+                        }
                         else
+                        {
                             _bodyPosY = _bodyPosY - 5;
-
-                        _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
+                            _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
+                        }
                     }
                     break;
             }

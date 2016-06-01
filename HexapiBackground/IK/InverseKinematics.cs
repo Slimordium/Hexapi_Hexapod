@@ -155,7 +155,27 @@ namespace HexapiBackground.IK{
             }
             else
             {
-                _pca9685.SetPin(_selectedFunctionLeg, 4090);
+                switch (_selectedFunctionLeg)
+                {
+                    case 0:
+                        _pca9685?.SetPin(5, 64);
+                        break;
+                    case 1:
+                        _pca9685?.SetPin(4, 64);
+                        break;
+                    case 2:
+                        _pca9685?.SetPin(3, 64);
+                        break;
+                    case 3:
+                        _pca9685?.SetPin(2, 64);
+                        break;
+                    case 4:
+                        _pca9685?.SetPin(1, 64);
+                        break;
+                    case 5:
+                        _pca9685?.SetPin(0, 64);
+                        break;
+                }
             }
         }
 
@@ -189,6 +209,8 @@ namespace HexapiBackground.IK{
         {
             _lastGaitType = _gaitType;
             _gaitType = gaitType;
+
+            GaitSelect();
         }
 
         internal void RequestSetMovement(bool enabled)
@@ -202,17 +224,23 @@ namespace HexapiBackground.IK{
             TurnOffServos();
         }
 
-        internal void RequestSetFunction(SelectedFunction selectedFunction, int leg = -1)
+        internal void RequestSetFunction(SelectedFunction selectedFunction)
         {
             if (selectedFunction == SelectedFunction.SetSingleLegLiftOffset)
             {
                 _pca9685.SetAllPwm(4096, 0);
-                if (leg >= 0)
-                    _pca9685.SetPin(leg, 4090);
             }
 
             _selectedFunction = selectedFunction;
+        }
+
+        internal void RequestLegYHeight(int leg, double yPos)
+        {
             _selectedFunctionLeg = leg;
+
+            LegYHeightCorrector[leg] = _bodyPosY + yPos;
+
+            Debug.WriteLine($"Leg {leg} RequestLegYHeight {LegYHeightCorrector[leg]}");
         }
 
         //The idea here, is that if a foot hits an object, the corrector is set to the negative value of the current foot height,
@@ -221,11 +249,15 @@ namespace HexapiBackground.IK{
         //Not event sure if this will work!
         //The value will be stored in LegYHeightCorrector
         //IK Calculations will need to be modified to use this.
-        internal void RequestLegYHeightCorrector(int leg)
+        internal void RequestSaveLegYHeightCorrector()
         {
-            Debug.WriteLine($"gaitPosX = {_gaitPosX[leg]}");
-            Debug.WriteLine($"gaitPosY = {_gaitPosY[leg]}");
-            Debug.WriteLine($"gaitPosZ = {_gaitPosZ[leg]}");
+            //Debug.WriteLine($"gaitPosX = {_gaitPosX[leg]}");
+            //Debug.WriteLine($"gaitPosY = {_gaitPosY[leg]}");
+            //Debug.WriteLine($"gaitPosZ = {_gaitPosZ[leg]}");
+
+            Debug.WriteLine($"_selectedFunctionLeg {_selectedFunctionLeg}  _bodyPosY {_bodyPosY}  _lastBodyPosY {_lastBodyPosY}");
+
+            LegYHeightCorrector[_selectedFunctionLeg] = _bodyPosY - _lastBodyPosY;
         }
         #endregion
 
@@ -278,22 +310,7 @@ namespace HexapiBackground.IK{
                     else
                         _travelRequest = false;
 
-                    //Only switch the gait after the previous one is complete
-                    if (_gaitStep == 1 && _lastGaitType != _gaitType)
-                        GaitSelect();
-                
-                    _lastLeg = false;
-
-                    if (_lastSelectedFunction == SelectedFunction.SetSingleLegLiftOffset && _selectedFunction != _lastSelectedFunction)
-                    {
-                        LegYHeightCorrector[_lastSelectedFunctionLeg] = _bodyPosY - _lastBodyPosY;
-                    }
-                    else
-                    {
-                        
-                    }
-
-                    if (_selectedFunction != SelectedFunction.SetSingleLegLiftOffset && _selectedFunctionLeg == -1)
+                    if (_selectedFunction != SelectedFunction.SetSingleLegLiftOffset)
                     {
                         IkLoop();
                     }
@@ -309,6 +326,8 @@ namespace HexapiBackground.IK{
 
                     SscCommandCompleteEvent.Wait((int)(_gaitSpeedInMs + 75));
                     SscCommandCompleteEvent.Reset();
+
+                    _lastLeg = false;
                 }
             }, TaskCreationOptions.LongRunning);
         }
@@ -400,7 +419,7 @@ namespace HexapiBackground.IK{
         private const double LmOffsetZ = 0;
         private const double LmOffsetX = 135;
 
-        private const double TravelDeadZone = 0;
+        private const double TravelDeadZone = 1;
 
         private const double TenThousand = 10000;
         private const double OneMillion = 1000000;
@@ -766,8 +785,8 @@ namespace HexapiBackground.IK{
                 }
 
                 CoxaServoAngles[legIndex] = coxaPosition;
-                FemurServoAngles[legIndex] = coxaPosition;
-                TibiaServoAngles[legIndex] = coxaPosition;
+                FemurServoAngles[legIndex] = femurPosition;
+                TibiaServoAngles[legIndex] = tibiaPosition;
 
                 StringBuilder.Append($"#{LegServos[legIndex][0]}P{coxaPosition}");
                 StringBuilder.Append($"#{LegServos[legIndex][1]}P{femurPosition}");
@@ -838,10 +857,18 @@ namespace HexapiBackground.IK{
 
         private static double GetArcCos(double cos)
         {
-            var c = cos / TenThousand; 
-            return (Math.Abs(Math.Abs(c) - 1.0) < .000000000000001
-                ? (1 - c) * Math.PI / 2.0
-                : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * TenThousand;
+            var c = cos / TenThousand;
+
+            if ((Math.Abs(Math.Abs(c) - 1.0) < .000000000000000000000000000001))
+            {
+                return (1 - c) * Math.PI/2.0;
+            }
+
+            return (Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * TenThousand;
+
+            //return (Math.Abs(Math.Abs(c) - 1.0) < .000000000000000000000000000001
+            //    ? (1 - c) * Math.PI / 2.0
+            //    : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * TenThousand;
         }
 
         private static double GetATan2(double atanX, double atanY, out double xyhyp2)
