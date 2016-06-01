@@ -29,12 +29,13 @@ namespace HexapiBackground.IK{
         private readonly GpioPin[] _legGpioPins = new GpioPin[6];
         private readonly Pca9685 _pca9685;
         private readonly byte[] _querySsc = { 0x51, 0x0d }; //0x51 = Q, 0x0d = carriage return
+        private const double Pi = 3.1415926535897932384626433832795028841971693993751058209749445923078164; //This seemed to help 
 
         internal InverseKinematics(Pca9685 pca9685 = null)
         {
             _pca9685 = pca9685;
 
-            _pi1K = Math.PI*1000D;
+            _pi1K = Pi*1000D;
 
             for (var i = 0; i < 6; i++)
                 LegServos[i] = new int[3];
@@ -260,8 +261,6 @@ namespace HexapiBackground.IK{
             LegYHeightCorrector[_selectedFunctionLeg] = _bodyPosY - _lastBodyPosY;
         }
         #endregion
-
-        
 
         #region Main logic loop 
         internal void Start()
@@ -849,7 +848,7 @@ namespace HexapiBackground.IK{
         #region MathHelpers, and static methods
         private static void GetSinCos(double angleDeg, out double sin, out double cos)
         {
-            var angle = Math.PI * angleDeg / 180.0;
+            var angle = Pi * angleDeg / 180.0;
 
             sin = Math.Sin(angle);
             cos = Math.Cos(angle);
@@ -859,15 +858,15 @@ namespace HexapiBackground.IK{
         {
             var c = cos / TenThousand;
 
-            if ((Math.Abs(Math.Abs(c) - 1.0) < .00000000000000000000000000000000000000000000000000001)) //Why does this make a difference if there is only 15/16 decimal places in regards to precision....?
+            if ((Math.Abs(Math.Abs(c) - 1.0) < 1e-60)) //.00000000000000000000000000000000000000000000000000001 Why does this make a difference if there is only 15/16 decimal places in regards to precision....?
             {
-                return (1 - c) * Math.PI/2.0;
+                return (1 - c) * Pi/2.0;
             }
 
             return (Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * TenThousand;
 
             //return (Math.Abs(Math.Abs(c) - 1.0) < .000000000000000000000000000001
-            //    ? (1 - c) * Math.PI / 2.0
+            //    ? (1 - c) * Pi / 2.0
             //    : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * TenThousand;
         }
 
