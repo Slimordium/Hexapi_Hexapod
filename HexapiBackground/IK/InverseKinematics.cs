@@ -859,7 +859,7 @@ namespace HexapiBackground.IK{
         {
             var c = cos / TenThousand;
 
-            if ((Math.Abs(Math.Abs(c) - 1.0) < .000000000000000000000000000001))
+            if ((Math.Abs(Math.Abs(c) - 1.0) < .00000000000000000000000000000000000000000000000000001)) //Why does this make a difference if there is only 15/16 decimal places in regards to precision....?
             {
                 return (1 - c) * Math.PI/2.0;
             }
