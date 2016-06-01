@@ -42,12 +42,8 @@ namespace HexapiBackground{
         private double _travelLengthZ;
         private double _travelRotationY;
 
-
-
         internal Hexapi(InverseKinematics inverseKinematics = null, IGps gps = null, RouteFinder routeFinder = null)
         {
-           
-
             _gps = gps;
             _ik = inverseKinematics;
             _routeFinder = routeFinder;
@@ -70,11 +66,11 @@ namespace HexapiBackground{
 
             _gaitSpeed = 50;
             GaitSpeedUpperLimit = 400;
-            GaitSpeedLowerLimit = 35;
-            TravelLengthZupperLimit = 180;
+            GaitSpeedLowerLimit = 30;
+            TravelLengthZupperLimit = 160;
             TravelLengthZlowerLimit = 80;
             TravelLengthXlimit = 40;
-            TravelRotationYlimit = 18;
+            TravelRotationYlimit = 22;
             LegLiftHeightUpperLimit = 90;
             LegLiftHeightLowerLimit = 5;
         }
