@@ -28,29 +28,26 @@ namespace HexapiBackground.Hardware
             _pinCount = 16;
         }
 
-        internal void Start()
+        internal async Task Start()
         {
-            Task.Factory.StartNew(async() =>
+            if (await _pca9685.Open())
+                Reset();
+            else
             {
-                if (await _pca9685.Open())
-                    Reset();
-                else
-                {
-                    Debug.WriteLine("Could not find Pca9685");
-                    return;
-                }
+                Debug.WriteLine("Could not find Pca9685");
+                return;
+            }
 
-                //Self test
-                for (byte pwmnum = 0; pwmnum < 16; pwmnum++)
+            //Self test
+            for (byte pwmnum = 0; pwmnum < 16; pwmnum++)
+            {
+                for (ushort i = 4096; i > 0; i -= 4)
                 {
-                    for (ushort i = 4096; i > 0; i -= 4)
-                    {
-                        SetPin(pwmnum, i);
-                    }
+                    SetPin(pwmnum, i);
                 }
+            }
 
-                SetAllPwm(4096, 0);
-            });
+            SetAllPwm(4096, 0);
         }
 
         /// <summary>

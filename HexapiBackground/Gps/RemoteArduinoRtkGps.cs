@@ -36,7 +36,7 @@ namespace HexapiBackground.Gps
 
             foreach (var s in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
             {
-                var latLon = GpsHelpers.NmeaParse(s);
+                var latLon = GpsExtensions.NmeaParse(s);
 
                 if (latLon == null)
                     continue;

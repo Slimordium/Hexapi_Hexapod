@@ -30,11 +30,13 @@ namespace HexapiBackground.IK{
         private readonly Pca9685 _pca9685;
         private readonly byte[] _querySsc = { 0x51, 0x0d }; //0x51 = Q, 0x0d = carriage return
         private const double Pi = 3.1415926535897932384626433832795028841971693993751058209749445923078164; //This seemed to help 
+        private static SfSerial16X2Lcd _sfSerial16X2Lcd;
 
-        internal InverseKinematics(Pca9685 pca9685 = null)
+        internal InverseKinematics(Pca9685 pca9685 = null, Mpu9150New mpu = null, SfSerial16X2Lcd sfSerial16X2Lcd = null)
         {
             _pca9685 = pca9685;
-
+            _sfSerial16X2Lcd = sfSerial16X2Lcd;
+            
             _pi1K = Pi*1000D;
 
             for (var i = 0; i < 6; i++)
@@ -58,9 +60,13 @@ namespace HexapiBackground.IK{
             ConfigureFootSwitches();
         }
 
-        private void ConfigureFootSwitches()
+        private async void ConfigureFootSwitches()
         {
-            Debug.WriteLine("Configuring foot sensors....");
+            if (_sfSerial16X2Lcd != null)
+            {
+                await _sfSerial16X2Lcd?.Clear();
+                await _sfSerial16X2Lcd.Write("Configuring feet");
+            }
             try
             {
                 _gpioController = GpioController.GetDefault();
@@ -88,7 +94,10 @@ namespace HexapiBackground.IK{
             }
             else
             {
-                Debug.WriteLine("Could not find Gpio Controller");
+                if (_sfSerial16X2Lcd == null) return;
+
+                await _sfSerial16X2Lcd?.Clear();
+                await _sfSerial16X2Lcd.Write("Could not find Gpio Controller");
             }
         }
 
@@ -97,7 +106,7 @@ namespace HexapiBackground.IK{
         private void Pin_ValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
         {
             //_pinChangedStringBuilder.Clear();
-            if (_selectedFunction != SelectedFunction.SetSingleLegLiftOffset)
+            if (_selectedFunction != SelectedFunction.SetFootHeightOffset)
             {
                 if (args.Edge == GpioPinEdge.FallingEdge)
                 {
@@ -227,12 +236,88 @@ namespace HexapiBackground.IK{
 
         internal void RequestSetFunction(SelectedFunction selectedFunction)
         {
-            if (selectedFunction == SelectedFunction.SetSingleLegLiftOffset)
+            if (selectedFunction == SelectedFunction.SetFootHeightOffset)
             {
                 _pca9685.SetAllPwm(4096, 0);
             }
+            else
+            {
+                foreach (var pin in _legGpioPins)
+                {
+                    if (pin.Read() == GpioPinValue.High)
+                    {
+                        switch (_selectedFunctionLeg)
+                        {
+                            case 0:
+                                _pca9685?.SetPin(5, 64);
+                                break;
+                            case 1:
+                                _pca9685?.SetPin(4, 64);
+                                break;
+                            case 2:
+                                _pca9685?.SetPin(3, 64);
+                                break;
+                            case 3:
+                                _pca9685?.SetPin(2, 64);
+                                break;
+                            case 4:
+                                _pca9685?.SetPin(1, 64);
+                                break;
+                            case 5:
+                                _pca9685?.SetPin(0, 64);
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        switch (_selectedFunctionLeg)
+                        {
+                            case 0:
+                                _pca9685?.SetPin(5, 4090);
+                                break;
+                            case 1:
+                                _pca9685?.SetPin(4, 4090);
+                                break;
+                            case 2:
+                                _pca9685?.SetPin(3, 4090);
+                                break;
+                            case 3:
+                                _pca9685?.SetPin(2, 4090);
+                                break;
+                            case 4:
+                                _pca9685?.SetPin(1, 4090);
+                                break;
+                            case 5:
+                                _pca9685?.SetPin(0, 4090);
+                                break;
+                        }
+                    }
+                }
+            }
 
             _selectedFunction = selectedFunction;
+        }
+
+        internal void CalibrateFootHeight()
+        {
+            _selectedFunction = SelectedFunction.SetFootHeightOffset;
+
+            Task.Factory.StartNew(() =>
+            {
+                var height = 0;
+
+                for (var i = 0; i < 6; i++)
+                {
+                    while (_legGpioPins[i].Read() != GpioPinValue.Low)
+                    {
+                        height += 2;
+
+                        RequestLegYHeight(i, height);
+                    }
+                }
+
+                _calibrated = true;
+            });
         }
 
         internal void RequestLegYHeight(int leg, double yPos)
@@ -243,6 +328,8 @@ namespace HexapiBackground.IK{
 
             Debug.WriteLine($"Leg {leg} RequestLegYHeight {LegYHeightCorrector[leg]}");
         }
+
+        private bool _calibrated;
 
         //The idea here, is that if a foot hits an object, the corrector is set to the negative value of the current foot height,
         //then for that leg, the body height is adjusted accordingly. 
@@ -267,6 +354,12 @@ namespace HexapiBackground.IK{
         {
             Task.Factory.StartNew(async() =>
             {
+                if (_sfSerial16X2Lcd != null)
+                {
+                    await _sfSerial16X2Lcd?.Clear();
+                    await _sfSerial16X2Lcd.Write("Starting IK...");
+                }
+
                 SerialPort = new SerialPort(); //BCM2836 = Onboard UART on PI3 and IoT Core build 14322 (AI041V40A is the USB/Serial dongle)
                 await SerialPort.Open("BCM2836", 115200, 2000, 2000);
 
@@ -289,6 +382,9 @@ namespace HexapiBackground.IK{
                 SerialPort.ListenForSscCommandComplete();
 #pragma warning restore 4014
 
+                if (_sfSerial16X2Lcd != null)
+                    await _sfSerial16X2Lcd.Write("IK Started...");
+
                 while (true)
                 {
                     //_avc.CheckForObstructions(ref _travelLengthX, ref _travelRotationY, ref _travelLengthZ, ref _nominalGaitSpeed);
@@ -300,7 +396,7 @@ namespace HexapiBackground.IK{
                         continue;
                     }
 
-                    if (_selectedFunction != SelectedFunction.SetSingleLegLiftOffset)
+                    if (_selectedFunction != SelectedFunction.SetFootHeightOffset)
                     {
                         _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) ||
                                          (Math.Abs(_travelLengthZ) > TravelDeadZone) ||
@@ -309,7 +405,7 @@ namespace HexapiBackground.IK{
                     else
                         _travelRequest = false;
 
-                    if (_selectedFunction != SelectedFunction.SetSingleLegLiftOffset)
+                    if (_selectedFunction != SelectedFunction.SetFootHeightOffset)
                     {
                         IkLoop();
                     }
@@ -325,6 +421,12 @@ namespace HexapiBackground.IK{
 
                     SscCommandCompleteEvent.Wait((int)(_gaitSpeedInMs + 75));
                     SscCommandCompleteEvent.Reset();
+
+                    //if (!_calibrated && !_calibrating)
+                    //{
+                    //    _calibrating = true;
+                    //    CalibrateFootHeight();
+                    //}
 
                     _lastLeg = false;
                 }
@@ -508,6 +610,7 @@ namespace HexapiBackground.IK{
         private static readonly double[] LegYHeightCorrector = new double[6]; //Leg index,
 
         private static double _pi1K;
+        private bool _calibrating;
 
         #endregion
 
@@ -799,6 +902,12 @@ namespace HexapiBackground.IK{
 
         private static async void TurnOffServos()
         {
+            if (_sfSerial16X2Lcd != null)
+            {
+                await _sfSerial16X2Lcd?.Clear();
+                await _sfSerial16X2Lcd.Write("Servos off...");
+            }
+
             StringBuilder.Clear();
 
             for (var legIndex = 0; legIndex <= 5; legIndex++)
@@ -815,7 +924,7 @@ namespace HexapiBackground.IK{
 
         private static async void LoadLegDefaults()
         {
-            var config = await FileHelpers.ReadStringFromFile("hexapod.config");
+            var config = await FileExtensions.ReadStringFromFile("hexapod.config");
             
             if (string.IsNullOrEmpty(config))
             {
@@ -840,7 +949,11 @@ namespace HexapiBackground.IK{
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e);
+                if (_sfSerial16X2Lcd != null)
+                {
+                    await _sfSerial16X2Lcd?.Clear();
+                    await _sfSerial16X2Lcd.Write(e.Message);
+                }
             }
         }
         #endregion
@@ -857,15 +970,15 @@ namespace HexapiBackground.IK{
         private static double GetArcCos(double cos)
         {
             var c = cos / TenThousand;
-
-            if ((Math.Abs(Math.Abs(c) - 1.0) < 1e-60)) //.00000000000000000000000000000000000000000000000000001 Why does this make a difference if there is only 15/16 decimal places in regards to precision....?
+            
+            if ((Math.Abs(Math.Abs(c) - 1.0) < 1e-60)) //Why does this make a difference if there is only 15/16 decimal places in regards to precision....?
             {
-                return (1 - c) * Pi/2.0;
+                return (1 - c) * Pi / 2.0;
             }
 
-            return (Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * TenThousand;
+            return (Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * TenThousand; ;
 
-            //return (Math.Abs(Math.Abs(c) - 1.0) < .000000000000000000000000000001
+            //return (Math.Abs(Math.Abs(c) - 1.0) < 1e-60
             //    ? (1 - c) * Pi / 2.0
             //    : Math.Atan(-c / Math.Sqrt(1 - c * c)) + 2 * Math.Atan(1)) * TenThousand;
         }

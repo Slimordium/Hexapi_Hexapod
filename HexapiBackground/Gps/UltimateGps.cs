@@ -112,7 +112,7 @@ namespace HexapiBackground.Gps
 
                     foreach (var s in sentences.Split('$').Where(s => s.Length > 15))
                     {
-                        var latLon = await GpsHelpers.NmeaParse(s);
+                        var latLon = await GpsExtensions.NmeaParse(s);
 
                         if (latLon == null)
                             continue;

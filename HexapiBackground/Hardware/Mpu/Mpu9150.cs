@@ -68,6 +68,7 @@ namespace HexapiBackground.Hardware
                 _interruptPin.ValueChanged += Interrupt;
                 
                 _mpu9150 = new I2CDevice((byte)Mpu9150Setup.Address, I2cBusSpeed.FastMode);
+                await _mpu9150.Open();
 
                 await Task.Delay(5); // power up 
 
@@ -152,17 +153,16 @@ namespace HexapiBackground.Hardware
 
                 _gyroXangle += xRotationPerSecond * loopPeriod;
 
-                //var M_PI = 3.14159265358979323846;
                 var radToDeg = 57.29578;
 
-                var accXangle = (Math.Atan2(sv.AccelerationY, sv.AccelerationZ) + 3.14159265358979323846) * radToDeg;
+                var accXangle = (Math.Atan2(sv.AccelerationY, sv.AccelerationZ) + Math.PI) * radToDeg;
                     
                 var complementaryFilterConstant = 0.98;
 
                 _cFangleX = complementaryFilterConstant * (_cFangleX + xRotationPerSecond * loopPeriod) + (1 - complementaryFilterConstant) * accXangle;
 
                 //Debug.WriteLine("X: " + sv.GyroX + ", Y: " + sv.GyroY + ", Z: " + sv.GyroZ);
-                Debug.WriteLine("CFangleX: " + _cFangleX);
+                //Debug.WriteLine("CFangleX: " + _cFangleX);
                 //Debug.WriteLine("AccelX: " + sv.AccelerationX + ", AccelY: " + sv.AccelerationY + ", AccelZ: " + sv.AccelerationZ);
             }
             ea.Values = l.ToArray();

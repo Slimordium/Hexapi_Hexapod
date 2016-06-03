@@ -9,7 +9,7 @@ using Windows.Storage.Streams;
 
 namespace HexapiBackground.Helpers
 {
-    internal static class FileHelpers
+    internal static class FileExtensions
     {
         internal static async Task<string> ReadStringFromFile(string filename)
         {

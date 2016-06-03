@@ -31,7 +31,7 @@ namespace HexapiBackground.Navigation
             if (_gpsNavigationEnabled)
                 return;
 
-            _waypoints = GpsHelpers.LoadWaypoints();
+            _waypoints = GpsExtensions.LoadWaypoints();
 
             _gpsNavigationEnabled = true;
 
@@ -62,7 +62,7 @@ namespace HexapiBackground.Navigation
         {
             return Task.Factory.StartNew(() =>
             {
-                var distanceHeading = GpsHelpers.GetDistanceAndHeadingToDestination(_gps.CurrentLatLon.Lat, _gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
+                var distanceHeading = GpsExtensions.GetDistanceAndHeadingToDestination(_gps.CurrentLatLon.Lat, _gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
                 var distanceToWaypoint = distanceHeading[0];
                 var headingToWaypoint = distanceHeading[1];
 
@@ -144,7 +144,7 @@ namespace HexapiBackground.Navigation
                     while (sw.ElapsedMilliseconds < 100) { } // only correct heading every 150ms. This may need to be shorter.
                     sw.Restart();
 
-                    distanceHeading = GpsHelpers.GetDistanceAndHeadingToDestination(_gps.CurrentLatLon.Lat, _gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
+                    distanceHeading = GpsExtensions.GetDistanceAndHeadingToDestination(_gps.CurrentLatLon.Lat, _gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
                     distanceToWaypoint = distanceHeading[0];
                     headingToWaypoint = distanceHeading[1];
                 }

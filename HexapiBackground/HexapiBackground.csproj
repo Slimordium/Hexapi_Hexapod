@@ -115,6 +115,7 @@
     <Compile Include="Hardware\Pca9685.cs" />
     <Compile Include="Hardware\Mpr121.cs" />
     <Compile Include="Hardware\Mpu\Mpu9150.cs" />
+    <Compile Include="Hardware\SfSerial16x2Lcd.cs" />
     <Compile Include="Navigation\Avc.cs" />
     <Compile Include="Enums\ControllerDirection.cs" />
     <Compile Include="Gps\IGps.cs" />
@@ -123,8 +124,8 @@
     <Compile Include="Gps\Ntrip\NtripClient_Fona.cs" />
     <Compile Include="Hardware\AdafruitFona.cs" />
     <Compile Include="Hardware\RemoteArduino.cs" />
-    <Compile Include="Helpers\GpsHelpers.cs" />
-    <Compile Include="Helpers\FileHelpers.cs" />
+    <Compile Include="Extensions\GpsExtensions.cs" />
+    <Compile Include="Extensions\FileExtensions.cs" />
     <Compile Include="Gps\Ntrip\NtripClient_Tcp.cs" />
     <Compile Include="Navigation\RouteFinder.cs" />
     <Compile Include="Enums\GaitType.cs" />
@@ -132,7 +133,7 @@
     <Compile Include="Enums\SelectedFunction.cs" />
     <Compile Include="Gps\UltimateGps.cs" />
     <Compile Include="Gps\LatLon.cs" />
-    <Compile Include="Helpers\MathHelpers.cs" />
+    <Compile Include="Extensions\MathExtensions.cs" />
     <Compile Include="Hexapi.cs" />
     <Compile Include="Hardware\I2CDevice.cs" />
     <Compile Include="Hardware\Mpu\Mpu9150Old.cs" />

@@ -7,20 +7,20 @@ using HexapiBackground.Gps;
 
 namespace HexapiBackground.Helpers
 {
-    internal static class GpsHelpers
+    internal static class GpsExtensions
     {
         internal static void SaveWaypoint(LatLon latLon)
         {
             Debug.WriteLine($"Saving to file : {latLon}");
 
-            FileHelpers.SaveStringToFile("waypoints.config", latLon.ToString());
+            FileExtensions.SaveStringToFile("waypoints.config", latLon.ToString());
         }
 
         internal static List<LatLon> LoadWaypoints()
         {
             var waypoints = new List<LatLon>();
 
-            var config = FileHelpers.ReadStringFromFile("waypoints.config").Result;
+            var config = FileExtensions.ReadStringFromFile("waypoints.config").Result;
 
             if (string.IsNullOrEmpty(config))
             {
@@ -59,12 +59,12 @@ namespace HexapiBackground.Helpers
         {
             try
             {
-                var diflat = MathHelpers.ToRadians(destinationLat - currentLat);
+                var diflat = MathExtensions.ToRadians(destinationLat - currentLat);
 
-                currentLat = MathHelpers.ToRadians(currentLat); //convert current latitude to radians
-                destinationLat = MathHelpers.ToRadians(destinationLat); //convert waypoint latitude to radians
+                currentLat = MathExtensions.ToRadians(currentLat); //convert current latitude to radians
+                destinationLat = MathExtensions.ToRadians(destinationLat); //convert waypoint latitude to radians
 
-                var diflon = MathHelpers.ToRadians(destinationLon - currentLon);
+                var diflon = MathExtensions.ToRadians(destinationLon - currentLon);
                     //subtract and convert longitude to radians
 
                 var distCalc = Math.Sin(diflat/2.0)*Math.Sin(diflat/2.0);
@@ -79,14 +79,14 @@ namespace HexapiBackground.Helpers
                 //Converting to meters. 6371000 is the magic number,  3959 is average Earth radius in miles
                 distCalc = Math.Round(distCalc*39.3701, 1); // and then to inches.
 
-                currentLon = MathHelpers.ToRadians(currentLon);
-                destinationLon = MathHelpers.ToRadians(destinationLon);
+                currentLon = MathExtensions.ToRadians(currentLon);
+                destinationLon = MathExtensions.ToRadians(destinationLon);
 
                 var heading = Math.Atan2(Math.Sin(destinationLon - currentLon)*Math.Cos(destinationLat),
                     Math.Cos(currentLat)*Math.Sin(destinationLat) -
                     Math.Sin(currentLat)*Math.Cos(destinationLat)*Math.Cos(destinationLon - currentLon));
 
-                heading = MathHelpers.FromRadians(heading);
+                heading = MathExtensions.FromRadians(heading);
 
                 if (heading < 0)
                     heading += 360;

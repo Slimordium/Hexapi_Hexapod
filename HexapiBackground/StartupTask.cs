@@ -2,6 +2,7 @@
     3DOF Hexapod - Hexapi startup 
 */
 
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Background;
 using HexapiBackground.Gps;
@@ -17,7 +18,7 @@ namespace HexapiBackground
         private static BackgroundTaskDeferral _deferral;
 
         //TODO : Make the various devices that are enabled to be configurable in a settings file
-        public void Run(IBackgroundTaskInstance taskInstance)
+        public async void Run(IBackgroundTaskInstance taskInstance)
         {
             _deferral = taskInstance.GetDeferral();
 
@@ -36,14 +37,30 @@ namespace HexapiBackground
             //var piezo = new Ads1115();
             //piezo.Start(0);  
 
-            var pca9685 = new Pca9685();
-            pca9685.Start();
+            //Task.Factory.StartNew(async() =>
+            //{
+            //    var mpu = new Mpu9150New();
+            //    await mpu.InitializeHardware();
+            //    //mpu.SensorInterruptEvent += Mpu_SensorInterruptEvent;
+            //});
+         
+            var lcd = new SfSerial16X2Lcd();
+            await lcd.Start();
 
-            var ik = new InverseKinematics(pca9685);
+            var pca9685 = new Pca9685();
+            await pca9685.Start();
+
+            var ik = new InverseKinematics(pca9685, null, lcd);
             ik.Start();
 
-            var hexapi = new Hexapi(ik);//new Hexapi(gps, avc)
+            var hexapi = new Hexapi(ik, null, null, lcd);//new Hexapi(gps, avc)
             hexapi.Start();
+        }
+
+        private void Mpu_SensorInterruptEvent(object sender, MpuSensorEventArgs e)
+        {
+            Debug.WriteLine(e.Values[0].GyroX);
+            Debug.WriteLine(e.Values[0].AccelerationX);
         }
 
         internal static void Complete()

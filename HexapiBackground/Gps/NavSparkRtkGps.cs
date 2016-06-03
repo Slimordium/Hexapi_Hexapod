@@ -48,7 +48,7 @@ namespace HexapiBackground.Gps
         {
             if (_useRtk)
             {
-                var config = FileHelpers.ReadStringFromFile("rtkGps.config").GetAwaiter().GetResult();
+                var config = FileExtensions.ReadStringFromFile("rtkGps.config").GetAwaiter().GetResult();
 
                 if (string.IsNullOrEmpty(config))
                 {
@@ -90,7 +90,7 @@ namespace HexapiBackground.Gps
 
                     foreach (var s in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
                     {
-                        var latLon = await GpsHelpers.NmeaParse(s);
+                        var latLon = await GpsExtensions.NmeaParse(s);
 
                         if (latLon == null)
                             continue;

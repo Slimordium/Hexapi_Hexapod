@@ -2,7 +2,7 @@
 
 namespace HexapiBackground.Helpers
 {
-    internal static class MathHelpers
+    internal static class MathExtensions
     {
         internal static double Map(double valueToMap, double valueToMapMin, double valueToMapMax, double outMin, double outMax)
         {

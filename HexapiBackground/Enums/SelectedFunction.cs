@@ -7,6 +7,6 @@
         TranslateHorizontal,
         Translate3D,
         SingleLeg,
-        SetSingleLegLiftOffset
+        SetFootHeightOffset
     }
 }
