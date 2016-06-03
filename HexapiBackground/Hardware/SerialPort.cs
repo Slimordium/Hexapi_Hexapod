@@ -69,7 +69,7 @@ namespace HexapiBackground.Hardware
             Debug.WriteLine("Available Serial Ports------------------");
             foreach (var d in DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()).GetAwaiter().GetResult())
             {
-                Debug.WriteLine($"Port - ID: {d.Id}");
+                Debug.WriteLine($"{d.Id}");
             }
             Debug.WriteLine("----------------------------------------");
         }
@@ -135,17 +135,7 @@ namespace HexapiBackground.Hardware
 
             _buffer = new Buffer(256);
 
-            //Task.Factory.StartNew(() =>
-            //{
-            //    try
-            //    {
             await _serialPort.InputStream.ReadAsync(_buffer, 256, InputStreamOptions.Partial);
-            //    }
-            //    catch (TimeoutException)
-            //    {
-                    
-            //    }
-            //}).Wait();
 
             return AsciiEncoding.GetString(_buffer.ToArray());
         }

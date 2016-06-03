@@ -46,6 +46,7 @@ namespace HexapiBackground
          
             var lcd = new SfSerial16X2Lcd();
             await lcd.Start();
+            await lcd.Write("Booting...");
 
             var pca9685 = new Pca9685();
             await pca9685.Start();
