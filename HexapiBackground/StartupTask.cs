@@ -44,17 +44,17 @@ namespace HexapiBackground
             //    //mpu.SensorInterruptEvent += Mpu_SensorInterruptEvent;
             //});
          
-            var lcd = new SfSerial16X2Lcd();
-            await lcd.Start();
-            await lcd.Write("Booting...");
+            //var lcd = new SfSerial16X2Lcd();
+            //await lcd.Start();
+            //await lcd.Write("Booting...");
 
-            var pca9685 = new Pca9685();
-            await pca9685.Start();
+            //var pca9685 = new Pca9685();
+            //await pca9685.Start();
 
-            var ik = new InverseKinematics(pca9685, null, lcd);
+            var ik = new InverseKinematics();
             ik.Start();
 
-            var hexapi = new Hexapi(ik, null, null, lcd);//new Hexapi(gps, avc)
+            var hexapi = new Hexapi(ik);//new Hexapi(gps, avc)
             hexapi.Start();
         }
 
