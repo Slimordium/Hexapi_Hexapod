@@ -249,7 +249,6 @@ namespace HexapiBackground.IK{
             {
                 if (_sfSerial16X2Lcd == null) return;
 
-                await _sfSerial16X2Lcd?.Clear();
                 await _sfSerial16X2Lcd.Write("Could not find Gpio Controller");
             }
         }
@@ -967,7 +966,6 @@ namespace HexapiBackground.IK{
             {
                 if (_sfSerial16X2Lcd != null)
                 {
-                    await _sfSerial16X2Lcd.Clear();
                     await _sfSerial16X2Lcd.Write(e.Message);
                 }
             }
