@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
 
@@ -24,7 +25,7 @@ namespace HexapiBackground.Gps
         public double DeviationLat { get; private set; }
         public double DriftCutoff { get; private set; }
 
-        public void Start()
+        public async Task Start()
         {
             RemoteArduino.StringReceivedActions.Add(NmeaReceived);
         }
@@ -36,7 +37,7 @@ namespace HexapiBackground.Gps
 
             foreach (var s in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
             {
-                var latLon = GpsExtensions.NmeaParse(s);
+                var latLon = GpsExtensions.ParseNmea(s);
 
                 if (latLon == null)
                     continue;

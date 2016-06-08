@@ -1,4 +1,6 @@
 ﻿
+using System.Threading.Tasks;
+
 namespace HexapiBackground.Gps
 {
     //http://www.x-io.co.uk/open-source-ahrs-with-x-imu/
@@ -13,6 +15,6 @@ namespace HexapiBackground.Gps
         double DeviationLat { get; }
         double DriftCutoff { get; }
         LatLon CurrentLatLon { get; }
-        void Start();
+        Task Start();
     }
 }

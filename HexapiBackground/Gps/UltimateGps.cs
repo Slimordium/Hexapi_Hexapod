@@ -81,9 +81,11 @@ namespace HexapiBackground.Gps
 
         #region Serial Communication
 
-        public void Start()
+        public async Task Start()
         {
+#pragma warning disable 4014
             Task.Factory.StartNew(async() =>
+#pragma warning restore 4014
             {
                 if (_serialPort == null)
                 {
@@ -110,9 +112,9 @@ namespace HexapiBackground.Gps
                 {
                     var sentences = await _serialPort.ReadString();
 
-                    foreach (var s in sentences.Split('$').Where(s => s.Length > 15))
+                    foreach (var sentence in sentences.Split('$').Where(s => s.Length > 15))
                     {
-                        var latLon = await GpsExtensions.NmeaParse(s);
+                        var latLon = sentence.ParseNmea();
 
                         if (latLon == null)
                             continue;

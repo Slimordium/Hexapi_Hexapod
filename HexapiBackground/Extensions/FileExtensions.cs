@@ -11,7 +11,7 @@ namespace HexapiBackground.Helpers
 {
     internal static class FileExtensions
     {
-        internal static async Task<string> ReadStringFromFile(string filename)
+        internal static async Task<string> ReadStringFromFile(this string filename)
         {
             var text = string.Empty;
 

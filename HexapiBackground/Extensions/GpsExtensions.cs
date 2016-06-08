@@ -5,11 +5,19 @@ using System.Threading.Tasks;
 using HexapiBackground.Enums;
 using HexapiBackground.Gps;
 
-namespace HexapiBackground.Helpers
-{
-    internal static class GpsExtensions
-    {
-        internal static void SaveWaypoint(LatLon latLon)
+namespace HexapiBackground.Helpers{
+    internal static class GpsExtensions{
+        private static double _lat;
+        private static double _lon;
+        private static GpsFixQuality _quality;
+        private static double _heading;
+        private static float _altitude;
+        private static double _feetPerSecond;
+        private static DateTime _dateTime;
+        private static int _satellitesInView;
+        private static int _signalToNoiseRatio;
+
+        internal static void SaveWaypoint(this LatLon latLon)
         {
             Debug.WriteLine($"Saving to file : {latLon}");
 
@@ -59,13 +67,13 @@ namespace HexapiBackground.Helpers
         {
             try
             {
-                var diflat = MathExtensions.ToRadians(destinationLat - currentLat);
+                var diflat = (destinationLat - currentLat).ToRadians();
 
-                currentLat = MathExtensions.ToRadians(currentLat); //convert current latitude to radians
-                destinationLat = MathExtensions.ToRadians(destinationLat); //convert waypoint latitude to radians
+                currentLat = currentLat.ToRadians(); //convert current latitude to radians
+                destinationLat = destinationLat.ToRadians(); //convert waypoint latitude to radians
 
-                var diflon = MathExtensions.ToRadians(destinationLon - currentLon);
-                    //subtract and convert longitude to radians
+                var diflon = (destinationLon - currentLon).ToRadians();
+                //subtract and convert longitude to radians
 
                 var distCalc = Math.Sin(diflat/2.0)*Math.Sin(diflat/2.0);
                 var distCalc2 = Math.Cos(currentLat);
@@ -79,14 +87,14 @@ namespace HexapiBackground.Helpers
                 //Converting to meters. 6371000 is the magic number,  3959 is average Earth radius in miles
                 distCalc = Math.Round(distCalc*39.3701, 1); // and then to inches.
 
-                currentLon = MathExtensions.ToRadians(currentLon);
-                destinationLon = MathExtensions.ToRadians(destinationLon);
+                currentLon = currentLon.ToRadians();
+                destinationLon = destinationLon.ToRadians();
 
                 var heading = Math.Atan2(Math.Sin(destinationLon - currentLon)*Math.Cos(destinationLat),
                     Math.Cos(currentLat)*Math.Sin(destinationLat) -
                     Math.Sin(currentLat)*Math.Cos(destinationLat)*Math.Cos(destinationLon - currentLon));
 
-                heading = MathExtensions.FromRadians(heading);
+                heading = heading.ToDegrees();
 
                 if (heading < 0)
                     heading += 360;
@@ -100,7 +108,7 @@ namespace HexapiBackground.Helpers
             }
         }
 
-        internal static double Latitude2Double(string lat, string ns)
+        internal static double Latitude2Double(this string lat, string ns)
         {
             if (lat.Length < 2 || string.IsNullOrEmpty(ns))
                 return 0;
@@ -124,10 +132,10 @@ namespace HexapiBackground.Helpers
                 med = -med;
             }
 
-            return Math.Round(med, 7);
+            return Math.Round(med, 8);
         }
 
-        internal static double Longitude2Double(string lon, string we)
+        internal static double Longitude2Double(this string lon, string we)
         {
             if (lon.Length < 2 || string.IsNullOrEmpty(we))
                 return 0;
@@ -151,23 +159,13 @@ namespace HexapiBackground.Helpers
                 med = -med;
             }
 
-            return Math.Round(med, 7);
+            return Math.Round(med, 8);
         }
 
-        private static double _lat;
-        private static double _lon;
-        private static GpsFixQuality _quality;
-        private static double _heading;
-        private static float _altitude;
-        private static double _feetPerSecond;
-        private static DateTime _dateTime;
-        private static int _satellitesInView;
-        private static int _signalToNoiseRatio;
-
-        internal static Task<LatLon> NmeaParse(string data)
+        internal static LatLon ParseNmea(this string data)
         {
-            return Task.Factory.StartNew(() =>
-            {
+            //return Task.Factory.StartNew(() =>
+            //{
                 try
                 {
                     var tokens = data.Split(',');
@@ -182,18 +180,18 @@ namespace HexapiBackground.Helpers
                             var st = tokens[1];
 
                             _dateTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
-                                                Convert.ToInt32(st.Substring(0, 2)), Convert.ToInt32(st.Substring(2, 2)),
-                                                Convert.ToInt32(st.Substring(4, 2)), DateTimeKind.Local);
+                                Convert.ToInt32(st.Substring(0, 2)), Convert.ToInt32(st.Substring(2, 2)),
+                                Convert.ToInt32(st.Substring(4, 2)), DateTimeKind.Local);
 
                             _lat = Latitude2Double(tokens[2], tokens[3]);
                             _lon = Longitude2Double(tokens[4], tokens[5]);
 
                             int quality;
                             if (int.TryParse(tokens[6], out quality))
-                                _quality = (GpsFixQuality)quality;
+                                _quality = (GpsFixQuality) quality;
 
                             if (float.TryParse(tokens[9], out _altitude))
-                                _altitude = _altitude * 3.28084f;
+                                _altitude = _altitude*3.28084f;
 
                             break;
                         case "GPGLL": //Global Positioning System Fix Data
@@ -214,7 +212,7 @@ namespace HexapiBackground.Helpers
 
                             double fps = 0;
                             if (double.TryParse(tokens[7], out fps))
-                                _feetPerSecond = Math.Round(fps * 1.68781, 2); //Convert knots to feet per second or "Speed over ground"
+                                _feetPerSecond = Math.Round(fps*1.68781, 2); //Convert knots to feet per second or "Speed over ground"
 
                             double dir = 0;
                             if (double.TryParse(tokens[8], out dir))
@@ -238,7 +236,7 @@ namespace HexapiBackground.Helpers
                         case "GPGSA": //dilution of precision and active satellites
 
                             var fix3d = tokens[2]; //1 no fix, 2 = 2d fix, 3 = 3d fix
-                                                   //var PRNs OfSatsUsedForFix = tokens 3 + 11 total 12
+                            //var PRNs OfSatsUsedForFix = tokens 3 + 11 total 12
 
                             //                        GSA Satellite status
                             //A        Auto selection of 2D or 3D fix(M = manual)
@@ -257,7 +255,6 @@ namespace HexapiBackground.Helpers
 
                     if (Math.Abs(_lat) < .1 || Math.Abs(_lon) < .1)
                         return null;
-
                 }
                 catch (ArgumentOutOfRangeException)
                 {
@@ -292,7 +289,7 @@ namespace HexapiBackground.Helpers
                 //    Debug.WriteLine($"Lat, Lon : {_lat}, {_lon}, {_quality}, Heading {_heading}, Alt {_altitude}, Sats {_satellitesInView}, SignalToNoise {_signalToNoiseRatio}");
 
                 return latLon;
-            });
+            //});
         }
     }
 }

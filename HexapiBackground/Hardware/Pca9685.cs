@@ -9,23 +9,21 @@ using Windows.Devices.I2c;
 
 namespace HexapiBackground.Hardware
 {
-    //Adafruit 12bit, 16 channel, I2C PWM controller 
-    //Adapted from the Adafruit library for the Arduino
     internal class Pca9685
     {
         private readonly I2CDevice _pca9685;
         private double _actualFrequency;
-        private readonly double _maxFrequency;
-        private readonly double _minFrequency;
-        private readonly int _pinCount;
+        private readonly double _maxFrequency = 1000;
+        private readonly double _minFrequency = 40;
+        private readonly int _pinCount = 16;
 
+        /// <summary>
+        /// Adafruit 12bit, 16 channel, I2C PWM controller.
+        /// Adapted from the Adafruit library for the Arduino
+        /// </summary>
         internal Pca9685()
         {
             _pca9685 = new I2CDevice(0x40, I2cBusSpeed.FastMode);
-
-            _maxFrequency = 1000;
-            _minFrequency = 40;
-            _pinCount = 16;
         }
 
         internal async Task Start()

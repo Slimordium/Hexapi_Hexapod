@@ -22,15 +22,16 @@ namespace HexapiBackground.Gps
         private readonly SerialPort _serialPortForGps;
         private readonly bool _useRtk;
 
-        public NavSparkGps(bool useRtk)
+        private SfSerial16X2Lcd _lcd;
+
+        public NavSparkGps(bool useRtk, SfSerial16X2Lcd lcd)
         {
             _serialPortForRtkCorrectionData = new SerialPort();  //FTDIBUS\VID_0403+PID_6001+A104OHRXA\0000
-            _serialPortForRtkCorrectionData.Open("A104OHRX", 57600, 2000, 2000).Wait();
-
             _serialPortForGps = new SerialPort();
-            _serialPortForGps.Open("AH03F3RY", 57600, 2000, 2000).Wait();
 
             _useRtk = useRtk;
+
+            _lcd = lcd;
 
             CurrentLatLon = new LatLon();
         }
@@ -44,11 +45,14 @@ namespace HexapiBackground.Gps
 
         #region Serial Communication
 
-        public void Start()
+        public async Task Start()
         {
+            await _serialPortForRtkCorrectionData.Open("A104OHRX", 57600, 2000, 2000);
+            await _serialPortForGps.Open("AH03F3RY", 57600, 2000, 2000);
+
             if (_useRtk)
             {
-                var config = FileExtensions.ReadStringFromFile("rtkGps.config").GetAwaiter().GetResult();
+                var config = await "rtkGps.config".ReadStringFromFile();
 
                 if (string.IsNullOrEmpty(config))
                 {
@@ -58,8 +62,11 @@ namespace HexapiBackground.Gps
 
                 try
                 {
-                    var ntripClient = new NtripClientTcp("172.16.0.229", 8181, "", "", "", _serialPortForRtkCorrectionData);
+                    var ntripClient = new NtripClientTcp("172.16.0.225", 8000, "", "", "", _lcd);
+                    ntripClient.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
                     ntripClient.Start();
+
+                    
 
                     //var settings = config.Split(',');
 
@@ -80,25 +87,41 @@ namespace HexapiBackground.Gps
                 }
             }
 
+#pragma warning disable 4014
             Task.Factory.StartNew(async() =>
+#pragma warning restore 4014
             {
-                Debug.WriteLine("NavSpark RTK GPS Started...");
+                await _lcd.Write("RTK GPS Started...");
 
                 while (true)
                 {
                     var sentences = await _serialPortForGps.ReadString();
 
-                    foreach (var s in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
+                    foreach (var sentence in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
                     {
-                        var latLon = await GpsExtensions.NmeaParse(s);
+                        var latLon = sentence.ParseNmea();
 
                         if (latLon == null)
                             continue;
+
+                        if (CurrentLatLon.Quality != latLon.Quality)
+                            await _lcd.WriteToFirstLine(latLon.Quality.ToString());
 
                         CurrentLatLon = latLon;
                     }
                 }
             }, TaskCreationOptions.LongRunning);
+        }
+
+        private void NtripClient_NtripDataArrivedEvent(object sender, NtripEventArgs e)
+        {
+            //Task.Factory.StartNew(async () =>
+            //{
+            //await _serialPortForRtkCorrectionData.Write(e.NtripBytes);
+            //});
+#pragma warning disable 4014
+            _serialPortForRtkCorrectionData.Write(e.NtripBytes);
+#pragma warning restore 4014
         }
 
         #endregion

@@ -3,6 +3,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace HexapiBackground.Hardware{
+
+    /// <summary>
+    /// SparkFun Serial 16x2 LCD
+    /// </summary>
     internal class SfSerial16X2Lcd
     {
         private readonly byte[] _startOfFirstLine = {0xfe, 0x80};

@@ -9,6 +9,7 @@ using Windows.Devices.Enumeration;
 using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
 using Buffer = Windows.Storage.Streams.Buffer;
+using Microsoft.Maker.Serial;
 
 namespace HexapiBackground.Hardware
 {
@@ -28,7 +29,7 @@ namespace HexapiBackground.Hardware
             while (_serialPort == null)
             {
                 var deviceInformationCollection = await DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector());
-                var selectedPort = deviceInformationCollection.FirstOrDefault(d => d.Id.Contains(identifier) || d.Name.Equals(identifier)); //Onboard is "UART0"
+                var selectedPort = deviceInformationCollection.FirstOrDefault(d => d.Id.Contains(identifier) || d.Name.Equals(identifier));
 
                 if (selectedPort == null)
                 {

@@ -115,6 +115,7 @@
     <Compile Include="Hardware\Pca9685.cs" />
     <Compile Include="Hardware\Mpr121.cs" />
     <Compile Include="Hardware\Mpu\Mpu9150.cs" />
+    <Compile Include="Hardware\Rfm69Hcw.cs" />
     <Compile Include="Hardware\SfSerial16x2Lcd.cs" />
     <Compile Include="Navigation\Avc.cs" />
     <Compile Include="Enums\ControllerDirection.cs" />
