@@ -10,7 +10,7 @@ using HexapiBackground.Hardware;
 using HexapiBackground.IK;
 using HexapiBackground.Navigation;
 using HexapiBackground.SignalR;
-
+#pragma warning disable 4014
 namespace HexapiBackground
 {
     public sealed class StartupTask : IBackgroundTask
@@ -18,26 +18,25 @@ namespace HexapiBackground
         private static BackgroundTaskDeferral _deferral;
 
         //TODO : Make the various devices that are enabled to be configurable in a settings file
-        public async void Run(IBackgroundTaskInstance taskInstance)
+        public void Run(IBackgroundTaskInstance taskInstance)
         {
             _deferral = taskInstance.GetDeferral();
 
             SerialPort.ListAvailablePorts();
 
-            var lcd = new SfSerial16X2Lcd();
-            await lcd.Start();
-            await lcd.Write("Booting...");
+            //var lcd = new SfSerial16X2Lcd();
+            //lcd.Start().ContinueWith(async(r) => { await lcd.Write("Booting"); }).Wait();
 
-            var gps = new NavSparkGps(true, lcd);
-            await gps.Start();
+            var gps = new NavSparkGps(true, null);
+            gps.Start();
 
             var pca9685 = new Pca9685();
-            await pca9685.Start();
+            pca9685.Start();
 
-            var ik = new InverseKinematics(pca9685, null, lcd);
+            var ik = new InverseKinematics(pca9685);
             ik.Start();
 
-            var hexapi = new Hexapi(ik, gps, null, lcd);//new Hexapi(gps, avc)
+            var hexapi = new Hexapi(ik, gps);//new Hexapi(gps, avc)
             hexapi.Start();
         }
 

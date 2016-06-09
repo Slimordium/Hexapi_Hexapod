@@ -94,7 +94,8 @@ namespace HexapiBackground.Gps.Ntrip
                 if (((Socket) sender).Connected)
                 {
                     //Debug.WriteLine($"Connected to NTRIP feed at {_endPoint.Address}\\{_ntripMountPoint}");
-                    _lcd.Write("NTRIP Connected").Wait();
+                    if (_lcd != null)
+                        _lcd.Write("NTRIP Connected").Wait();
 
                     Task.Delay(500).Wait();
 
@@ -102,7 +103,8 @@ namespace HexapiBackground.Gps.Ntrip
                 }
                 else
                 {
-                    _lcd.Write("NTRIP Connection failed").Wait();
+                    if (_lcd != null)
+                        _lcd.Write("NTRIP Connection failed").Wait();
                     //Debug.WriteLine("NTRIP connection failed");
                 }
             };
@@ -125,7 +127,8 @@ namespace HexapiBackground.Gps.Ntrip
             {
                 Debug.WriteLine($"NTRIP Authentication : {eventArgs.SocketError.ToString()}");
 
-                _lcd.Write($"NTRIP {eventArgs.SocketError.ToString()}").Wait();
+                if (_lcd != null)
+                    _lcd.Write($"NTRIP {eventArgs.SocketError.ToString()}").Wait();
 
                 Task.Delay(1500).Wait();
 

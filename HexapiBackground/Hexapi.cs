@@ -14,7 +14,7 @@ namespace HexapiBackground{
     internal sealed class Hexapi{
         private readonly IGps _gps;
         private readonly InverseKinematics _ik;
-        private readonly SfSerial16X2Lcd _sfSerial16X2Lcd;
+        private readonly SfSerial16X2Lcd _lcd;
 
         private readonly Stopwatch _stopwatch = new Stopwatch();
         private readonly XboxController _xboxController;
@@ -47,12 +47,12 @@ namespace HexapiBackground{
         private double _travelLengthZ;
         private double _travelRotationY;
 
-        internal Hexapi(InverseKinematics inverseKinematics = null, IGps gps = null, RouteFinder routeFinder = null, SfSerial16X2Lcd sfSerial16X2Lcd = null)
+        internal Hexapi(InverseKinematics inverseKinematics = null, IGps gps = null, RouteFinder routeFinder = null, SfSerial16X2Lcd lcd = null)
         {
             _gps = gps;
             _ik = inverseKinematics;
             _routeFinder = routeFinder;
-            _sfSerial16X2Lcd = sfSerial16X2Lcd;
+            _lcd = lcd;
 
             //var asdf = new HexapiLeapMotionClient(_ik);
 
@@ -72,7 +72,7 @@ namespace HexapiBackground{
 
             _gaitSpeed = 50;
             GaitSpeedUpperLimit = 400;
-            GaitSpeedLowerLimit = 20;
+            GaitSpeedLowerLimit = 30;
             TravelLengthZupperLimit = 160;
             TravelLengthZlowerLimit = 80;
             TravelLengthXlimit = 40;
@@ -139,14 +139,14 @@ namespace HexapiBackground{
                     {
                         if (_gaitSpeed < GaitSpeedUpperLimit) //200
                         {
-                            _gaitSpeed = _gaitSpeed + 5;
+                            _gaitSpeed = _gaitSpeed + 2;
                         }
                     }
                     else
                     {
                         if (_gaitSpeed > GaitSpeedLowerLimit) //45
                         {
-                            _gaitSpeed = _gaitSpeed - 5;
+                            _gaitSpeed = _gaitSpeed - 2;
                         }
                     }
 
@@ -155,22 +155,22 @@ namespace HexapiBackground{
                     if (button == 5)
                     {
                         if (_legLiftHeight < LegLiftHeightUpperLimit) //90
-                            _legLiftHeight = _legLiftHeight + 5;
+                            _legLiftHeight = _legLiftHeight + 3;
                     }
                     else
                     {
                         if (_legLiftHeight > LegLiftHeightLowerLimit) //20
-                            _legLiftHeight = _legLiftHeight - 5;
+                            _legLiftHeight = _legLiftHeight - 3;
                     }
                     break;
             }
 
             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
 
-            var writeToFirstLine = _sfSerial16X2Lcd?.WriteToFirstLine($"Speed : {_gaitSpeed}");
+            var writeToFirstLine = _lcd?.WriteToFirstLine($"Speed : {_gaitSpeed}");
             if (writeToFirstLine != null) await writeToFirstLine;
 
-            var writeToSecondLine = _sfSerial16X2Lcd?.WriteToSecondLine($"Lift : {_legLiftHeight}");
+            var writeToSecondLine = _lcd?.WriteToSecondLine($"Lift : {_legLiftHeight}");
             if (writeToSecondLine != null) await writeToSecondLine;
         }
 
@@ -182,12 +182,14 @@ namespace HexapiBackground{
                     if (_selectedFunction == SelectedFunction.GaitSpeed)
                     {
                         _selectedFunction = SelectedFunction.LegHeight;
-                        await _sfSerial16X2Lcd.WriteToFirstLine($"Leg height");
+                        if (_lcd != null)
+                            await _lcd.WriteToFirstLine($"Leg height");
                     }
                     else
                     {
                         _selectedFunction = SelectedFunction.GaitSpeed;
-                        await _sfSerial16X2Lcd.WriteToFirstLine($"Gait speed");
+                        if (_lcd != null)
+                            await _lcd.WriteToFirstLine($"Gait speed");
                     }
                     break;
                 case 1: //B
@@ -329,7 +331,7 @@ namespace HexapiBackground{
                     {
                         _gaitType--;
                         _ik.RequestSetGaitType(_gaitType);
-                        var write = _sfSerial16X2Lcd?.Write(Enum.GetName(typeof (GaitType), _gaitType));
+                        var write = _lcd?.Write(Enum.GetName(typeof (GaitType), _gaitType));
                         if (write != null) await write;
                     }
                     else if (_selectedFunction == SelectedFunction.TranslateHorizontal && _bodyRotY > -30)
@@ -353,7 +355,7 @@ namespace HexapiBackground{
                     {
                         _gaitType++;
                         _ik.RequestSetGaitType(_gaitType);
-                        var write = _sfSerial16X2Lcd?.Write(Enum.GetName(typeof (GaitType), _gaitType));
+                        var write = _lcd?.Write(Enum.GetName(typeof (GaitType), _gaitType));
                         if (write != null) await write;
                     }
                     else if (_selectedFunction == SelectedFunction.TranslateHorizontal && _bodyRotY < 30)
@@ -385,7 +387,7 @@ namespace HexapiBackground{
                             _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                         }
 
-                        await _sfSerial16X2Lcd.Write($"_bodyPosY = {_bodyPosY}");
+                        await _lcd.Write($"_bodyPosY = {_bodyPosY}");
                     }
                     break;
                 case ControllerDirection.Down:
@@ -401,7 +403,7 @@ namespace HexapiBackground{
                             _bodyPosY = _bodyPosY - 5;
                             _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                         }
-                        await _sfSerial16X2Lcd.Write($"_bodyPosY = {_bodyPosY}");
+                        await _lcd.Write($"_bodyPosY = {_bodyPosY}");
                     }
                     break;
             }

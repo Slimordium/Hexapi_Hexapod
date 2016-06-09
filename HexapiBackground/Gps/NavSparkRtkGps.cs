@@ -22,7 +22,7 @@ namespace HexapiBackground.Gps
         private readonly SerialPort _serialPortForGps;
         private readonly bool _useRtk;
 
-        private SfSerial16X2Lcd _lcd;
+        private readonly SfSerial16X2Lcd _lcd;
 
         public NavSparkGps(bool useRtk, SfSerial16X2Lcd lcd)
         {
@@ -91,7 +91,8 @@ namespace HexapiBackground.Gps
             Task.Factory.StartNew(async() =>
 #pragma warning restore 4014
             {
-                await _lcd.Write("RTK GPS Started...");
+                if (_lcd != null)
+                    await _lcd.Write("RTK GPS Started...");
 
                 while (true)
                 {
@@ -104,7 +105,7 @@ namespace HexapiBackground.Gps
                         if (latLon == null)
                             continue;
 
-                        if (CurrentLatLon.Quality != latLon.Quality)
+                        if (CurrentLatLon.Quality != latLon.Quality && _lcd != null)
                             await _lcd.WriteToFirstLine(latLon.Quality.ToString());
 
                         CurrentLatLon = latLon;
