@@ -81,11 +81,9 @@ namespace HexapiBackground.Gps
 
         #region Serial Communication
 
-        public async Task Start()
+        public void Start()
         {
-#pragma warning disable 4014
-            Task.Factory.StartNew(async() =>
-#pragma warning restore 4014
+            Task.Run(async() =>
             {
                 if (_serialPort == null)
                 {
@@ -122,7 +120,7 @@ namespace HexapiBackground.Gps
                         CurrentLatLon = latLon;
                     }
                 }
-            }, TaskCreationOptions.LongRunning);
+            });
         }
 
         #endregion

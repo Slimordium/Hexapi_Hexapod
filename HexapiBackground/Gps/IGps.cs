@@ -15,6 +15,6 @@ namespace HexapiBackground.Gps
         double DeviationLat { get; }
         double DriftCutoff { get; }
         LatLon CurrentLatLon { get; }
-        Task Start();
+        void Start();
     }
 }

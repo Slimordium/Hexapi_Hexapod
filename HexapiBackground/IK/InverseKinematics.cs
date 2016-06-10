@@ -10,6 +10,7 @@ using Windows.Devices.Gpio;
 using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
 using HexapiBackground.Enums;
+using HexapiBackground.Extensions;
 using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
 #pragma warning disable 4014
@@ -24,7 +25,6 @@ namespace HexapiBackground.IK{
         private const double Pi = 3.1415926535897932384626433832795028841971693993751058209749445923078164; //This seemed to help 
         private static readonly StringBuilder StringBuilder = new StringBuilder();
         internal static ManualResetEventSlim SscCommandCompleteEvent = new ManualResetEventSlim(false);
-        private static SfSerial16X2Lcd _lcd;
         private readonly GpioPin[] _legGpioPins = new GpioPin[6];
         private readonly Pca9685 _pca9685;
 
@@ -183,10 +183,9 @@ namespace HexapiBackground.IK{
 
         #endregion
 
-        internal InverseKinematics(Pca9685 pca9685 = null, Mpu9150New mpu = null, SfSerial16X2Lcd lcd = null)
+        internal InverseKinematics(Pca9685 pca9685 = null, Mpu9150New mpu = null)
         {
             _pca9685 = pca9685;
-            _lcd = lcd;
 
             _pi1K = Pi*1000D;
 
@@ -210,12 +209,10 @@ namespace HexapiBackground.IK{
 
     
 
-        private async void ConfigureFootSwitches()
+        private void ConfigureFootSwitches()
         {
-            if (_lcd != null)
-            {
-                await _lcd.Write("Configuring feet");
-            }
+            "Configuring feet".WriteToLcd(1);
+
             try
             {
                 _gpioController = GpioController.GetDefault();
@@ -243,9 +240,7 @@ namespace HexapiBackground.IK{
             }
             else
             {
-                if (_lcd == null) return;
-
-                await _lcd.Write("Could not find Gpio Controller");
+                Display.Write("Could not find Gpio Controller", 1);
             }
         }
 
@@ -447,14 +442,13 @@ namespace HexapiBackground.IK{
             GaitSelect();
         }
 
-        internal async void RequestSetMovement(bool enabled)
+        internal void RequestSetMovement(bool enabled)
         {
             _movementStarted = enabled;
 
             if (enabled)
             {
-                if (_lcd != null)
-                    await _lcd.Write("Servos on");
+                "Servos on".WriteToLcd(2);
             }
         }
 
@@ -577,41 +571,39 @@ namespace HexapiBackground.IK{
 
         #region Main loop  
 
-        internal async void Start()
+        internal void Start()
         {
-            _serialDevice = await SerialPortHelper.GetSerialPort("BCM2836", 115200, TimeSpan.MaxValue, new TimeSpan(0, 0, 0, 5));
-
-            Ik();
-        }
-
-        internal async void Ik()
-        {
-            while (true)
+            Task.Run(async () =>
             {
-                _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) || (Math.Abs(_travelLengthZ) > TravelDeadZone) || (Math.Abs(_travelRotationY) > TravelDeadZone);
+                _serialDevice = await SerialPortHelper.GetSerialPort("BCM2836", 115200, TimeSpan.MaxValue, new TimeSpan(0, 0, 0, 5));
 
-                IkLoop();
-
-                _lastLeg = false;
-
-                if (_movementStarted)
-                    await _serialDevice.OutputStream.WriteAsync(UpdateServoPositions(_coxaAngle, _femurAngle, _tibiaAngle));
-                else
-                    await _serialDevice.OutputStream.WriteAsync(TurnOffServos());
-
-                var buffer = new byte[1];
                 while (true)
                 {
-                    await _serialDevice.InputStream.ReadAsync(buffer.AsBuffer(), 1, InputStreamOptions.None);
+                    _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) || (Math.Abs(_travelLengthZ) > TravelDeadZone) || (Math.Abs(_travelRotationY) > TravelDeadZone);
 
-                    if (buffer[0] == 0x2e)
-                        break;
-                     
-                    await _serialDevice.OutputStream.WriteAsync(_querySsc.AsBuffer());
+                    IkLoop();
+
+                    _lastLeg = false;
+
+                    if (_movementStarted)
+                        await _serialDevice.OutputStream.WriteAsync(GetServoPositions(_coxaAngle, _femurAngle, _tibiaAngle));
+                    else
+                        await _serialDevice.OutputStream.WriteAsync(TurnOffServos());
+
+                    var buffer = new byte[1];
+                    while (true)
+                    {
+                        await _serialDevice.InputStream.ReadAsync(buffer.AsBuffer(), 1, InputStreamOptions.None);
+
+                        if (buffer[0] == 0x2e)
+                            break;
+
+                        await _serialDevice.OutputStream.WriteAsync(_querySsc.AsBuffer());
+                    }
                 }
-            }
+            });
         }
-        
+
         private void IkCalculation(int legIndex)
         {
             if (legIndex == 5)
@@ -823,7 +815,7 @@ namespace HexapiBackground.IK{
 
         #region Servo related, build various servo controller strings and read values
 
-        private static IBuffer UpdateServoPositions(IList<double> coxaAngles, IList<double> femurAngles, IList<double> tibiaAngles)
+        private static IBuffer GetServoPositions(IList<double> coxaAngles, IList<double> femurAngles, IList<double> tibiaAngles)
         {
             StringBuilder.Clear();
 
@@ -907,10 +899,7 @@ namespace HexapiBackground.IK{
             }
             catch (Exception e)
             {
-                if (_lcd != null)
-                {
-                    await _lcd.Write(e.Message);
-                }
+                e.Message.WriteToLcd();
             }
 
             GaitSelect();

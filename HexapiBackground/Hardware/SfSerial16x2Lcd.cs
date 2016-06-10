@@ -29,10 +29,13 @@ namespace HexapiBackground.Hardware{
 
             if (count > 0)
             {
+                var spaces = new List<byte>();
+
                 for (var i = 0; i <= count; i++)
                 {
-                    await _serialPort.Write(new byte[] { 0x20 });
+                    spaces.Add(0x20);
                 }
+                await _serialPort.Write(spaces.ToArray());
             }
         }
 
@@ -47,10 +50,13 @@ namespace HexapiBackground.Hardware{
 
             if (count > 0)
             {
+                var spaces = new List<byte>();
+
                 for (var i = 0; i <= count; i++)
                 {
-                    await _serialPort.Write(new byte[] { 0x20 });
+                    spaces.Add(0x20);
                 }
+                await _serialPort.Write(spaces.ToArray());
             }
         }
 

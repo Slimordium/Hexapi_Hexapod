@@ -6,7 +6,7 @@ using HexapiBackground.Helpers;
 
 namespace HexapiBackground.Gps
 {
-    internal class RemoteArduinoRtkGps : IGps
+    internal class RemoteArduinoRtkGps 
     {
         private readonly List<double> _correctors = new List<double>();
         private readonly List<LatLon> _latLons = new List<LatLon>();
@@ -37,7 +37,7 @@ namespace HexapiBackground.Gps
 
             foreach (var s in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
             {
-                var latLon = GpsExtensions.ParseNmea(s);
+                var latLon = s.ParseNmea();
 
                 if (latLon == null)
                     continue;

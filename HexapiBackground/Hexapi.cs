@@ -14,7 +14,6 @@ namespace HexapiBackground{
     internal sealed class Hexapi{
         private readonly IGps _gps;
         private readonly InverseKinematics _ik;
-        private readonly SfSerial16X2Lcd _lcd;
 
         private readonly Stopwatch _stopwatch = new Stopwatch();
         private readonly XboxController _xboxController;
@@ -47,12 +46,11 @@ namespace HexapiBackground{
         private double _travelLengthZ;
         private double _travelRotationY;
 
-        internal Hexapi(InverseKinematics inverseKinematics = null, IGps gps = null, RouteFinder routeFinder = null, SfSerial16X2Lcd lcd = null)
+        internal Hexapi(InverseKinematics inverseKinematics = null, IGps gps = null, RouteFinder routeFinder = null)
         {
             _gps = gps;
             _ik = inverseKinematics;
             _routeFinder = routeFinder;
-            _lcd = lcd;
 
             //var asdf = new HexapiLeapMotionClient(_ik);
 
@@ -167,14 +165,11 @@ namespace HexapiBackground{
 
             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
 
-            var writeToFirstLine = _lcd?.WriteToFirstLine($"Speed : {_gaitSpeed}");
-            if (writeToFirstLine != null) await writeToFirstLine;
-
-            var writeToSecondLine = _lcd?.WriteToSecondLine($"Lift : {_legLiftHeight}");
-            if (writeToSecondLine != null) await writeToSecondLine;
+            Display.Write($"Speed : {_gaitSpeed}", 1);
+            Display.Write($"Lift : {_legLiftHeight}", 2);
         }
 
-        private async void XboxController_FunctionButtonChanged(int button)
+        private void XboxController_FunctionButtonChanged(int button)
         {
             switch (button)
             {
@@ -182,14 +177,12 @@ namespace HexapiBackground{
                     if (_selectedFunction == SelectedFunction.GaitSpeed)
                     {
                         _selectedFunction = SelectedFunction.LegHeight;
-                        if (_lcd != null)
-                            await _lcd.WriteToFirstLine($"Leg height");
+                        Display.Write($"Leg height");
                     }
                     else
                     {
                         _selectedFunction = SelectedFunction.GaitSpeed;
-                        if (_lcd != null)
-                            await _lcd.WriteToFirstLine($"Gait speed");
+                        Display.Write($"Gait speed");
                     }
                     break;
                 case 1: //B
@@ -322,7 +315,7 @@ namespace HexapiBackground{
             _ik.RequestMovement(_gaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
         }
 
-        private async void XboxController_DpadDirectionChanged(ControllerVector sender)
+        private void XboxController_DpadDirectionChanged(ControllerVector sender)
         {
             switch (sender.Direction)
             {
@@ -331,8 +324,7 @@ namespace HexapiBackground{
                     {
                         _gaitType--;
                         _ik.RequestSetGaitType(_gaitType);
-                        var write = _lcd?.Write(Enum.GetName(typeof (GaitType), _gaitType));
-                        if (write != null) await write;
+                        Display.Write(Enum.GetName(typeof(GaitType), _gaitType));
                     }
                     else if (_selectedFunction == SelectedFunction.TranslateHorizontal && _bodyRotY > -30)
                     {
@@ -355,8 +347,7 @@ namespace HexapiBackground{
                     {
                         _gaitType++;
                         _ik.RequestSetGaitType(_gaitType);
-                        var write = _lcd?.Write(Enum.GetName(typeof (GaitType), _gaitType));
-                        if (write != null) await write;
+                        Display.Write(Enum.GetName(typeof(GaitType), _gaitType));
                     }
                     else if (_selectedFunction == SelectedFunction.TranslateHorizontal && _bodyRotY < 30)
                     {
@@ -387,7 +378,7 @@ namespace HexapiBackground{
                             _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                         }
 
-                        await _lcd.Write($"_bodyPosY = {_bodyPosY}");
+                        Display.Write($"_bodyPosY = {_bodyPosY}");
                     }
                     break;
                 case ControllerDirection.Down:
@@ -403,7 +394,7 @@ namespace HexapiBackground{
                             _bodyPosY = _bodyPosY - 5;
                             _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                         }
-                        await _lcd.Write($"_bodyPosY = {_bodyPosY}");
+                        Display.Write($"_bodyPosY = {_bodyPosY}");
                     }
                     break;
             }

@@ -23,11 +23,13 @@ namespace HexapiBackground
             _deferral = taskInstance.GetDeferral();
 
             SerialPort.ListAvailablePorts();
+            
+            var lcd = new SfSerial16X2Lcd();
+            lcd.Start();
 
-            //var lcd = new SfSerial16X2Lcd();
-            //lcd.Start().ContinueWith(async(r) => { await lcd.Write("Booting"); }).Wait();
+            var display = new Display(lcd);
 
-            var gps = new NavSparkGps(true, null);
+            var gps = new NavSparkGps(true);
             gps.Start();
 
             var pca9685 = new Pca9685();
@@ -36,7 +38,7 @@ namespace HexapiBackground
             var ik = new InverseKinematics(pca9685);
             ik.Start();
 
-            var hexapi = new Hexapi(ik, gps);//new Hexapi(gps, avc)
+            var hexapi = new Hexapi(ik);//new Hexapi(gps, avc)
             hexapi.Start();
         }
 

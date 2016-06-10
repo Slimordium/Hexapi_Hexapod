@@ -50,7 +50,7 @@ namespace HexapiBackground.Navigation
                     break;
             }
 
-            _inverseKinematics.RequestSetMovement(false);
+            //_inverseKinematics.RequestSetMovement(false);
         }
 
         internal void DisableGpsNavigation()
@@ -60,7 +60,7 @@ namespace HexapiBackground.Navigation
         
         internal Task<bool> NavigateToWaypoint(LatLon currentWaypoint)
         {
-            return Task.Factory.StartNew(() =>
+            return Task.Run(() =>
             {
                 var distanceHeading = GpsExtensions.GetDistanceAndHeadingToDestination(_gps.CurrentLatLon.Lat, _gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
                 var distanceToWaypoint = distanceHeading[0];
@@ -71,8 +71,8 @@ namespace HexapiBackground.Navigation
 
                 _travelLengthZ = -50;
 
-                Debug.WriteLine($"Distance/Heading to WP : {distanceToWaypoint}, {headingToWaypoint}");
-                Debug.WriteLine($"Current Heading : {_gps.CurrentLatLon.Heading}");
+                Display.Write($"D/H to WP {distanceToWaypoint}, {headingToWaypoint}", 1);
+                Display.Write($"Heading {_gps.CurrentLatLon.Heading}", 2);
 
                 while (distanceToWaypoint > 10) //Inches
                 {
@@ -149,8 +149,8 @@ namespace HexapiBackground.Navigation
                     headingToWaypoint = distanceHeading[1];
                 }
 
-                Debug.WriteLine($"Distance/Heading to WP : {distanceToWaypoint}, {headingToWaypoint}");
-                Debug.WriteLine($"Current Heading : {_gps.CurrentLatLon.Heading}");
+                Display.Write($"D/H to WP {distanceToWaypoint}, {headingToWaypoint}", 1);
+                Display.Write($"Heading {_gps.CurrentLatLon.Heading}", 2);
 
                 return true;
             });

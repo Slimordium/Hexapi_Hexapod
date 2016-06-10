@@ -22,16 +22,12 @@ namespace HexapiBackground.Gps
         private readonly SerialPort _serialPortForGps;
         private readonly bool _useRtk;
 
-        private readonly SfSerial16X2Lcd _lcd;
-
-        public NavSparkGps(bool useRtk, SfSerial16X2Lcd lcd)
+        public NavSparkGps(bool useRtk)
         {
             _serialPortForRtkCorrectionData = new SerialPort();  //FTDIBUS\VID_0403+PID_6001+A104OHRXA\0000
             _serialPortForGps = new SerialPort();
 
             _useRtk = useRtk;
-
-            _lcd = lcd;
 
             CurrentLatLon = new LatLon();
         }
@@ -45,54 +41,58 @@ namespace HexapiBackground.Gps
 
         #region Serial Communication
 
-        public async Task Start()
+        public void Start()
         {
-            await _serialPortForRtkCorrectionData.Open("A104OHRX", 57600, 2000, 2000);
-            await _serialPortForGps.Open("AH03F3RY", 57600, 2000, 2000);
+            //await _serialPortForRtkCorrectionData.Open("A104OHRX", 57600, 2000, 2000);
+            //await _serialPortForGps.Open("AH03F3RY", 57600, 2000, 2000);
 
-            if (_useRtk)
-            {
-                var config = await "rtkGps.config".ReadStringFromFile();
+            //if (_useRtk)
+            //{
+            //    var config = await "rtkGps.config".ReadStringFromFile();
 
-                if (string.IsNullOrEmpty(config))
-                {
-                    Debug.WriteLine("rtkGps.config file is empty. Trying defaults.");
-                    config = "69.44.86.36,2101,P041_RTCM,user,passw,serial";
-                }
+            //    if (string.IsNullOrEmpty(config))
+            //    {
+            //        Debug.WriteLine("rtkGps.config file is empty. Trying defaults.");
+            //        config = "69.44.86.36,2101,P041_RTCM,user,passw,serial";
+            //    }
 
-                try
-                {
-                    var ntripClient = new NtripClientTcp("172.16.0.225", 8000, "", "", "", _lcd);
-                    ntripClient.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
-                    ntripClient.Start();
+            //    try
+            //    {
+            //        var ntripClient = new NtripClientTcp("172.16.0.225", 8000, "", "", "");
+            //        ntripClient.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
+            //        ntripClient.Start();
 
                     
 
-                    //var settings = config.Split(',');
+            //        //var settings = config.Split(',');
 
-                    //if (settings[5] != null && settings[5].Equals("serial", StringComparison.CurrentCultureIgnoreCase))
-                    //{
-                    //    var ntripClient = new NtripClientFona(settings[0], int.Parse(settings[1]), settings[2], settings[3], settings[4], _serialPort);
-                    //    ntripClient.Start();
-                    //}
-                    //else
-                    //{
-                    //    var ntripClient = new NtripClientTcp(settings[0], int.Parse(settings[1]), settings[2], settings[3], settings[4], _serialPort);
-                    //    ntripClient.Start();
-                    //}
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine($"Creating NTRIP client failed - {e}");
-                }
-            }
+            //        //if (settings[5] != null && settings[5].Equals("serial", StringComparison.CurrentCultureIgnoreCase))
+            //        //{
+            //        //    var ntripClient = new NtripClientFona(settings[0], int.Parse(settings[1]), settings[2], settings[3], settings[4], _serialPort);
+            //        //    ntripClient.Start();
+            //        //}
+            //        //else
+            //        //{
+            //        //    var ntripClient = new NtripClientTcp(settings[0], int.Parse(settings[1]), settings[2], settings[3], settings[4], _serialPort);
+            //        //    ntripClient.Start();
+            //        //}
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        Debug.WriteLine($"Creating NTRIP client failed - {e}");
+            //    }
+            //}
 
-#pragma warning disable 4014
-            Task.Factory.StartNew(async() =>
-#pragma warning restore 4014
+            Task.Run(async() =>
             {
-                if (_lcd != null)
-                    await _lcd.Write("RTK GPS Started...");
+                await _serialPortForRtkCorrectionData.Open("A104OHRX", 57600, 2000, 2000);
+                await _serialPortForGps.Open("AH03F3RY", 57600, 2000, 2000);
+
+                var ntripClient = new NtripClientTcp("172.16.0.225", 8000, "", "", "");
+                ntripClient.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
+                ntripClient.Start();
+
+                Display.Write("RTK GPS Started...");
 
                 while (true)
                 {
@@ -105,24 +105,23 @@ namespace HexapiBackground.Gps
                         if (latLon == null)
                             continue;
 
-                        if (CurrentLatLon.Quality != latLon.Quality && _lcd != null)
-                            await _lcd.WriteToFirstLine(latLon.Quality.ToString());
+                        if (CurrentLatLon.Quality != latLon.Quality)
+                            Display.Write(latLon.Quality.ToString(), 2);
 
                         CurrentLatLon = latLon;
                     }
                 }
-            }, TaskCreationOptions.LongRunning);
+            });
         }
 
-        private void NtripClient_NtripDataArrivedEvent(object sender, NtripEventArgs e)
+        private async void NtripClient_NtripDataArrivedEvent(object sender, NtripEventArgs e)
         {
-            //Task.Factory.StartNew(async () =>
-            //{
-            //await _serialPortForRtkCorrectionData.Write(e.NtripBytes);
-            //});
-#pragma warning disable 4014
-            _serialPortForRtkCorrectionData.Write(e.NtripBytes);
-#pragma warning restore 4014
+            await Task.Run(async () =>
+            {
+                await _serialPortForRtkCorrectionData.Write(e.NtripBytes);
+            });
+
+            //_serialPortForRtkCorrectionData.Write(e.NtripBytes);
         }
 
         #endregion
