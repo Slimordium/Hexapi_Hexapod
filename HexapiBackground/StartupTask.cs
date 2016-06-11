@@ -32,10 +32,7 @@ namespace HexapiBackground
             var gps = new Gps.Gps(true);
             gps.Start();
 
-            var pca9685 = new Pca9685();
-            pca9685.Start();
-
-            var ik = new InverseKinematics(pca9685);
+            var ik = new InverseKinematics();
             ik.Start();
 
             var hexapi = new Hexapi(ik);//new Hexapi(gps, avc)

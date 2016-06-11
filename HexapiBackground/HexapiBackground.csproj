@@ -118,7 +118,7 @@
     <Compile Include="Hardware\Mpr121.cs" />
     <Compile Include="Hardware\Mpu\Mpu9150.cs" />
     <Compile Include="Hardware\Rfm69Hcw.cs" />
-    <Compile Include="Hardware\SerialPortHelper.cs" />
+    <Compile Include="Hardware\SerialDeviceHelper.cs" />
     <Compile Include="Hardware\SfSerial16x2Lcd.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Navigation\Avc.cs" />

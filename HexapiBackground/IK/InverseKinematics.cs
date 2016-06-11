@@ -26,7 +26,6 @@ namespace HexapiBackground.IK{
         private static readonly StringBuilder StringBuilder = new StringBuilder();
         internal static ManualResetEventSlim SscCommandCompleteEvent = new ManualResetEventSlim(false);
         private readonly GpioPin[] _legGpioPins = new GpioPin[6];
-        private readonly Pca9685 _pca9685;
 
         private readonly StringBuilder _pinChangedStringBuilder = new StringBuilder();
         private readonly byte[] _querySsc = {0x51, 0x0d}; //0x51 = Q, 0x0d = carriage return
@@ -183,10 +182,8 @@ namespace HexapiBackground.IK{
 
         #endregion
 
-        internal InverseKinematics(Pca9685 pca9685 = null, Mpu9150New mpu = null)
+        internal InverseKinematics(Mpu9150New mpu = null)
         {
-            _pca9685 = pca9685;
-
             _pi1K = Pi*1000D;
 
             for (var i = 0; i < 6; i++)
@@ -204,8 +201,6 @@ namespace HexapiBackground.IK{
             }
 
             LoadLegDefaults();
-
-            ConfigureFootSwitches();
         }
 
         private void ConfigureFootSwitches()
@@ -234,7 +229,6 @@ namespace HexapiBackground.IK{
                 {
                     legGpioPin.DebounceTimeout = new TimeSpan(0, 0, 0, 0, 1);
                     legGpioPin.SetDriveMode(GpioPinDriveMode.InputPullUp);
-                    legGpioPin.ValueChanged += Pin_ValueChanged;
                 }
             }
             else
@@ -243,91 +237,7 @@ namespace HexapiBackground.IK{
             }
         }
 
-        private void Pin_ValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
-        {
-            //_pinChangedStringBuilder.Clear();
-            if (_selectedFunction != SelectedFunction.SetFootHeightOffset)
-            {
-                if (args.Edge == GpioPinEdge.FallingEdge)
-                {
-                    switch (sender.PinNumber)
-                    {
-                        case 26:
-                            _pca9685?.SetPin(5, 4090);
-
-                            //_pinChangedStringBuilder.Append($"#{LegServos[0][1]}P{FemurServoAngles[0]}#{LegServos[0][2]}P{TibiaServoAngles[0]}{(char)27}");
-                            //await SerialPort.Write(_pinChangedStringBuilder.ToString());
-                            break;
-                        case 19:
-                            _pca9685?.SetPin(4, 4090);
-                            break;
-                        case 13:
-                            _pca9685?.SetPin(3, 4090);
-                            break;
-                        case 16:
-                            _pca9685?.SetPin(2, 4090);
-                            break;
-                        case 20:
-                            _pca9685?.SetPin(1, 4090);
-                            break;
-                        case 21:
-                            _pca9685?.SetPin(0, 4090);
-                            break;
-                    }
-                }
-                else
-                {
-                    switch (sender.PinNumber)
-                    {
-                        case 26:
-                            _pca9685?.SetPin(5, 64);
-
-                            //_pinChangedStringBuilder.Append($"#{LegServos[0][1]}P{FemurServoAngles[0]}#{LegServos[0][2]}P{TibiaServoAngles[0]}{(char)27}");
-                            //await SerialPort.Write(_pinChangedStringBuilder.ToString());
-                            break;
-                        case 19:
-                            _pca9685?.SetPin(4, 64);
-                            break;
-                        case 13:
-                            _pca9685?.SetPin(3, 64);
-                            break;
-                        case 16:
-                            _pca9685?.SetPin(2, 64);
-                            break;
-                        case 20:
-                            _pca9685?.SetPin(1, 64);
-                            break;
-                        case 21:
-                            _pca9685?.SetPin(0, 64);
-                            break;
-                    }
-                }
-            }
-            else
-            {
-                switch (_selectedFunctionLeg)
-                {
-                    case 0:
-                        _pca9685?.SetPin(5, 64);
-                        break;
-                    case 1:
-                        _pca9685?.SetPin(4, 64);
-                        break;
-                    case 2:
-                        _pca9685?.SetPin(3, 64);
-                        break;
-                    case 3:
-                        _pca9685?.SetPin(2, 64);
-                        break;
-                    case 4:
-                        _pca9685?.SetPin(1, 64);
-                        break;
-                    case 5:
-                        _pca9685?.SetPin(0, 64);
-                        break;
-                }
-            }
-        }
+  
 
         #region Body and Leg Inverse Kinematics
 
@@ -453,68 +363,6 @@ namespace HexapiBackground.IK{
 
         internal void RequestSetFunction(SelectedFunction selectedFunction)
         {
-            if (selectedFunction == SelectedFunction.SetFootHeightOffset)
-            {
-                _pca9685?.SetAllPwm(4096, 0);
-            }
-            else
-            {
-                foreach (var pin in _legGpioPins)
-                {
-                    if (pin == null)
-                        return;
-
-                    if (pin.Read() == GpioPinValue.High)
-                    {
-                        switch (_selectedFunctionLeg)
-                        {
-                            case 0:
-                                _pca9685?.SetPin(5, 64);
-                                break;
-                            case 1:
-                                _pca9685?.SetPin(4, 64);
-                                break;
-                            case 2:
-                                _pca9685?.SetPin(3, 64);
-                                break;
-                            case 3:
-                                _pca9685?.SetPin(2, 64);
-                                break;
-                            case 4:
-                                _pca9685?.SetPin(1, 64);
-                                break;
-                            case 5:
-                                _pca9685?.SetPin(0, 64);
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        switch (_selectedFunctionLeg)
-                        {
-                            case 0:
-                                _pca9685?.SetPin(5, 4090);
-                                break;
-                            case 1:
-                                _pca9685?.SetPin(4, 4090);
-                                break;
-                            case 2:
-                                _pca9685?.SetPin(3, 4090);
-                                break;
-                            case 3:
-                                _pca9685?.SetPin(2, 4090);
-                                break;
-                            case 4:
-                                _pca9685?.SetPin(1, 4090);
-                                break;
-                            case 5:
-                                _pca9685?.SetPin(0, 4090);
-                                break;
-                        }
-                    }
-                }
-            }
-
             _selectedFunction = selectedFunction;
         }
 
@@ -574,7 +422,7 @@ namespace HexapiBackground.IK{
         {
             Task.Run(async () =>
             {
-                _serialDevice = await SerialPortHelper.GetSerialPort("BCM2836", 115200, TimeSpan.MaxValue, new TimeSpan(0, 0, 0, 5));
+                _serialDevice = await SerialDeviceHelper.GetSerialDevice("BCM2836", 115200, TimeSpan.MaxValue, new TimeSpan(0, 0, 0, 5));
 
                 while (true)
                 {

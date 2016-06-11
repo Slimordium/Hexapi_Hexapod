@@ -26,7 +26,7 @@ namespace HexapiBackground.Hardware
 
         internal void Start()
         {
-            Task.Factory.StartNew(async () =>
+            Task.Run(async () =>
             {
                 if (_connection != null)
                     return;
@@ -86,12 +86,15 @@ namespace HexapiBackground.Hardware
             Arduino.StringMessageReceived += Arduino_StringMessageReceived;
         }
 
-        private void Arduino_StringMessageReceived(string message)
+        private async void Arduino_StringMessageReceived(string message)
         {
-            foreach (var a in StringReceivedActions)
+            await Task.Run(() =>
             {
-                a.Invoke(message);
-            }
+                foreach (var a in StringReceivedActions)
+                {
+                    a.Invoke(message);
+                }
+            });
         }
 
         private void Arduino_DigitalPinUpdated(byte pin, PinState state)
