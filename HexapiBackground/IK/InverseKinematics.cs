@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
@@ -424,6 +425,9 @@ namespace HexapiBackground.IK{
             {
                 _serialDevice = await SerialDeviceHelper.GetSerialDevice("BCM2836", 115200, TimeSpan.MaxValue, new TimeSpan(0, 0, 0, 5));
 
+                var inputStream = new DataReader(_serialDevice.InputStream) {InputStreamOptions = InputStreamOptions.Partial};
+                var outputStream = new DataWriter(_serialDevice.OutputStream);
+
                 while (true)
                 {
                     _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) || (Math.Abs(_travelLengthZ) > TravelDeadZone) || (Math.Abs(_travelRotationY) > TravelDeadZone);
@@ -433,19 +437,27 @@ namespace HexapiBackground.IK{
                     _lastLeg = false;
 
                     if (_movementStarted)
-                        await _serialDevice.OutputStream.WriteAsync(GetServoPositions(_coxaAngle, _femurAngle, _tibiaAngle));
+                    {
+                        outputStream.WriteString(GetServoPositions(_coxaAngle, _femurAngle, _tibiaAngle));
+                        await outputStream.StoreAsync();
+                    }
                     else
-                        await _serialDevice.OutputStream.WriteAsync(TurnOffServos());
+                    {
+                        outputStream.WriteString(TurnOffServos());
+                        await outputStream.StoreAsync();
+                    }
 
-                    var buffer = new byte[1];
                     while (true)
                     {
-                        await _serialDevice.InputStream.ReadAsync(buffer.AsBuffer(), 1, InputStreamOptions.None);
+                        var bytesIn = await inputStream.LoadAsync(1);
+                        if (bytesIn > 0)
+                        {
+                            if (inputStream.ReadByte() == 0x2e)
+                                break;
+                        }
 
-                        if (buffer[0] == 0x2e)
-                            break;
-
-                        await _serialDevice.OutputStream.WriteAsync(_querySsc.AsBuffer());
+                        outputStream.WriteBytes(_querySsc);
+                        await outputStream.StoreAsync();
                     }
                 }
             });
@@ -662,7 +674,7 @@ namespace HexapiBackground.IK{
 
         #region Servo related, build various servo controller strings and read values
 
-        private static IBuffer GetServoPositions(IList<double> coxaAngles, IList<double> femurAngles, IList<double> tibiaAngles)
+        private static string GetServoPositions(IList<double> coxaAngles, IList<double> femurAngles, IList<double> tibiaAngles)
         {
             StringBuilder.Clear();
 
@@ -700,10 +712,10 @@ namespace HexapiBackground.IK{
 
             StringBuilder.Append($"T{_gaitSpeedInMs}\rQ\r");
 
-            return Encoding.ASCII.GetBytes(StringBuilder.ToString()).AsBuffer();
+            return StringBuilder.ToString();
         }
 
-        private static IBuffer TurnOffServos()
+        private static string TurnOffServos()
         {
             StringBuilder.Clear();
 
@@ -716,7 +728,7 @@ namespace HexapiBackground.IK{
 
             StringBuilder.Append("T0\rQ\r");
 
-            return Encoding.ASCII.GetBytes(StringBuilder.ToString()).ToArray().AsBuffer();
+            return StringBuilder.ToString();
         }
 
         private async Task LoadLegDefaults()

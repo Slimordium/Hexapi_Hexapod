@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.SerialCommunication;
-using Windows.Storage.Streams;
 
 namespace HexapiBackground.Hardware
 {
