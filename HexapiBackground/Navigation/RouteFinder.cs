@@ -11,7 +11,7 @@ namespace HexapiBackground.Navigation
     internal sealed class RouteFinder
     {
         private readonly InverseKinematics _inverseKinematics;
-        private readonly IGps _gps;
+        private readonly Gps.Gps _gps;
         private bool _gpsNavigationEnabled;
         private List<LatLon> _waypoints;
 
@@ -20,7 +20,7 @@ namespace HexapiBackground.Navigation
         private double _travelRotationY = 0;
         private double _nomGaitSpeed = 50;
 
-        internal RouteFinder(InverseKinematics inverseKinematics, IGps gps)
+        internal RouteFinder(InverseKinematics inverseKinematics, Gps.Gps gps)
         {
             _inverseKinematics = inverseKinematics;
             _gps = gps;

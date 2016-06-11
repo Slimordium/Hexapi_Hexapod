@@ -29,7 +29,7 @@ namespace HexapiBackground
 
             var display = new Display(lcd);
 
-            var gps = new NavSparkGps(true);
+            var gps = new Gps.Gps(true);
             gps.Start();
 
             var pca9685 = new Pca9685();

@@ -12,7 +12,7 @@ using HexapiBackground.Navigation;
 
 namespace HexapiBackground{
     internal sealed class Hexapi{
-        private readonly IGps _gps;
+        private readonly Gps.Gps _gps;
         private readonly InverseKinematics _ik;
 
         private readonly Stopwatch _stopwatch = new Stopwatch();
@@ -46,16 +46,11 @@ namespace HexapiBackground{
         private double _travelLengthZ;
         private double _travelRotationY;
 
-        internal Hexapi(InverseKinematics inverseKinematics = null, IGps gps = null, RouteFinder routeFinder = null)
+        internal Hexapi(InverseKinematics inverseKinematics = null, Gps.Gps gps = null, RouteFinder routeFinder = null)
         {
             _gps = gps;
             _ik = inverseKinematics;
             _routeFinder = routeFinder;
-
-            //var asdf = new HexapiLeapMotionClient(_ik);
-
-            //if (_gps != null)
-            //    _routeFinder = new RouteFinder(_ik, gps);
 
             _xboxController = new XboxController();
             _xboxController.Open();
@@ -126,7 +121,7 @@ namespace HexapiBackground{
         #region XBox 360 Controller related...
 
         //4 = Left bumper, 5 = Right bumper
-        private async void XboxController_BumperButtonChanged(int button)
+        private void XboxController_BumperButtonChanged(int button)
         {
             switch (_selectedFunction)
             {

@@ -203,11 +203,10 @@ namespace HexapiBackground.IK{
                 LegYHeightCorrector[legIndex] = 0;
             }
 
-
             LoadLegDefaults();
-        }
 
-    
+            ConfigureFootSwitches();
+        }
 
         private void ConfigureFootSwitches()
         {

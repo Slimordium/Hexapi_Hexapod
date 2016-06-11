@@ -123,9 +123,7 @@
     <Compile Include="Logger.cs" />
     <Compile Include="Navigation\Avc.cs" />
     <Compile Include="Enums\ControllerDirection.cs" />
-    <Compile Include="Gps\IGps.cs" />
-    <Compile Include="Gps\RemoteArduinoRtkGps.cs" />
-    <Compile Include="Gps\NavSparkRtkGps.cs" />
+    <Compile Include="Gps\Gps.cs" />
     <Compile Include="Gps\Ntrip\NtripClient_Fona.cs" />
     <Compile Include="Hardware\AdafruitFona.cs" />
     <Compile Include="Hardware\RemoteArduino.cs" />
@@ -136,7 +134,6 @@
     <Compile Include="Enums\GaitType.cs" />
     <Compile Include="Enums\GpsFixQuality.cs" />
     <Compile Include="Enums\SelectedFunction.cs" />
-    <Compile Include="Gps\UltimateGps.cs" />
     <Compile Include="Gps\LatLon.cs" />
     <Compile Include="Extensions\MathExtensions.cs" />
     <Compile Include="Hexapi.cs" />

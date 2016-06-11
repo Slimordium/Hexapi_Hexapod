@@ -15,7 +15,6 @@ namespace HexapiBackground.Gps.Ntrip
     {
         private static readonly Encoding Encoding = new ASCIIEncoding();
         private readonly IPEndPoint _endPoint;
-        private readonly ManualResetEventSlim _manualResetEventSlim = new ManualResetEventSlim(false);
         private readonly string _ntripMountPoint; //P041_RTCM3
         private readonly string _password;
         private readonly Socket _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -50,8 +49,6 @@ namespace HexapiBackground.Gps.Ntrip
                 }
 
                 _endPoint = new IPEndPoint(ip, ntripPort);
-
-                Connect();
             }
             catch (Exception e)
             {
@@ -76,36 +73,6 @@ namespace HexapiBackground.Gps.Ntrip
             return r;
         }
 
-        internal void Connect()
-        {
-            var args = new SocketAsyncEventArgs
-            {
-                UserToken = _socket,
-                RemoteEndPoint = _endPoint
-            };
-
-            args.Completed += async (sender, eventArgs) =>
-            {
-                await Task.Run(async () =>
-                {
-                    if (((Socket) sender).Connected)
-                    {
-                        Display.Write("NTRIP Connected");
-
-                        await Task.Delay(500);
-
-                        Authenticate();
-                    }
-                    else
-                    {
-                        Display.Write("NTRIP Connection failed");
-                    }
-                });
-            };
-
-            _socket.ConnectAsync(args);
-        }
-
         internal void Authenticate()
         {
             var buffer = new ArraySegment<byte>(CreateAuthRequest());
@@ -121,13 +88,13 @@ namespace HexapiBackground.Gps.Ntrip
             {
                 await Task.Run(async () =>
                 {
-                    Debug.WriteLine($"NTRIP Authentication : {eventArgs.SocketError.ToString()}");
+                    Debug.WriteLine($"NTRIP Authentication : {eventArgs.SocketError}");
 
-                    Display.Write($"NTRIP {eventArgs.SocketError.ToString()}");
+                    Display.Write($"NTRIP {eventArgs.SocketError}");
 
                     await Task.Delay(1500);
 
-                    _manualResetEventSlim.Set();
+                    ReadData();
                 });
             };
 
@@ -158,30 +125,43 @@ namespace HexapiBackground.Gps.Ntrip
 
                 Array.Copy(e.BufferList[0].Array, data, e.BytesTransferred);
 
-                if (e.BytesTransferred == 0)
+                if (e.BytesTransferred > 0)
                 {
-                    _manualResetEventSlim.Set();
-                    return;
+                    await SendToGps(data);
                 }
 
-                await SendToGps(data);
-
-                _manualResetEventSlim.Set();
+                ReadData();
             });
         }
 
         public void Start()
         {
-            Task.Run(() =>
+            var args = new SocketAsyncEventArgs
             {
-                while (true)
-                {
-                    _manualResetEventSlim.Wait(5000);
-                    _manualResetEventSlim.Reset();
+                UserToken = _socket,
+                RemoteEndPoint = _endPoint
+            };
 
-                    ReadData();
-                }
-            });
+            args.Completed += async (sender, eventArgs) =>
+            {
+                await Task.Run(async () =>
+                {
+                    if (((Socket)sender).Connected)
+                    {
+                        Display.Write("NTRIP Connected");
+
+                        await Task.Delay(500);
+
+                        Authenticate();
+                    }
+                    else
+                    {
+                        Display.Write("NTRIP Connection failed");
+                    }
+                });
+            };
+
+            _socket.ConnectAsync(args);
         }
 
         private async Task SendToGps(byte[] data)
