@@ -26,7 +26,7 @@ namespace HexapiBackground{
         private double _bodyRotZ;
         private double _gaitSpeed;
 
-        private GaitType _gaitType = GaitType.Tripod8Steps;
+        private GaitType _gaitType = GaitType.TripleTripod16Steps;
 
         private bool _isMovementStarted;
 
@@ -63,15 +63,15 @@ namespace HexapiBackground{
             _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
 
-            _gaitSpeed = 50;
-            GaitSpeedUpperLimit = 400;
-            GaitSpeedLowerLimit = 30;
-            TravelLengthZupperLimit = 160;
+            _gaitSpeed = 30;
+            GaitSpeedUpperLimit = 500;
+            GaitSpeedLowerLimit = 15;
+            TravelLengthZupperLimit = 230;
             TravelLengthZlowerLimit = 80;
             TravelLengthXlimit = 40;
-            TravelRotationYlimit = 22;
-            LegLiftHeightUpperLimit = 120;
-            LegLiftHeightLowerLimit = 25;
+            TravelRotationYlimit = 40;
+            LegLiftHeightUpperLimit = 140;
+            LegLiftHeightLowerLimit = 30;
         }
 
         internal static double LegLiftHeightUpperLimit { get; set; }
@@ -270,7 +270,7 @@ namespace HexapiBackground{
                         _ik.RequestSetFunction(SelectedFunction.GaitSpeed);
                         _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                         _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
-                        _ik.RequestSetGaitType(GaitType.Tripod8Steps);
+                        _ik.RequestSetGaitType(GaitType.TripleTripod16Steps);
                         _ik.RequestMovement(_gaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
                     }
                     else

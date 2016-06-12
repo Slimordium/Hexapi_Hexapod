@@ -238,8 +238,6 @@ namespace HexapiBackground.IK{
             }
         }
 
-  
-
         #region Body and Leg Inverse Kinematics
 
         private static double[] BodyLegIk(int legIndex,

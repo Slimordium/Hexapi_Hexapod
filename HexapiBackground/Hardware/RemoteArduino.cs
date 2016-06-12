@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
+using Windows.Devices.I2c;
 using Windows.Devices.SerialCommunication;
 using Microsoft.Maker.RemoteWiring;
 using Microsoft.Maker.Serial;
@@ -88,13 +89,10 @@ namespace HexapiBackground.Hardware
 
         private async void Arduino_StringMessageReceived(string message)
         {
-            await Task.Run(() =>
+            foreach (var a in StringReceivedActions)
             {
-                foreach (var a in StringReceivedActions)
-                {
-                    a.Invoke(message);
-                }
-            });
+                await Task.Run(() => a.Invoke(message));
+            }
         }
 
         private void Arduino_DigitalPinUpdated(byte pin, PinState state)

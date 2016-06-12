@@ -4,11 +4,11 @@ using HexapiBackground.Hardware;
 namespace HexapiBackground{
     internal class Display
     {
-        private static SfSerial16X2Lcd _lcd;
+        private static SparkFunSerial16X2Lcd _lcd = new SparkFunSerial16X2Lcd();
 
-        internal Display(SfSerial16X2Lcd lcd)
+        internal Display()
         {
-            _lcd = lcd;
+            _lcd.Start();
         }
 
         internal static void Write(string text, int line)
