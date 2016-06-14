@@ -19,7 +19,7 @@ namespace HexapiBackground.Hardware{
 
         internal async void Start()
         {
-            _serialDevice = await SerialDeviceHelper.GetSerialDevice("AJ030T2QA", 9600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+            _serialDevice = await SerialDeviceHelper.GetSerialDevice("AJ030T2QA", 9600);
             _outputStream = new DataWriter(_serialDevice.OutputStream);
         }
 

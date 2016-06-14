@@ -421,7 +421,7 @@ namespace HexapiBackground.IK{
         {
             Task.Run(async () =>
             {
-                _serialDevice = await SerialDeviceHelper.GetSerialDevice("BCM2836", 115200, TimeSpan.MaxValue, new TimeSpan(0, 0, 0, 5));
+                _serialDevice = await SerialDeviceHelper.GetSerialDevice("BCM2836", 115200);
 
                 var inputStream = new DataReader(_serialDevice.InputStream) {InputStreamOptions = InputStreamOptions.Partial};
                 var outputStream = new DataWriter(_serialDevice.OutputStream);

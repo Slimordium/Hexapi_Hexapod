@@ -9,6 +9,17 @@ namespace HexapiBackground.Hardware
 {
     internal static class SerialDeviceHelper
     {
+        /// <summary>
+        /// Default 1 second read/write timeout
+        /// </summary>
+        /// <param name="identifier">Serial Number from device manager</param>
+        /// <param name="baudRate"></param>
+        /// <returns></returns>
+        internal static async Task<SerialDevice> GetSerialDevice(string identifier, int baudRate)
+        {
+            return await GetSerialDevice(identifier, baudRate, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+        }
+
         internal static async Task<SerialDevice> GetSerialDevice(string identifier, int baudRate, TimeSpan readTimeout, TimeSpan writeTimeout)
         {
             var deviceInformationCollection = await DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector());
@@ -41,6 +52,16 @@ namespace HexapiBackground.Hardware
             serialDevice.Handshake = SerialHandshake.None;
 
             return serialDevice;
+        }
+
+        internal static async void ListAvailablePorts()
+        {
+            Debug.WriteLine("Available Serial Ports------------------");
+            foreach (var d in await DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()))
+            {
+                Debug.WriteLine($"{d.Id}");
+            }
+            Debug.WriteLine("----------------------------------------");
         }
     }
 }

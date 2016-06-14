@@ -20,7 +20,7 @@ namespace HexapiBackground
         {
             _deferral = taskInstance.GetDeferral();
 
-            SerialPort.ListAvailablePorts();
+            SerialDeviceHelper.ListAvailablePorts();
             
             var ping = new RemoteArduino();
             ping.Start();

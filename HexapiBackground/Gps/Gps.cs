@@ -28,13 +28,13 @@ namespace HexapiBackground.Gps
         { 
             Task.Run(async() =>
             {
-                _serialPortForGps = await SerialDeviceHelper.GetSerialDevice("AH03F3RY", 57600, new TimeSpan(0, 0, 0, 5), new TimeSpan(0, 0, 0, 5));
+                _serialPortForGps = await SerialDeviceHelper.GetSerialDevice("AH03F3RY", 57600);
 
                 var inputStream = new DataReader(_serialPortForGps.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
 
                 if (_useRtk)
                 {
-                    _serialPortForRtkCorrectionData = await SerialDeviceHelper.GetSerialDevice("A104OHRX", 57600, new TimeSpan(0, 0, 0, 5), new TimeSpan(0, 0, 0, 5));  //FTDIBUS\VID_0403+PID_6001+A104OHRXA\0000
+                    _serialPortForRtkCorrectionData = await SerialDeviceHelper.GetSerialDevice("A104OHRX", 57600);  //FTDIBUS\VID_0403+PID_6001+A104OHRXA\0000
 
                     var ntripClient = new NtripClientTcp("172.16.0.225", 8000, "", "", "");
                     ntripClient.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;

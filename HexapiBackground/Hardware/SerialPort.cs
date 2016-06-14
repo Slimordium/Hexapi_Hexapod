@@ -65,15 +65,7 @@ namespace HexapiBackground.Hardware
             }
         }
 
-        internal static void ListAvailablePorts()
-        {
-            Debug.WriteLine("Available Serial Ports------------------");
-            foreach (var d in DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()).GetAwaiter().GetResult())
-            {
-                Debug.WriteLine($"{d.Id}");
-            }
-            Debug.WriteLine("----------------------------------------");
-        }
+        
 
         private void _serialPort_ErrorReceived(SerialDevice sender, ErrorReceivedEventArgs args)
         {
@@ -179,6 +171,5 @@ namespace HexapiBackground.Hardware
 
             return returnString;
         }
-
     }
 }
