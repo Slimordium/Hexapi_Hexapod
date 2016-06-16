@@ -4,34 +4,34 @@ using HexapiBackground.Hardware;
 namespace HexapiBackground{
     internal class Display
     {
-        private static SparkFunSerial16X2Lcd _lcd = new SparkFunSerial16X2Lcd();
+        private static readonly SparkFunSerial16X2Lcd Lcd = new SparkFunSerial16X2Lcd();
 
         internal Display()
         {
-            _lcd.Start();
+            Lcd.Start();
         }
 
         internal static void Write(string text, int line)
         {
-            if (_lcd == null) return;
+            if (Lcd == null) return;
 
             Task.Run(async () =>
             {
                 if (line == 1)
-                    await _lcd.WriteToFirstLine(text);
+                    await Lcd.WriteToFirstLine(text);
 
                 if (line == 2)
-                    await _lcd.WriteToSecondLine(text);
+                    await Lcd.WriteToSecondLine(text);
             });
         }
 
         internal static void Write(string text)
         {
-            if (_lcd == null) return;
+            if (Lcd == null) return;
 
             Task.Run(async () =>
             {
-                await _lcd.Write(text);
+                await Lcd.Write(text);
             });
         }
     }

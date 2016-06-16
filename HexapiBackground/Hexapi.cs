@@ -19,7 +19,7 @@ namespace HexapiBackground{
         private readonly XboxController _xboxController;
         private double _bodyPosX;
 
-        private double _bodyPosY = 50; //45
+        private double _bodyPosY; //45
         private double _bodyPosZ;
         private double _bodyRotX;
         private double _bodyRotY;
@@ -30,7 +30,7 @@ namespace HexapiBackground{
 
         private bool _isMovementStarted;
 
-        private double _legLiftHeight = 35;
+        private double _legLiftHeight;
         private double _legPosY;
 
         private Mpr121 _mpr121;
@@ -63,13 +63,15 @@ namespace HexapiBackground{
             _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
 
-            _gaitSpeed = 30;
+            _gaitSpeed = 80;
+            _bodyPosY = 42;
+            _legLiftHeight = 42;
             GaitSpeedUpperLimit = 500;
-            GaitSpeedLowerLimit = 15;
-            TravelLengthZupperLimit = 230;
+            GaitSpeedLowerLimit = 30;
+            TravelLengthZupperLimit = 180;
             TravelLengthZlowerLimit = 80;
-            TravelLengthXlimit = 40;
-            TravelRotationYlimit = 40;
+            TravelLengthXlimit = 38;
+            TravelRotationYlimit = 31;
             LegLiftHeightUpperLimit = 140;
             LegLiftHeightLowerLimit = 30;
         }
@@ -86,33 +88,6 @@ namespace HexapiBackground{
         internal static double TravelLengthZlowerLimit { get; set; }
         internal static double TravelLengthXlimit { get; set; }
         internal static double TravelRotationYlimit { get; set; }
-
-        private void Pin_ValueChanged(GpioPin sender, GpioPinValueChangedEventArgs args)
-        {
-            if (_stopwatch.ElapsedMilliseconds < 10) //how in the world is this going to work for 6 legs
-                return;
-
-            if (args.Edge == GpioPinEdge.FallingEdge)
-                Debug.WriteLine($"6, Down, Elapsed {_stopwatch.ElapsedMilliseconds}ms");
-            else
-                Debug.WriteLine($"6, up, Elapsed {_stopwatch.ElapsedMilliseconds}ms");
-
-
-            _stopwatch.Restart();
-
-            //if (sender.PinNumber == 3)
-            //    _ik.RequestLegYHeightCorrector(0);
-            //if (sender.PinNumber == 4)
-            //    _ik.RequestLegYHeightCorrector(1);
-            //if (sender.PinNumber == 5)
-            //    _ik.RequestLegYHeightCorrector(2);
-            //if (sender.PinNumber == 6)
-            //    _ik.RequestLegYHeightCorrector(3);
-            //if (sender.PinNumber == 7)
-            //    _ik.RequestLegYHeightCorrector(4);
-            //if (sender.PinNumber == 8)
-            // _ik.RequestLegYHeightCorrector(5);
-        }
 
         public void Start()
         {
@@ -132,14 +107,14 @@ namespace HexapiBackground{
                     {
                         if (_gaitSpeed < GaitSpeedUpperLimit) //200
                         {
-                            _gaitSpeed = _gaitSpeed + 2;
+                            _gaitSpeed = _gaitSpeed + 3;
                         }
                     }
                     else
                     {
                         if (_gaitSpeed > GaitSpeedLowerLimit) //45
                         {
-                            _gaitSpeed = _gaitSpeed - 2;
+                            _gaitSpeed = _gaitSpeed - 3;
                         }
                     }
 
@@ -148,12 +123,12 @@ namespace HexapiBackground{
                     if (button == 5)
                     {
                         if (_legLiftHeight < LegLiftHeightUpperLimit) //90
-                            _legLiftHeight = _legLiftHeight + 3;
+                            _legLiftHeight = _legLiftHeight + 4;
                     }
                     else
                     {
                         if (_legLiftHeight > LegLiftHeightLowerLimit) //20
-                            _legLiftHeight = _legLiftHeight - 3;
+                            _legLiftHeight = _legLiftHeight - 4;
                     }
                     break;
             }
@@ -445,35 +420,35 @@ namespace HexapiBackground{
             {
                 case ControllerDirection.Left:
                     _bodyRotX = 0;
-                    _bodyRotZ = -sender.Magnitude.Map(0, 10000, 0, 8);
+                    _bodyRotZ = -sender.Magnitude.Map(0, 10000, 0, 10);
                     break;
                 case ControllerDirection.UpLeft:
-                    _bodyRotX = sender.Magnitude.Map(0, 10000, 0, 8);
-                    _bodyRotZ = -sender.Magnitude.Map(0, 10000, 0, 8);
+                    _bodyRotX = sender.Magnitude.Map(0, 10000, 0, 10);
+                    _bodyRotZ = -sender.Magnitude.Map(0, 10000, 0, 10);
                     break;
                 case ControllerDirection.UpRight:
-                    _bodyRotX = sender.Magnitude.Map(0, 10000, 0, 8);
-                    _bodyRotZ = sender.Magnitude.Map(0, 10000, 0, 8);
+                    _bodyRotX = sender.Magnitude.Map(0, 10000, 0, 10);
+                    _bodyRotZ = sender.Magnitude.Map(0, 10000, 0, 10);
                     break;
                 case ControllerDirection.Right:
                     _bodyRotX = 0;
-                    _bodyRotZ = sender.Magnitude.Map(0, 10000, 0, 8);
+                    _bodyRotZ = sender.Magnitude.Map(0, 10000, 0, 10);
                     break;
                 case ControllerDirection.Up:
-                    _bodyRotX = sender.Magnitude.Map(0, 10000, 0, 8);
+                    _bodyRotX = sender.Magnitude.Map(0, 10000, 0, 10);
                     _bodyRotZ = 0;
                     break;
                 case ControllerDirection.Down:
-                    _bodyRotX = -sender.Magnitude.Map(0, 10000, 0, 8);
+                    _bodyRotX = -sender.Magnitude.Map(0, 10000, 0, 10);
                     _bodyRotZ = 0;
                     break;
                 case ControllerDirection.DownLeft:
-                    _bodyRotZ = -sender.Magnitude.Map(0, 10000, 0, 8);
-                    _bodyRotX = -sender.Magnitude.Map(0, 10000, 0, 8);
+                    _bodyRotZ = -sender.Magnitude.Map(0, 10000, 0, 10);
+                    _bodyRotX = -sender.Magnitude.Map(0, 10000, 0, 10);
                     break;
                 case ControllerDirection.DownRight:
-                    _bodyRotZ = sender.Magnitude.Map(0, 10000, 0, 8);
-                    _bodyRotX = -sender.Magnitude.Map(0, 10000, 0, 8);
+                    _bodyRotZ = sender.Magnitude.Map(0, 10000, 0, 10);
+                    _bodyRotX = -sender.Magnitude.Map(0, 10000, 0, 10);
                     break;
             }
 
