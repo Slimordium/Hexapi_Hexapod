@@ -49,7 +49,7 @@ namespace HexapiBackground.IK{
         private const double HexInitXz = CoxaLengthInMm + FemurLengthInMm;
         private const double HexInitXzCos45 = HexInitXz * .7071; //http://www.math.com/tables/trig/tables.htm
         private const double HexInitXzSin45 = HexInitXz * .7071;
-        private const double HexInitY = 55;
+        private const double HexInitY = 25;
 
         //For the Solar 772 or 771, PwmDiv = 1500 and PfConst = 900 works well. Not sure what this should be on any other servo
         private const double PfConst = 900;
@@ -201,7 +201,7 @@ namespace HexapiBackground.IK{
                 LegYHeightCorrector[legIndex] = 0;
             }
 
-            LoadLegDefaults();
+            
         }
 
         private void ConfigureFootSwitches()
@@ -327,6 +327,9 @@ namespace HexapiBackground.IK{
 
         internal void RequestBodyPosition(double bodyRotX1, double bodyRotZ1, double bodyPosX, double bodyPosZ, double bodyPosY, double bodyRotY1)
         {
+            if (bodyPosY < 65)
+                bodyPosY = 65;
+
             _bodyRotX = bodyRotX1;
             _bodyRotZ = bodyRotZ1;
 
@@ -424,9 +427,22 @@ namespace HexapiBackground.IK{
         {
             Task.Run(async () =>
             {
+                if (!await LoadLegDefaults())
+                {
+                    Debug.WriteLine("Could not setup IK. Exiting...");
+                    return;
+                }
+
+                await Task.Delay(500);
+
                 _serialDevice = await SerialDeviceHelper.GetSerialDevice("BCM2836", 115200);
+
+                await Task.Delay(500);
+
                 _inputStream = new DataReader(_serialDevice.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
                 _outputStream = new DataWriter(_serialDevice.OutputStream);
+
+                await Task.Delay(500);
 
                 while (true)
                 {
@@ -459,7 +475,7 @@ namespace HexapiBackground.IK{
                             await _outputStream.StoreAsync();
                     }
                 }
-            }).ConfigureAwait(false);
+            });
         }
 
         private void IkCalculation(int legIndex)
@@ -730,14 +746,14 @@ namespace HexapiBackground.IK{
             return StringBuilder.ToString();
         }
 
-        internal async void LoadLegDefaults()
+        internal async Task<bool> LoadLegDefaults()
         {
             var config = await "hexapod.config".ReadStringFromFile();
 
             if (string.IsNullOrEmpty(config))
             {
                 Debug.WriteLine("Empty config file. hexapod.config");
-                return;
+                return false;
             }
 
             config = config.Replace("\n", "");
@@ -758,9 +774,12 @@ namespace HexapiBackground.IK{
             catch (Exception e)
             {
                 e.Message.WriteToLcd();
+                return false;
             }
 
             GaitSelect();
+
+            return true;
         }
 
         #endregion

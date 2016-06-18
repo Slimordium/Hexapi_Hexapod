@@ -65,7 +65,7 @@ namespace HexapiBackground{
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
 
             _gaitSpeed = 55;
-            _bodyPosY = 55;
+            _bodyPosY = 65;
             _legLiftHeight = 35;
             GaitSpeedUpperLimit = 500;
             GaitSpeedLowerLimit = 30;
