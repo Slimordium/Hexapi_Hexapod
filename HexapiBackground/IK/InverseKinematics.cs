@@ -62,12 +62,12 @@ namespace HexapiBackground.IK{
         private const int Rm = 1;
         private const int Rr = 0;
 
-        private const double CoxaMin = -585;
-        private const double CoxaMax = 585;
-        private const double FemurMin = -580;
-        private const double FemurMax = 580;
-        private const double TibiaMin = -500;
-        private const double TibiaMax = 580; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -650;
+        private const double CoxaMax = 650;
+        private const double FemurMin = -670;
+        private const double FemurMax = 670;
+        private const double TibiaMin = -670;
+        private const double TibiaMax = 670; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double RrCoxaAngle = -450; //450 = 45 degrees off center
         private const double RmCoxaAngle = 0;
@@ -155,7 +155,7 @@ namespace HexapiBackground.IK{
         private bool _travelRequest; //is the gait is in motion
 
         private double _bodyPosX;
-        private double _bodyPosY; //Controls height of the body from the ground
+        private double _bodyPosY = 42; //Controls height of the body from the ground
         private double _lastBodyPosY;
         private double _bodyPosZ;
 
@@ -169,7 +169,7 @@ namespace HexapiBackground.IK{
         private static int _gaitStep = 1;
         private GaitType _gaitType = GaitType.Tripod8Steps;
         private GaitType _lastGaitType = GaitType.Tripod8Steps;
-        private static double _gaitSpeedInMs = 60; //Nominal speed of the gait in ms
+        private static double _gaitSpeedInMs = 40; //Nominal speed of the gait in ms
 
         private double _travelLengthX; //Current Travel length X - Left/Right
         private double _travelLengthZ; //Current Travel length Z - Negative numbers = "forward" movement.
@@ -417,48 +417,49 @@ namespace HexapiBackground.IK{
 
         #region Main loop  
 
+        private DataReader _inputStream;
+        private DataWriter _outputStream;
+
         internal void Start()
         {
             Task.Run(async () =>
             {
                 _serialDevice = await SerialDeviceHelper.GetSerialDevice("BCM2836", 115200);
-
-                var inputStream = new DataReader(_serialDevice.InputStream) {InputStreamOptions = InputStreamOptions.Partial};
-                var outputStream = new DataWriter(_serialDevice.OutputStream);
+                _inputStream = new DataReader(_serialDevice.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
+                _outputStream = new DataWriter(_serialDevice.OutputStream);
 
                 while (true)
                 {
-                    _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) || (Math.Abs(_travelLengthZ) > TravelDeadZone) || (Math.Abs(_travelRotationY) > TravelDeadZone);
-
-                    IkLoop();
-
-                    _lastLeg = false;
-
                     if (_movementStarted)
                     {
-                        outputStream.WriteString(GetServoPositions(_coxaAngle, _femurAngle, _tibiaAngle));
-                        await outputStream.StoreAsync();
+                        _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) || (Math.Abs(_travelLengthZ) > TravelDeadZone) || (Math.Abs(_travelRotationY) > TravelDeadZone);
+
+                        IkLoop();
+
+                        _lastLeg = false;
+
+                        _outputStream.WriteString(GetServoPositions(_coxaAngle, _femurAngle, _tibiaAngle));
+                        await _outputStream.StoreAsync();
                     }
                     else
                     {
-                        outputStream.WriteString(TurnOffServos());
-                        await outputStream.StoreAsync();
+                        _outputStream.WriteString(TurnOffServos());
+                        await _outputStream.StoreAsync();
                     }
 
                     while (true)
                     {
-                        var bytesIn = await inputStream.LoadAsync(1);
+                        var bytesIn = await _inputStream.LoadAsync(1);
                         if (bytesIn > 0)
                         {
-                            if (inputStream.ReadByte() == 0x2e)
+                            if (_inputStream.ReadByte() == 0x2e)
                                 break;
                         }
-
-                        outputStream.WriteBytes(_querySsc);
-                        await outputStream.StoreAsync();
+                        _outputStream.WriteBytes(_querySsc);
+                            await _outputStream.StoreAsync();
                     }
                 }
-            });
+            }).ConfigureAwait(false);
         }
 
         private void IkCalculation(int legIndex)
@@ -729,7 +730,7 @@ namespace HexapiBackground.IK{
             return StringBuilder.ToString();
         }
 
-        private async Task LoadLegDefaults()
+        internal async void LoadLegDefaults()
         {
             var config = await "hexapod.config".ReadStringFromFile();
 

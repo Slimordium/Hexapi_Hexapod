@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Windows.Devices.Gpio;
 using HexapiBackground.Enums;
 using HexapiBackground.Gps;
@@ -26,7 +27,7 @@ namespace HexapiBackground{
         private double _bodyRotZ;
         private double _gaitSpeed;
 
-        private GaitType _gaitType = GaitType.TripleTripod16Steps;
+        private GaitType _gaitType = GaitType.Tripod8Steps;
 
         private bool _isMovementStarted;
 
@@ -63,16 +64,16 @@ namespace HexapiBackground{
             _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
             _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
 
-            _gaitSpeed = 80;
-            _bodyPosY = 42;
-            _legLiftHeight = 42;
+            _gaitSpeed = 55;
+            _bodyPosY = 55;
+            _legLiftHeight = 35;
             GaitSpeedUpperLimit = 500;
             GaitSpeedLowerLimit = 30;
             TravelLengthZupperLimit = 180;
             TravelLengthZlowerLimit = 80;
-            TravelLengthXlimit = 38;
-            TravelRotationYlimit = 31;
-            LegLiftHeightUpperLimit = 140;
+            TravelLengthXlimit = 35;
+            TravelRotationYlimit = 36;
+            LegLiftHeightUpperLimit = 110;
             LegLiftHeightLowerLimit = 30;
         }
 
@@ -91,6 +92,7 @@ namespace HexapiBackground{
 
         public void Start()
         {
+           
         }
 
         #region XBox 360 Controller related...
@@ -295,6 +297,12 @@ namespace HexapiBackground{
                         _gaitType--;
                         _ik.RequestSetGaitType(_gaitType);
                         Display.Write(Enum.GetName(typeof(GaitType), _gaitType));
+                        if (_gaitType == GaitType.Tripod8Steps)
+                        {
+                            _legLiftHeight = 35;
+                            _gaitSpeed = 55;
+                            _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
+                        }
                     }
                     else if (_selectedFunction == SelectedFunction.TranslateHorizontal && _bodyRotY > -30)
                     {
@@ -318,6 +326,12 @@ namespace HexapiBackground{
                         _gaitType++;
                         _ik.RequestSetGaitType(_gaitType);
                         Display.Write(Enum.GetName(typeof(GaitType), _gaitType));
+                        if (_gaitType == GaitType.Tripod8Steps)
+                        {
+                            _legLiftHeight = 35;
+                            _gaitSpeed = 55;
+                            _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
+                        }
                     }
                     else if (_selectedFunction == SelectedFunction.TranslateHorizontal && _bodyRotY < 30)
                     {

@@ -11,28 +11,30 @@ namespace HexapiBackground
 {
     public sealed class StartupTask : IBackgroundTask
     {
-        private static BackgroundTaskDeferral _deferral;
+        private BackgroundTaskDeferral _deferral;
 
         private Display _display = new Display();
 
         //TODO : Make the various devices that are enabled to be configurable in a settings file
         public void Run(IBackgroundTaskInstance taskInstance)
         {
-            _deferral = taskInstance.GetDeferral();
+            
 
             SerialDeviceHelper.ListAvailablePorts();
             
-            var ping = new RemoteArduino();
-            ping.Start();
+            //var ping = new RemoteArduino();
+            //ping.Start();
 
-            var gps = new Gps.Gps(true);
-            gps.Start();
+            //var gps = new Gps.Gps(true);
+            //gps.Start();
 
             var ik = new InverseKinematics();
             ik.Start();
 
-            var hexapi = new Hexapi(ik, gps);//new Hexapi(gps, avc)
+            var hexapi = new Hexapi(ik);//new Hexapi(gps, avc)
             hexapi.Start();
+
+            _deferral = taskInstance.GetDeferral();
         }
 
         private void Mpu_SensorInterruptEvent(object sender, MpuSensorEventArgs e)
@@ -41,7 +43,7 @@ namespace HexapiBackground
             Debug.WriteLine(e.Values[0].AccelerationX);
         }
 
-        internal static void Complete()
+        internal void Complete()
         {
             _deferral.Complete();
         }

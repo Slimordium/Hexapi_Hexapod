@@ -19,7 +19,7 @@ namespace HexapiBackground.Hardware{
 
         internal async void Start()
         {
-            _serialDevice = await SerialDeviceHelper.GetSerialDevice("AJ030T2QA", 9600);
+            _serialDevice = await SerialDeviceHelper.GetSerialDevice("DN01E099A", 9600);
             _outputStream = new DataWriter(_serialDevice.OutputStream);
         }
 
@@ -34,7 +34,7 @@ namespace HexapiBackground.Hardware{
             {
                 var spaces = new List<byte>();
 
-                for (var i = 0; i < count; i++)
+                for (var i = 0; i <= count; i++)
                 {
                     spaces.Add(0x20);
                 }
@@ -55,7 +55,7 @@ namespace HexapiBackground.Hardware{
             {
                 var spaces = new List<byte>();
 
-                for (var i = 0; i < count; i++)
+                for (var i = 0; i <= count; i++)
                 {
                     spaces.Add(0x20);
                 }
