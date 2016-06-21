@@ -65,21 +65,18 @@ namespace HexapiBackground.Gps.Ntrip
 
             args.Completed += async (sender, eventArgs) =>
             {
-                await Task.Run(async () =>
+                if (((Socket)sender).Connected)
                 {
-                    if (((Socket)sender).Connected)
-                    {
-                        await Display.Write("NTRIP Connected");
+                    await Display.Write("NTRIP Connected");
 
-                        await Task.Delay(500);
+                    await Task.Delay(500);
 
-                        Authenticate();
-                    }
-                    else
-                    {
-                        await Display.Write("NTRIP Connection failed");
-                    }
-                });
+                    Authenticate();
+                }
+                else
+                {
+                    await Display.Write("NTRIP Connection failed");
+                }
             };
 
             _socket.ConnectAsync(args);
@@ -115,16 +112,13 @@ namespace HexapiBackground.Gps.Ntrip
 
             args.Completed += async (sender, eventArgs) =>
             {
-                await Task.Run(async () =>
-                {
-                    Debug.WriteLine($"NTRIP Authentication : {eventArgs.SocketError}");
+                Debug.WriteLine($"NTRIP Authentication : {eventArgs.SocketError}");
 
-                    await Display.Write($"NTRIP {eventArgs.SocketError}");
+                await Display.Write($"NTRIP {eventArgs.SocketError}");
 
-                    await Task.Delay(1500);
+                await Task.Delay(1500);
 
-                    ReadData();
-                });
+                ReadData();
             };
 
             _socket.SendAsync(args);
@@ -148,32 +142,28 @@ namespace HexapiBackground.Gps.Ntrip
 
         private async void Args_Completed(object sender, SocketAsyncEventArgs e)
         {
-            await Task.Run(async () =>
+            if (e.BytesTransferred > 0)
             {
                 var data = new byte[e.BytesTransferred];
 
                 Array.Copy(e.BufferList[0].Array, data, e.BytesTransferred);
+                await SendToGps(data);
+            }
 
-                if (e.BytesTransferred > 0)
-                {
-                    await SendToGps(data);
-                }
-
-                ReadData();
-            }).ConfigureAwait(false);
+            ReadData();
         }
 
-        private async Task SendToGps(byte[] data)
+        private Task SendToGps(byte[] data)
         {
-            await Task.Run(() =>
+            return Task.Run(() =>
             {
                 var handler = NtripDataArrivedEvent;
 
                 if (handler != null && data.Length > 1)
                 {
-                   handler.Invoke(this, new NtripEventArgs(data));
+                    handler.Invoke(this, new NtripEventArgs(data));
                 }
-            }).ConfigureAwait(false);
+            });
         }
 
         internal static string ToBase64(string str)

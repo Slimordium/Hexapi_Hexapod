@@ -119,7 +119,6 @@
     <Compile Include="Hardware\Rfm69Hcw.cs" />
     <Compile Include="Hardware\SerialDeviceHelper.cs" />
     <Compile Include="Hardware\SparkFunSerial16X2Lcd.cs" />
-    <Compile Include="Logger.cs" />
     <Compile Include="Navigation\Avc.cs" />
     <Compile Include="Enums\ControllerDirection.cs" />
     <Compile Include="Gps\Gps.cs" />
@@ -141,7 +140,6 @@
     <Compile Include="IK\InverseKinematics.cs" />
     <Compile Include="Hardware\PingSensors.cs" />
     <Compile Include="Hardware\SerialPort.cs" />
-    <Compile Include="SignalR\RtkGps.cs" />
     <Compile Include="SignalR\HexapiLeapMotionClient.cs" />
     <Compile Include="StartupTask.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

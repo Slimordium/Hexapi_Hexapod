@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,7 +20,9 @@ namespace HexapiBackground.Hardware{
         internal async Task Start()
         {
             _serialDevice = await SerialDeviceHelper.GetSerialDevice("DN01E099A", 9600);
+            await Task.Delay(500);
             _outputStream = new DataWriter(_serialDevice.OutputStream);
+            await Task.Delay(500);
         }
 
         private async Task Write(string text, byte[] line, bool clear)
@@ -50,9 +51,17 @@ namespace HexapiBackground.Hardware{
                 return;
             }
 
-            _outputStream.WriteBytes(line);
-            _outputStream.WriteString(stringBuilder.ToString());
-            await _outputStream.StoreAsync();
+            try
+            {
+                _outputStream.WriteBytes(line);
+                _outputStream.WriteString(stringBuilder.ToString());
+                await _outputStream.StoreAsync();
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e.Message);
+            }
+
         }
 
         internal async Task WriteToFirstLine(string text)

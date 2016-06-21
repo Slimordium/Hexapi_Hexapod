@@ -35,48 +35,37 @@ namespace HexapiBackground.Hardware
         /// </summary>
         /// <param name="deadZoneTolerance">The amount the stick needs to be moved before movement is registered</param>
         /// <returns></returns>
-        internal void Open(int deadZoneTolerance = 9000)
+        internal async Task Open(int deadZoneTolerance = 9000)
         {
             _deadzoneTolerance = deadZoneTolerance; 
 
-            Task.Factory.StartNew(async () =>
+            //USB\VID_045E&PID_0719\E02F1950 - receiver
+            //USB\VID_045E & PID_02A1 & IG_00\6 & F079888 & 0 & 00  - XboxController
+            //0x01, 0x05 = game controllers
+
+            var deviceInformationCollection = await DeviceInformation.FindAllAsync(HidDevice.GetDeviceSelector(0x01, 0x05));
+
+            if (deviceInformationCollection.Count == 0)
             {
-                while (_deviceHandle == null)
+                await Display.Write("No Xbox controller");
+                await Task.Delay(2000);
+                return;
+            }
+
+            foreach (var d in deviceInformationCollection)
+            {
+                _deviceHandle = await HidDevice.FromIdAsync(d.Id, FileAccessMode.Read);
+
+                if (_deviceHandle == null)
                 {
-                    //USB\VID_045E&PID_0719\E02F1950 - receiver
-                    //USB\VID_045E & PID_02A1 & IG_00\6 & F079888 & 0 & 00  - XboxController
-                    //0x01, 0x05 = game controllers
-
-                    var deviceInformationCollection = await DeviceInformation.FindAllAsync(HidDevice.GetDeviceSelector(0x01, 0x05));
-
-                    if (deviceInformationCollection.Count == 0)
-                    {
-                        Debug.WriteLine("No Xbox360 XboxController found! Perhaps an appx.manifest issue?");
-                        await Task.Delay(2000);
-                        continue;
-                    }
-
-                    foreach (var d in deviceInformationCollection)
-                    {
-                        Debug.WriteLine("Device ID: " + d.Id);
-
-                        _deviceHandle = await HidDevice.FromIdAsync(d.Id, FileAccessMode.Read);
-
-                        if (_deviceHandle == null)
-                        {
-                            Debug.WriteLine("Failed to connect to the XboxController");
-                            await Task.Delay(2000);
-                            continue;
-                        }
-
-                        _deviceHandle.InputReportReceived += InputReportReceived;
-                        return;
-                    }
-
-                    Debug.WriteLine("Waiting 2 seconds and trying again...");
+                    await Display.Write("No Xbox controller");
                     await Task.Delay(2000);
+                    continue;
                 }
-            });
+
+                _deviceHandle.InputReportReceived += InputReportReceived;
+                return;
+            }
         }
 
         private void InputReportReceived(HidDevice sender, HidInputReportReceivedEventArgs args)

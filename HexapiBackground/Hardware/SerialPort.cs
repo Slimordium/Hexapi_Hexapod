@@ -13,6 +13,10 @@ using Microsoft.Maker.Serial;
 
 namespace HexapiBackground.Hardware
 {
+
+    /// <summary>
+    /// Should not be used. Out of date.
+    /// </summary>
     internal class SerialPort
     {
         private static IBuffer _singleByteBuffer = new Buffer(1);

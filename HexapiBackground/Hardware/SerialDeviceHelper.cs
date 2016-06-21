@@ -27,8 +27,7 @@ namespace HexapiBackground.Hardware
 
             if (selectedPort == null)
             {
-                Debug.WriteLine($"Could not find device information for {identifier}");
-
+                await Display.Write($"not found {identifier}");
                 return null;
             }
 
@@ -36,12 +35,11 @@ namespace HexapiBackground.Hardware
 
             if (serialDevice == null)
             {
-                Debug.WriteLine($"Could not open serial port at {identifier}");
-
+                await Display.Write($"not opened {identifier}");
                 return null;
             }
 
-            Debug.WriteLine($"Found - {identifier} as {selectedPort.Id}");
+            await Display.Write($"Found - {identifier}");
 
             serialDevice.ReadTimeout = readTimeout;
             serialDevice.WriteTimeout = writeTimeout;

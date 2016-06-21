@@ -419,57 +419,54 @@ namespace HexapiBackground.IK{
 
         internal async Task Start()
         {
-            //Task.Run(async () =>
-            //{
-                if (!await LoadLegDefaults())
+            if (!await LoadLegDefaults())
+            {
+                await Display.Write("Could not setup IK. Exiting...");
+                return;
+            }
+
+            await Task.Delay(500);
+
+            _serialDevice = await SerialDeviceHelper.GetSerialDevice("BCM2836", 115200);
+
+            await Task.Delay(500);
+
+            _inputStream = new DataReader(_serialDevice.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
+            _outputStream = new DataWriter(_serialDevice.OutputStream);
+
+            await Task.Delay(500);
+
+            while (true)
+            {
+                if (_movementStarted)
                 {
-                    await Display.Write("Could not setup IK. Exiting...");
-                    return;
+                    _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) || (Math.Abs(_travelLengthZ) > TravelDeadZone) || (Math.Abs(_travelRotationY) > TravelDeadZone);
+
+                    IkLoop();
+
+                    _lastLeg = false;
+
+                    _outputStream.WriteString(GetServoPositions(_coxaAngle, _femurAngle, _tibiaAngle));
+                    await _outputStream.StoreAsync();
                 }
-
-                await Task.Delay(500);
-
-                _serialDevice = await SerialDeviceHelper.GetSerialDevice("BCM2836", 115200);
-
-                await Task.Delay(500);
-
-                _inputStream = new DataReader(_serialDevice.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
-                _outputStream = new DataWriter(_serialDevice.OutputStream);
-
-                await Task.Delay(500);
+                else
+                {
+                    _outputStream.WriteString(TurnOffServos());
+                    await _outputStream.StoreAsync();
+                }
 
                 while (true)
                 {
-                    if (_movementStarted)
+                    var bytesIn = await _inputStream.LoadAsync(1);
+                    if (bytesIn > 0)
                     {
-                        _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) || (Math.Abs(_travelLengthZ) > TravelDeadZone) || (Math.Abs(_travelRotationY) > TravelDeadZone);
-
-                        IkLoop();
-
-                        _lastLeg = false;
-
-                        _outputStream.WriteString(GetServoPositions(_coxaAngle, _femurAngle, _tibiaAngle));
+                        if (_inputStream.ReadByte() == 0x2e)
+                            break;
+                    }
+                    _outputStream.WriteBytes(_querySsc);
                         await _outputStream.StoreAsync();
-                    }
-                    else
-                    {
-                        _outputStream.WriteString(TurnOffServos());
-                        await _outputStream.StoreAsync();
-                    }
-
-                    while (true)
-                    {
-                        var bytesIn = await _inputStream.LoadAsync(1);
-                        if (bytesIn > 0)
-                        {
-                            if (_inputStream.ReadByte() == 0x2e)
-                                break;
-                        }
-                        _outputStream.WriteBytes(_querySsc);
-                            await _outputStream.StoreAsync();
-                    }
                 }
-            //});
+            }
         }
 
         private void IkCalculation(int legIndex)

@@ -6,6 +6,10 @@ using HexapiBackground.Hardware;
 
 namespace HexapiBackground.Gps.Ntrip
 {
+    /// <summary>
+    /// Very out of date! 
+    /// </summary>
+
     internal class NtripClientFona
     {
         private static readonly Encoding Encoding = new ASCIIEncoding();

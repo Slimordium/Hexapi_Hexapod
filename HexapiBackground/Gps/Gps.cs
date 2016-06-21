@@ -24,55 +24,65 @@ namespace HexapiBackground.Gps
 
         #region Serial Communication
 
-        public void Start()
+        public async Task Start()
         { 
-            Task.Run(async() =>
+            _serialPortForGps = await SerialDeviceHelper.GetSerialDevice("AH03F3RY", 57600);
+
+            await Task.Delay(500);
+
+            var inputStream = new DataReader(_serialPortForGps.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
+
+            if (_useRtk)
             {
-                _serialPortForGps = await SerialDeviceHelper.GetSerialDevice("AH03F3RY", 57600);
+                _serialPortForRtkCorrectionData = await SerialDeviceHelper.GetSerialDevice("A104OHRX", 57600);  //FTDIBUS\VID_0403+PID_6001+A104OHRXA\0000
 
-                var inputStream = new DataReader(_serialPortForGps.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
+                await Task.Delay(500);
 
-                if (_useRtk)
+                var ntripClient = new NtripClientTcp("172.16.0.226", 8000, "", "", "");
+                ntripClient.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
+            }
+
+            await Display.Write("RTK GPS Started");
+
+            await Task.Delay(500);
+
+            while (true)
+            {
+                var bytesIn = await inputStream.LoadAsync(32);
+
+                if (bytesIn == 0)
+                    continue;
+
+                var sentences = inputStream.ReadString(bytesIn);
+
+                foreach (var sentence in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
                 {
-                    _serialPortForRtkCorrectionData = await SerialDeviceHelper.GetSerialDevice("A104OHRX", 57600);  //FTDIBUS\VID_0403+PID_6001+A104OHRXA\0000
+                    var latLon = sentence.ParseNmea();
 
-                    var ntripClient = new NtripClientTcp("172.16.0.225", 8000, "", "", "");
-                    ntripClient.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
-                }
-
-                await Display.Write("RTK GPS Started...");
-
-                while (true)
-                {
-                    var bytesIn = await inputStream.LoadAsync(32);
-
-                    if (bytesIn == 0)
+                    if (latLon == null)
                         continue;
 
-                    var sentences = inputStream.ReadString(bytesIn);
+                    if (CurrentLatLon.Quality != latLon.Quality)
+                        await Display.Write(latLon.Quality.ToString(), 2);
 
-                    foreach (var sentence in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
-                    {
-                        var latLon = sentence.ParseNmea();
-
-                        if (latLon == null)
-                            continue;
-
-                        if (CurrentLatLon.Quality != latLon.Quality)
-                            await Display.Write(latLon.Quality.ToString(), 2);
-
-                        CurrentLatLon = latLon;
-                    }
+                    CurrentLatLon = latLon;
                 }
-            });
+            }
         }
 
         private async void NtripClient_NtripDataArrivedEvent(object sender, NtripEventArgs e)
         {
-            using (var outputStream = new DataWriter(_serialPortForRtkCorrectionData.OutputStream))
+            try
             {
-                outputStream.WriteBytes(e.NtripBytes);
-                await outputStream.StoreAsync();
+                using (var outputStream = new DataWriter(_serialPortForRtkCorrectionData.OutputStream))
+                {
+                    outputStream.WriteBytes(e.NtripBytes);
+                    await outputStream.StoreAsync();
+                }
+            }
+            catch
+            {
+                await Display.Write("NTRIP update failed");
             }
         }
 
