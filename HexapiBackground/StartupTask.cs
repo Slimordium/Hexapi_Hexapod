@@ -24,14 +24,14 @@ namespace HexapiBackground
             //var ping = new RemoteArduino();
             //ping.Start();
 
-            //var gps = new Gps.Gps(true);
-            //gps.Start();
+            var gps = new Gps.Gps(true);
+            gps.Start();
 
             var ik = new InverseKinematics();
             ik.Start();
 
-            var hexapi = new Hexapi(ik);//new Hexapi(gps, avc)
-            //hexapi.Start();
+            var hexapi = new Hexapi(ik, gps);//new Hexapi(gps, avc)
+            hexapi.Start();
 
             _deferral = taskInstance.GetDeferral();
         }

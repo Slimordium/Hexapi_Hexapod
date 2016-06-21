@@ -49,7 +49,8 @@ namespace HexapiBackground.Gps.Ntrip
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e);
+                Display.Write(e.Message);
+                return;
             }
 
             Connect();
@@ -91,12 +92,8 @@ namespace HexapiBackground.Gps.Ntrip
             msg += "Authorization: Basic " + auth + "\r\n";
             msg += "Accept: */*\r\nConnection: close\r\n";
             msg += "\r\n";
-
-            var r = Encoding.ASCII.GetBytes(msg);
-
-            Debug.WriteLine(r);
-
-            return r;
+            
+            return Encoding.ASCII.GetBytes(msg);
         }
 
         private void Authenticate()
@@ -112,8 +109,6 @@ namespace HexapiBackground.Gps.Ntrip
 
             args.Completed += async (sender, eventArgs) =>
             {
-                Debug.WriteLine($"NTRIP Authentication : {eventArgs.SocketError}");
-
                 await Display.Write($"NTRIP {eventArgs.SocketError}");
 
                 await Task.Delay(1500);

@@ -28,6 +28,9 @@ namespace HexapiBackground.Gps
         { 
             _serialPortForGps = await SerialDeviceHelper.GetSerialDevice("AH03F3RY", 57600);
 
+            if (_serialPortForGps == null)
+                return;
+
             await Task.Delay(500);
 
             var inputStream = new DataReader(_serialPortForGps.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
@@ -38,8 +41,11 @@ namespace HexapiBackground.Gps
 
                 await Task.Delay(500);
 
-                var ntripClient = new NtripClientTcp("172.16.0.226", 8000, "", "", "");
-                ntripClient.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
+                if (_serialPortForRtkCorrectionData != null)
+                {
+                    var ntripClient = new NtripClientTcp("172.16.0.226", 8000, "", "", "");
+                    ntripClient.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
+                }
             }
 
             await Display.Write("RTK GPS Started");

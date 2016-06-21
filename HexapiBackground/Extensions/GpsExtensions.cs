@@ -17,22 +17,22 @@ namespace HexapiBackground.Helpers{
         private static int _satellitesInView;
         private static int _signalToNoiseRatio;
 
-        internal static void SaveWaypoint(this LatLon latLon)
+        internal static async Task SaveWaypoint(this LatLon latLon)
         {
-            Debug.WriteLine($"Saving to file : {latLon}");
+            await Display.Write($"{latLon}");
 
-            FileExtensions.SaveStringToFile("waypoints.config", latLon.ToString());
+            await FileExtensions.SaveStringToFile("waypoints.config", latLon.ToString());
         }
 
-        internal static List<LatLon> LoadWaypoints()
+        internal static async Task<List<LatLon>> LoadWaypoints()
         {
             var waypoints = new List<LatLon>();
 
-            var config = FileExtensions.ReadStringFromFile("waypoints.config").Result;
+            var config = await "waypoints.config".ReadStringFromFile();
 
             if (string.IsNullOrEmpty(config))
             {
-                Debug.WriteLine("Empty waypoints.config file");
+                await Display.Write("Empty waypoints");
                 return waypoints;
             }
 
@@ -40,14 +40,25 @@ namespace HexapiBackground.Helpers{
 
             foreach (var wp in wps)
             {
+                if (string.IsNullOrEmpty(wp))
+                    continue;
+
                 try
                 {
-                    if (!string.IsNullOrEmpty(wp))
-                        waypoints.Add(new LatLon(wp));
+                    var latlon = new LatLon(wp);
+
+                    if (latlon.DateTime == DateTime.MinValue)
+                    {
+                        await Display.Write("Invalid way point");
+                        continue;
+                    }
+
+                    waypoints.Add(new LatLon(wp));
+                        
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine(e);
+                    await Display.Write(e.Message);
                 }
             }
 
@@ -266,8 +277,7 @@ namespace HexapiBackground.Helpers{
             {
                 if (_quality != GpsFixQuality.NoFix)
                 {
-                    Debug.WriteLine(e);
-                    Debug.WriteLine(data);
+                    Display.Write($"GPS {e.Message}");
                 }
             }
 

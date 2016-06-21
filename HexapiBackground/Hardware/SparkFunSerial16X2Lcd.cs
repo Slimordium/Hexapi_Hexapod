@@ -21,6 +21,10 @@ namespace HexapiBackground.Hardware{
         {
             _serialDevice = await SerialDeviceHelper.GetSerialDevice("DN01E099A", 9600);
             await Task.Delay(500);
+
+            if (_serialDevice == null)
+                return;
+
             _outputStream = new DataWriter(_serialDevice.OutputStream);
             await Task.Delay(500);
         }

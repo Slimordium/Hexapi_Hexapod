@@ -17,7 +17,7 @@ namespace HexapiBackground{
         private readonly InverseKinematics _ik;
 
         private readonly Stopwatch _stopwatch = new Stopwatch();
-        private readonly XboxController _xboxController;
+        private XboxController _xboxController;
         private double _bodyPosX;
 
         private double _bodyPosY; //45
@@ -53,16 +53,7 @@ namespace HexapiBackground{
             _ik = inverseKinematics;
             _routeFinder = routeFinder;
 
-            _xboxController = new XboxController();
-            _xboxController.Open();
 
-            _xboxController.LeftDirectionChanged += XboxController_LeftDirectionChanged;
-            _xboxController.RightDirectionChanged += XboxController_RightDirectionChanged;
-            _xboxController.DpadDirectionChanged += XboxController_DpadDirectionChanged;
-            _xboxController.LeftTriggerChanged += XboxController_LeftTriggerChanged;
-            _xboxController.RightTriggerChanged += XboxController_RightTriggerChanged;
-            _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
-            _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
 
             _gaitSpeed = 55;
             _bodyPosY = 65;
@@ -90,9 +81,18 @@ namespace HexapiBackground{
         internal static double TravelLengthXlimit { get; set; }
         internal static double TravelRotationYlimit { get; set; }
 
-        public void Start()
+        public async Task Start()
         {
-           
+            _xboxController = new XboxController();
+            await _xboxController.Open();
+
+            _xboxController.LeftDirectionChanged += XboxController_LeftDirectionChanged;
+            _xboxController.RightDirectionChanged += XboxController_RightDirectionChanged;
+            _xboxController.DpadDirectionChanged += XboxController_DpadDirectionChanged;
+            _xboxController.LeftTriggerChanged += XboxController_LeftTriggerChanged;
+            _xboxController.RightTriggerChanged += XboxController_RightTriggerChanged;
+            _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
+            _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
         }
 
         #region XBox 360 Controller related...

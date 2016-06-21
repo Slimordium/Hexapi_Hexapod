@@ -31,7 +31,7 @@ namespace HexapiBackground.Navigation
             if (_gpsNavigationEnabled)
                 return;
 
-            _waypoints = GpsExtensions.LoadWaypoints();
+            _waypoints = await GpsExtensions.LoadWaypoints();
 
             _gpsNavigationEnabled = true;
 
@@ -39,8 +39,6 @@ namespace HexapiBackground.Navigation
 
             foreach (var wp in _waypoints)
             {
-                Debug.WriteLine(wp);
-
                 if (wp.Lat == 0 || wp.Lon == 0)
                     continue;
 
@@ -139,8 +137,7 @@ namespace HexapiBackground.Navigation
 
                 _inverseKinematics.RequestMovement(_nomGaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
 
-                while (sw.ElapsedMilliseconds < 100) { } // only correct heading every 150ms. This may need to be shorter.
-                sw.Restart();
+                await Task.Delay(100);//May need to be shorter
 
                 distanceHeading = GpsExtensions.GetDistanceAndHeadingToDestination(_gps.CurrentLatLon.Lat, _gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
                 distanceToWaypoint = distanceHeading[0];
