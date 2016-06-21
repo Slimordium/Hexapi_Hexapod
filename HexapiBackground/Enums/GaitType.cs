@@ -2,10 +2,10 @@
 {
     internal enum GaitType
     {
-        RippleGait12Steps,
-        Tripod8Steps,
-        TripleTripod12Steps,
-        TripleTripod16Steps,
-        Wave24Steps,
+        RippleGait12,
+        Tripod8,
+        TripleTripod12,
+        TripleTripod16,
+        Wave24,
     }
 }

@@ -30,38 +30,35 @@ namespace HexapiBackground.Helpers
                 if (buffer.Length > 0)
                     text = Encoding.UTF8.GetString(buffer.ToArray());
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Debug.WriteLine($"Read failed {filename}, {e}");
+                await Display.Write($"Read failed {filename}");
             }
 
             return text;
         }
 
         //https://github.com/Microsoft/Windows-universal-samples/blob/master/Samples/ApplicationData/cs/Scenario1_Files.xaml.cs
-        internal static void SaveStringToFile(string filename, string content)
+        internal static async Task SaveStringToFile(string filename, string content)
         {
             var bytesToAppend = Encoding.UTF8.GetBytes(content.ToCharArray());
-
-            Task.Factory.StartNew(async () =>
+         
+            try
             {
-                try
-                {
-                    var file = await ApplicationData.Current.LocalFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).AsTask();
+                var file = await ApplicationData.Current.LocalFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).AsTask();
 
-                    Debug.WriteLine($"Writing {file.Path}");
+                await Display.Write($"Write {file.Path}");
 
-                    using (var stream = await file.OpenStreamForWriteAsync())
-                    {
-                        stream.Position = stream.Length;
-                        stream.Write(bytesToAppend, 0, bytesToAppend.Length);
-                    }
-                }
-                catch (Exception e)
+                using (var stream = await file.OpenStreamForWriteAsync())
                 {
-                    Debug.WriteLine($"Save failed {filename}, {e}");
+                    stream.Position = stream.Length;
+                    stream.Write(bytesToAppend, 0, bytesToAppend.Length);
                 }
-            });
+            }
+            catch (Exception)
+            {
+                await Display.Write($"Save failed {filename}");
+            }
         }
     }
 }

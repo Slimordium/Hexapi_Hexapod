@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Devices.SerialCommunication;
@@ -17,83 +18,56 @@ namespace HexapiBackground.Hardware{
         private SerialDevice _serialDevice;
         private DataWriter _outputStream;
 
-        internal async void Start()
+        internal async Task Start()
         {
             _serialDevice = await SerialDeviceHelper.GetSerialDevice("DN01E099A", 9600);
             _outputStream = new DataWriter(_serialDevice.OutputStream);
         }
 
-        internal async Task WriteToFirstLine(string text)
+        private async Task Write(string text, byte[] line, bool clear)
         {
-            _outputStream.WriteBytes(_startOfFirstLine);
-            _outputStream.WriteString(text);
-            
-            var count = 16 - text.Length - 1;
+            var stringBuilder = new StringBuilder();
+            stringBuilder.Append(text);
+
+            var count = 0;
+
+            if (!clear)
+                count = 16 - text.Length;
+            else
+                count = 32 - text.Length;
 
             if (count > 0)
             {
-                var spaces = new List<byte>();
-
-                for (var i = 0; i <= count; i++)
+                for (var i = 0; i < count; i++)
                 {
-                    spaces.Add(0x20);
+                    stringBuilder.Append(' ');
                 }
-                _outputStream.WriteBytes(spaces.ToArray());
             }
 
+            if (_outputStream == null || _serialDevice == null)
+            {
+                Debug.WriteLine(text);
+                return;
+            }
+
+            _outputStream.WriteBytes(line);
+            _outputStream.WriteString(stringBuilder.ToString());
             await _outputStream.StoreAsync();
+        }
+
+        internal async Task WriteToFirstLine(string text)
+        {
+            await Write(text, _startOfFirstLine, false);
         }
 
         internal async Task WriteToSecondLine(string text)
         {
-            _outputStream.WriteBytes(_startOfSecondLine);
-            _outputStream.WriteString(text);
-
-            var count = 16 - text.Length - 1;
-
-            if (count > 0)
-            {
-                var spaces = new List<byte>();
-
-                for (var i = 0; i <= count; i++)
-                {
-                    spaces.Add(0x20);
-                }
-                _outputStream.WriteBytes(spaces.ToArray());
-            }
-
-            await _outputStream.StoreAsync();
+            await Write(text, _startOfSecondLine, false);
         }
 
         internal async Task Write(string text)
         {
-            await Clear();
-
-            var bytes = Encoding.ASCII.GetBytes(text);
-
-            _outputStream.WriteBytes(_startOfFirstLine);
-            _outputStream.WriteBytes(bytes);
-            await _outputStream.StoreAsync();
-        }
-
-        internal async Task EraseFirstLine()
-        {
-            _outputStream.WriteBytes(_startOfFirstLine);
-            _outputStream.WriteBytes(new byte [] {0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20});
-            await _outputStream.StoreAsync();
-        }
-
-        internal async Task EraseSecondLine()
-        {
-            _outputStream.WriteBytes(_startOfSecondLine);
-            _outputStream.WriteBytes(new byte[] { 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20 });
-            await _outputStream.StoreAsync();
-        }
-
-        internal async Task Clear()
-        {
-            await EraseFirstLine();
-            await EraseSecondLine();
+            await Write(text, _startOfFirstLine, true);
         }
     }
 }

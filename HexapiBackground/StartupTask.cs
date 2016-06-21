@@ -12,16 +12,15 @@ namespace HexapiBackground
     public sealed class StartupTask : IBackgroundTask
     {
         private BackgroundTaskDeferral _deferral;
-
-        private Display _display = new Display();
+        private readonly Display _display = new Display();
 
         //TODO : Make the various devices that are enabled to be configurable in a settings file
         public void Run(IBackgroundTaskInstance taskInstance)
         {
-            
-
             SerialDeviceHelper.ListAvailablePorts();
-            
+
+            _display.Start();
+
             //var ping = new RemoteArduino();
             //ping.Start();
 
@@ -32,7 +31,7 @@ namespace HexapiBackground
             ik.Start();
 
             var hexapi = new Hexapi(ik);//new Hexapi(gps, avc)
-            hexapi.Start();
+            //hexapi.Start();
 
             _deferral = taskInstance.GetDeferral();
         }

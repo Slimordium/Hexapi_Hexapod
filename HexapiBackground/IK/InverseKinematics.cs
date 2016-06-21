@@ -11,7 +11,6 @@ using Windows.Devices.Gpio;
 using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
 using HexapiBackground.Enums;
-using HexapiBackground.Extensions;
 using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
 #pragma warning disable 4014
@@ -167,8 +166,8 @@ namespace HexapiBackground.IK{
         private double _legLiftHeight = 35; //Current Travel height
 
         private static int _gaitStep = 1;
-        private GaitType _gaitType = GaitType.Tripod8Steps;
-        private GaitType _lastGaitType = GaitType.Tripod8Steps;
+        private GaitType _gaitType = GaitType.Tripod8;
+        private GaitType _lastGaitType = GaitType.Tripod8;
         private static double _gaitSpeedInMs = 40; //Nominal speed of the gait in ms
 
         private double _travelLengthX; //Current Travel length X - Left/Right
@@ -206,8 +205,6 @@ namespace HexapiBackground.IK{
 
         private void ConfigureFootSwitches()
         {
-            "Configuring feet".WriteToLcd(1);
-
             try
             {
                 _gpioController = GpioController.GetDefault();
@@ -353,14 +350,11 @@ namespace HexapiBackground.IK{
             GaitSelect();
         }
 
-        internal void RequestSetMovement(bool enabled)
+        internal async void RequestSetMovement(bool enabled)
         {
             _movementStarted = enabled;
 
-            if (enabled)
-            {
-                "Servos on".WriteToLcd(2);
-            }
+            await Display.Write(enabled ? "Servos on" : "Servos off", 2);
         }
 
         internal void RequestSetFunction(SelectedFunction selectedFunction)
@@ -423,13 +417,13 @@ namespace HexapiBackground.IK{
         private DataReader _inputStream;
         private DataWriter _outputStream;
 
-        internal void Start()
+        internal async Task Start()
         {
-            Task.Run(async () =>
-            {
+            //Task.Run(async () =>
+            //{
                 if (!await LoadLegDefaults())
                 {
-                    Debug.WriteLine("Could not setup IK. Exiting...");
+                    await Display.Write("Could not setup IK. Exiting...");
                     return;
                 }
 
@@ -475,7 +469,7 @@ namespace HexapiBackground.IK{
                             await _outputStream.StoreAsync();
                     }
                 }
-            });
+            //});
         }
 
         private void IkCalculation(int legIndex)
@@ -523,7 +517,7 @@ namespace HexapiBackground.IK{
         {
             switch (_gaitType)
             {
-                case GaitType.RippleGait12Steps:
+                case GaitType.RippleGait12:
                     _gaitLegNumber[Lr] = 1;
                     _gaitLegNumber[Rf] = 3;
                     _gaitLegNumber[Lm] = 5;
@@ -536,7 +530,7 @@ namespace HexapiBackground.IK{
                     _tlDivisionFactor = 8;
                     _stepsInGait = 12;
                     break;
-                case GaitType.Tripod8Steps:
+                case GaitType.Tripod8:
                     _gaitLegNumber[Lr] = 5;
                     _gaitLegNumber[Rf] = 1;
                     _gaitLegNumber[Lm] = 1;
@@ -549,7 +543,7 @@ namespace HexapiBackground.IK{
                     _tlDivisionFactor = 4;
                     _stepsInGait = 8;
                     break;
-                case GaitType.TripleTripod12Steps:
+                case GaitType.TripleTripod12:
                     _gaitLegNumber[Rf] = 3;
                     _gaitLegNumber[Lm] = 4;
                     _gaitLegNumber[Rr] = 5;
@@ -562,7 +556,7 @@ namespace HexapiBackground.IK{
                     _tlDivisionFactor = 8;
                     _stepsInGait = 12;
                     break;
-                case GaitType.TripleTripod16Steps:
+                case GaitType.TripleTripod16:
                     _gaitLegNumber[Rf] = 4;
                     _gaitLegNumber[Lm] = 5;
                     _gaitLegNumber[Rr] = 6;
@@ -575,7 +569,7 @@ namespace HexapiBackground.IK{
                     _tlDivisionFactor = 10;
                     _stepsInGait = 16;
                     break;
-                case GaitType.Wave24Steps:
+                case GaitType.Wave24:
                     _gaitLegNumber[Lr] = 1;
                     _gaitLegNumber[Rf] = 21;
                     _gaitLegNumber[Lm] = 5;
@@ -773,7 +767,7 @@ namespace HexapiBackground.IK{
             }
             catch (Exception e)
             {
-                e.Message.WriteToLcd();
+                Display.Write(e.Message, 1);
                 return false;
             }
 

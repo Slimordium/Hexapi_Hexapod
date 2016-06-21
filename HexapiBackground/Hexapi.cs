@@ -27,7 +27,7 @@ namespace HexapiBackground{
         private double _bodyRotZ;
         private double _gaitSpeed;
 
-        private GaitType _gaitType = GaitType.Tripod8Steps;
+        private GaitType _gaitType = GaitType.Tripod8;
 
         private bool _isMovementStarted;
 
@@ -98,7 +98,7 @@ namespace HexapiBackground{
         #region XBox 360 Controller related...
 
         //4 = Left bumper, 5 = Right bumper
-        private void XboxController_BumperButtonChanged(int button)
+        private async void XboxController_BumperButtonChanged(int button)
         {
             switch (_selectedFunction)
             {
@@ -137,11 +137,11 @@ namespace HexapiBackground{
 
             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
 
-            Display.Write($"Speed : {_gaitSpeed}", 1);
-            Display.Write($"Lift : {_legLiftHeight}", 2);
+            await Display.Write($"Speed : {_gaitSpeed}", 1);
+            await Display.Write($"Lift : {_legLiftHeight}", 2);
         }
 
-        private void XboxController_FunctionButtonChanged(int button)
+        private async void XboxController_FunctionButtonChanged(int button)
         {
             switch (button)
             {
@@ -149,12 +149,12 @@ namespace HexapiBackground{
                     if (_selectedFunction == SelectedFunction.GaitSpeed)
                     {
                         _selectedFunction = SelectedFunction.LegHeight;
-                        Display.Write($"Leg height");
+                        await Display.Write($"Leg lift height");
                     }
                     else
                     {
                         _selectedFunction = SelectedFunction.GaitSpeed;
-                        Display.Write($"Gait speed");
+                        await Display.Write($"Gait speed");
                     }
                     break;
                 case 1: //B
@@ -247,13 +247,11 @@ namespace HexapiBackground{
                         _ik.RequestSetFunction(SelectedFunction.GaitSpeed);
                         _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                         _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
-                        _ik.RequestSetGaitType(GaitType.TripleTripod16Steps);
+                        _ik.RequestSetGaitType(GaitType.TripleTripod16);
                         _ik.RequestMovement(_gaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
                     }
                     else
                         _ik.RequestMovement(_gaitSpeed, 0, 0, 0);
-
-                    Debug.WriteLine("setting movement to  " + _isMovementStarted);
                     break;
                 case 6: //back button
                     _gps?.CurrentLatLon.SaveWaypoint();
@@ -287,7 +285,7 @@ namespace HexapiBackground{
             _ik.RequestMovement(_gaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
         }
 
-        private void XboxController_DpadDirectionChanged(ControllerVector sender)
+        private async void XboxController_DpadDirectionChanged(ControllerVector sender)
         {
             switch (sender.Direction)
             {
@@ -296,8 +294,8 @@ namespace HexapiBackground{
                     {
                         _gaitType--;
                         _ik.RequestSetGaitType(_gaitType);
-                        Display.Write(Enum.GetName(typeof(GaitType), _gaitType));
-                        if (_gaitType == GaitType.Tripod8Steps)
+                        await Display.Write(Enum.GetName(typeof(GaitType), _gaitType));
+                        if (_gaitType == GaitType.Tripod8)
                         {
                             _legLiftHeight = 35;
                             _gaitSpeed = 55;
@@ -325,8 +323,8 @@ namespace HexapiBackground{
                     {
                         _gaitType++;
                         _ik.RequestSetGaitType(_gaitType);
-                        Display.Write(Enum.GetName(typeof(GaitType), _gaitType));
-                        if (_gaitType == GaitType.Tripod8Steps)
+                        await Display.Write(Enum.GetName(typeof(GaitType), _gaitType));
+                        if (_gaitType == GaitType.Tripod8)
                         {
                             _legLiftHeight = 35;
                             _gaitSpeed = 55;
@@ -362,7 +360,7 @@ namespace HexapiBackground{
                             _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                         }
 
-                        Display.Write($"_bodyPosY = {_bodyPosY}");
+                        await Display.Write($"_bodyPosY = {_bodyPosY}");
                     }
                     break;
                 case ControllerDirection.Down:
@@ -378,7 +376,7 @@ namespace HexapiBackground{
                             _bodyPosY = _bodyPosY - 5;
                             _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                         }
-                        Display.Write($"_bodyPosY = {_bodyPosY}");
+                        await Display.Write($"_bodyPosY = {_bodyPosY}");
                     }
                     break;
             }

@@ -40,7 +40,7 @@ namespace HexapiBackground.Gps
                     ntripClient.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
                 }
 
-                Display.Write("RTK GPS Started...");
+                await Display.Write("RTK GPS Started...");
 
                 while (true)
                 {
@@ -59,7 +59,7 @@ namespace HexapiBackground.Gps
                             continue;
 
                         if (CurrentLatLon.Quality != latLon.Quality)
-                            Display.Write(latLon.Quality.ToString(), 2);
+                            await Display.Write(latLon.Quality.ToString(), 2);
 
                         CurrentLatLon = latLon;
                     }

@@ -69,7 +69,7 @@ namespace HexapiBackground.Gps.Ntrip
                 {
                     if (((Socket)sender).Connected)
                     {
-                        Display.Write("NTRIP Connected");
+                        await Display.Write("NTRIP Connected");
 
                         await Task.Delay(500);
 
@@ -77,7 +77,7 @@ namespace HexapiBackground.Gps.Ntrip
                     }
                     else
                     {
-                        Display.Write("NTRIP Connection failed");
+                        await Display.Write("NTRIP Connection failed");
                     }
                 });
             };
@@ -119,7 +119,7 @@ namespace HexapiBackground.Gps.Ntrip
                 {
                     Debug.WriteLine($"NTRIP Authentication : {eventArgs.SocketError}");
 
-                    Display.Write($"NTRIP {eventArgs.SocketError}");
+                    await Display.Write($"NTRIP {eventArgs.SocketError}");
 
                     await Task.Delay(1500);
 

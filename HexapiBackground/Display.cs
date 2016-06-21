@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Diagnostics;
+using System.Threading.Tasks;
 using HexapiBackground.Hardware;
 
 namespace HexapiBackground{
@@ -6,33 +7,23 @@ namespace HexapiBackground{
     {
         private static readonly SparkFunSerial16X2Lcd Lcd = new SparkFunSerial16X2Lcd();
 
-        internal Display()
+        internal async Task Start()
         {
-            Lcd.Start();
+            await Lcd.Start();
         }
 
-        internal static void Write(string text, int line)
+        internal static async Task Write(string text, int line)
         {
-            if (Lcd == null) return;
+            if (line == 1)
+                await Lcd.WriteToFirstLine(text);
 
-            Task.Run(async () =>
-            {
-                if (line == 1)
-                    await Lcd.WriteToFirstLine(text);
-
-                if (line == 2)
-                    await Lcd.WriteToSecondLine(text);
-            });
+            if (line == 2)
+                await Lcd.WriteToSecondLine(text);
         }
 
-        internal static void Write(string text)
+        internal static async Task Write(string text)
         {
-            if (Lcd == null) return;
-
-            Task.Run(async () =>
-            {
-                await Lcd.Write(text);
-            });
+            await Lcd.Write(text);
         }
     }
 }
