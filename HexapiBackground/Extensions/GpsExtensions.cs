@@ -114,7 +114,7 @@ namespace HexapiBackground.Helpers{
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e);
+                Display.Write(e.Message);
                 return new double[] {0, 0};
             }
         }

@@ -12,14 +12,14 @@ using HexapiBackground.Navigation;
 // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
 
 namespace HexapiBackground{
-    internal sealed class Hexapi{
-        private readonly Gps.Gps _gps;
+    internal sealed class Hexapi
+    {
         private readonly InverseKinematics _ik;
+        private readonly XboxController _xboxController;
+        private readonly Gps.Gps _gps;
+        private readonly PingSensors _pingSensors;
 
-        private readonly Stopwatch _stopwatch = new Stopwatch();
-        private XboxController _xboxController;
         private double _bodyPosX;
-
         private double _bodyPosY; //45
         private double _bodyPosZ;
         private double _bodyRotX;
@@ -34,11 +34,9 @@ namespace HexapiBackground{
         private double _legLiftHeight;
         private double _legPosY;
 
-        private Mpr121 _mpr121;
-
         private int _posture;
 
-        private RouteFinder _routeFinder;
+        private Navigator _navigator;
         private SelectedFunction _selectedFunction = SelectedFunction.GaitSpeed;
 
         private int _selectedLeg;
@@ -47,13 +45,13 @@ namespace HexapiBackground{
         private double _travelLengthZ;
         private double _travelRotationY;
 
-        internal Hexapi(InverseKinematics inverseKinematics = null, Gps.Gps gps = null, RouteFinder routeFinder = null)
+        internal Hexapi(InverseKinematics inverseKinematics, XboxController xboxController, Gps.Gps gps, Navigator navigator, PingSensors pingSensors)
         {
-            _gps = gps;
             _ik = inverseKinematics;
-            _routeFinder = routeFinder;
-
-
+            _xboxController = xboxController;
+            _gps = gps;
+            _navigator = navigator;
+            _pingSensors = pingSensors;
 
             _gaitSpeed = 55;
             _bodyPosY = 65;
@@ -66,7 +64,21 @@ namespace HexapiBackground{
             TravelRotationYlimit = 36;
             LegLiftHeightUpperLimit = 110;
             LegLiftHeightLowerLimit = 30;
+
+            if (_xboxController == null)
+                return;
+
+            _xboxController.LeftDirectionChanged += XboxController_LeftDirectionChanged;
+            _xboxController.RightDirectionChanged += XboxController_RightDirectionChanged;
+            _xboxController.DpadDirectionChanged += XboxController_DpadDirectionChanged;
+            _xboxController.LeftTriggerChanged += XboxController_LeftTriggerChanged;
+            _xboxController.RightTriggerChanged += XboxController_RightTriggerChanged;
+            _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
+            _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
+
+
         }
+
 
         internal static double LegLiftHeightUpperLimit { get; set; }
         internal static double LegLiftHeightLowerLimit { get; set; }
@@ -81,18 +93,9 @@ namespace HexapiBackground{
         internal static double TravelLengthXlimit { get; set; }
         internal static double TravelRotationYlimit { get; set; }
 
-        public async Task Start()
+        public void Start()
         {
-            _xboxController = new XboxController();
-            await _xboxController.Open();
 
-            _xboxController.LeftDirectionChanged += XboxController_LeftDirectionChanged;
-            _xboxController.RightDirectionChanged += XboxController_RightDirectionChanged;
-            _xboxController.DpadDirectionChanged += XboxController_DpadDirectionChanged;
-            _xboxController.LeftTriggerChanged += XboxController_LeftTriggerChanged;
-            _xboxController.RightTriggerChanged += XboxController_RightTriggerChanged;
-            _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
-            _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
         }
 
         #region XBox 360 Controller related...

@@ -13,6 +13,8 @@ using Windows.Storage.Streams;
 using HexapiBackground.Enums;
 using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
+using HexapiBackground.Navigation;
+
 #pragma warning disable 4014
 
 namespace HexapiBackground.IK{
@@ -384,13 +386,13 @@ namespace HexapiBackground.IK{
             });
         }
 
-        internal void RequestLegYHeight(int leg, double yPos)
+        internal async void RequestLegYHeight(int leg, double yPos)
         {
             _selectedFunctionLeg = leg;
 
             LegYHeightCorrector[leg] = _bodyPosY + yPos;
 
-            Debug.WriteLine($"Leg {leg} RequestLegYHeight {LegYHeightCorrector[leg]}");
+            await Display.Write($"Leg {leg} - {LegYHeightCorrector[leg]}");
         }
 
         //The idea here, is that if a foot hits an object, the corrector is set to the negative value of the current foot height,
@@ -401,12 +403,6 @@ namespace HexapiBackground.IK{
         //IK Calculations will need to be modified to use this.
         internal void RequestSaveLegYHeightCorrector()
         {
-            //Debug.WriteLine($"gaitPosX = {_gaitPosX[leg]}");
-            //Debug.WriteLine($"gaitPosY = {_gaitPosY[leg]}");
-            //Debug.WriteLine($"gaitPosZ = {_gaitPosZ[leg]}");
-
-            Debug.WriteLine($"_selectedFunctionLeg {_selectedFunctionLeg}  _bodyPosY {_bodyPosY}  _lastBodyPosY {_lastBodyPosY}");
-
             LegYHeightCorrector[_selectedFunctionLeg] = _bodyPosY - _lastBodyPosY;
         }
 
@@ -743,7 +739,7 @@ namespace HexapiBackground.IK{
 
             if (string.IsNullOrEmpty(config))
             {
-                Debug.WriteLine("Empty config file. hexapod.config");
+                await Display.Write("Empty hexapod.config");
                 return false;
             }
 
@@ -764,7 +760,7 @@ namespace HexapiBackground.IK{
             }
             catch (Exception e)
             {
-                Display.Write(e.Message, 1);
+                await Display.Write(e.Message, 1);
                 return false;
             }
 

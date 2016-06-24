@@ -6,6 +6,8 @@ using System.Diagnostics;
 using Windows.ApplicationModel.Background;
 using HexapiBackground.Hardware;
 using HexapiBackground.IK;
+using HexapiBackground.Navigation;
+
 #pragma warning disable 4014
 namespace HexapiBackground
 {
@@ -13,33 +15,40 @@ namespace HexapiBackground
     {
         private BackgroundTaskDeferral _deferral;
         private readonly Display _display = new Display();
+        private XboxController _xboxController;
+        private RemoteArduino _remoteArduino;
+        private Gps.Gps _gps;
+        private InverseKinematics _inverseKinematics;
+        private Hexapi _hexapi;
+        private Navigator _navigator;
+        private PingSensors _pingSensors;
 
-        //TODO : Make the various devices that are enabled to be configurable in a settings file
         public void Run(IBackgroundTaskInstance taskInstance)
         {
             SerialDeviceHelper.ListAvailablePorts();
 
             _display.Start();
 
-            //var ping = new RemoteArduino();
-            //ping.Start();
+            _remoteArduino = new RemoteArduino();
+            _remoteArduino.Start();
 
-            var gps = new Gps.Gps(true);
-            gps.Start();
+            _pingSensors = new PingSensors(_remoteArduino);
 
-            var ik = new InverseKinematics();
-            ik.Start();
+            _xboxController = new XboxController();
+            _xboxController.Open(_pingSensors);
 
-            var hexapi = new Hexapi(ik, gps);//new Hexapi(gps, avc)
-            hexapi.Start();
+            _gps = new Gps.Gps(true);
+            _gps.Start();
+
+            _inverseKinematics = new InverseKinematics();
+            _inverseKinematics.Start();
+
+            _navigator = new Navigator(_inverseKinematics, _gps);
+
+            _hexapi = new Hexapi(_inverseKinematics, _xboxController, _gps, _navigator, _pingSensors);
+            _hexapi.Start();
 
             _deferral = taskInstance.GetDeferral();
-        }
-
-        private void Mpu_SensorInterruptEvent(object sender, MpuSensorEventArgs e)
-        {
-            Debug.WriteLine(e.Values[0].GyroX);
-            Debug.WriteLine(e.Values[0].AccelerationX);
         }
 
         internal void Complete()

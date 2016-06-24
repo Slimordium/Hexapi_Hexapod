@@ -740,8 +740,8 @@ void systemResetCallback()
 #define leftTrigPin 9
 #define leftEchoPin 8
 
-#define centerTrigPin 10
-#define centerEchoPin 11
+#define centerTrigPin 11
+#define centerEchoPin 10
 
 #define rightTrigPin 12
 #define rightEchoPin 13
@@ -808,133 +808,15 @@ void PingAll()
 
 	Firmata.sendString(pingData);
 
-	Serial.write(pingData);
-	Serial.write('\r\n');
-}
-
-void ReadWriteDebug()
-{
-	Serial2.readBytes(readBuffer, 256);
-	Serial.write(readBuffer);
-	
-	Serial.write('\r\n');
-}
-
-void OpenTcpConnection()
-{
-	Serial2.write("AT+CGATT?\r"); //Get GPRS Service status
-
-	ReadWriteDebug();
-
-	Serial2.write("AT+CIPMODE=0\r");
-
-	ReadWriteDebug();
-
-	Serial2.write("at+cstt=\"wholesale\"\r"); //Set APN and start task
-
-	ReadWriteDebug();
-
-	Serial2.write("AT+CIICR\r"); //Bring up wireless connection
-	
-	ReadWriteDebug();
-
-	Serial2.write("AT+CIFSR\r"); //Get IP address
-	
-	ReadWriteDebug();
-
-	Serial2.write("AT+CIPSTART=\"TCP\",\"69.44.86.36\",\"2101\"\r");
-
-	delay(1500);//Wait until it "actually" connects
-
-	ReadWriteDebug();
-
-	AuthenticateNtrip();
-}
-
-void AuthenticateNtrip()
-{
-	Serial2.write("AT+CIPSEND\r"); //This always helps...
-
-	Serial2.write("GET /P041_RTCM3 HTTP/1.1");
-	Serial.write('\r\n');
-
-	Serial2.write("User-Agent: Hexapi");
-	Serial.write('\r\n');
-
-	Serial2.write("Authorization: Basic bHdhdGtpbnM6RDJxMDI0MjU=");
-	Serial.write('\r\n');
-
-	Serial2.write("Accept: */*");
-	Serial.write('\r\n');
-
-	Serial2.write("Connection: close");
-	Serial.write('\r\n');
-
-	Serial.write('\r\n');
-
-	Serial2.write("\x1A");
-
-	Serial2.write('\r');
-
-	//String msg = "GET /P041_RTCM3 HTTP/1.1\r\n"; //P041 is the mountpoint for the NTRIP station data
-	//msg += "User-Agent: Hexapi\r\n";
-
-	//msg += "Authorization: Basic bHdhdGtpbnM6RDJxMDI0MjU=\r\n";
-	//msg += "Accept: */*\r\nConnection: close\r\n";
-	//msg += "\r\n";
-
-	//char chars[140];
-	//msg.toCharArray(chars, 140);
-
-	//Serial.write(chars);
-	//Serial2.write(chars);
-	
-	/*Serial2.write((byte)0x1a);
-	Serial2.write('\r');
-	Serial2.write('\n');
-
-	Serial.write('\r');
-	Serial.write('\n');*/
-
-	ReadWriteDebug();
-
-	delay(1500);
-
-	ReadWriteDebug();
+	//Serial.write(pingData);
+	//Serial.write('\r\n');
 }
 
 void loop()
 {
-	//Get NMEA sentences from GPS and forward to the PI 3
-	//if (Serial1.available())
-	//{
-	//	Serial.write("GPS Data arrived");
-	//	Serial1.readBytes(gpsData, 512);
-	//	//Firmata.sendString(gpsData);
-	//	//delay(250);
-	//	Serial.write(gpsData);
-	//	Serial.write('\r\n');
-	//	//Serial1.flush();
-	//}
-
-	//Get RTK correction data, and then send to the GPS
-	/*if (Serial2.available())
-	{
-		Serial.write("RTK Data arrived");
-		Serial2.readBytes(rtkData, 512);
-		Serial1.write(rtkData);
-		Serial.write(rtkData); //Debug
-		Serial.write('\r\n');
-	}*/
-
 	PingAll();
 
-	delay(60);
-
-	//byte pin, analogPin;
-	/* DIGITALREAD - as fast as possible, check for changes and output them to the
-	* FTDI buffer using Serial.print()  */
-	//checkDigitalInputs();
+	delay(20);
 
 	while (Firmata.available()) //<---LW
 		Firmata.processInput(); //<---LW

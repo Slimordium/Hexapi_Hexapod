@@ -1,23 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace HexapiBackground.Hardware
 {
-    internal sealed class PingSensors
+    internal class PingSensors
     {
-        private readonly List<int> _centerAvg = new List<int>();
-        private readonly List<int> _leftAvg = new List<int>();
-        private readonly List<int> _rightAvg = new List<int>();
+        internal int PerimeterInInches { get; set; }
 
-        internal static int LeftInches { get; private set; }
-        internal static int CenterInches { get; private set; }
-        internal static int RightInches { get; private set; }
+        internal int LeftInches { get; private set; }
+        internal int CenterInches { get; private set; }
+        internal int RightInches { get; private set; }
 
-        internal PingSensors()
+        internal bool LeftBlocked => LeftInches < PerimeterInInches;
+        internal bool CenterBlocked => CenterInches < PerimeterInInches;
+        internal bool RightBlocked => RightInches < PerimeterInInches;
+
+        public event EventHandler<bool> Left;
+        public event EventHandler<bool> Center;
+        public event EventHandler<bool> Right;
+
+        internal PingSensors(RemoteArduino remoteArduino)
         {
-            RemoteArduino.StringReceivedActions.Add(StringMessageReceived);
+            PerimeterInInches = 14;
+
+            remoteArduino.StringReceivedActions.Add(StringMessageReceived);
 
             LeftInches = 0;
             CenterInches = 0;
@@ -29,45 +37,39 @@ namespace HexapiBackground.Hardware
             return Convert.ToInt32(Math.Round((duration / 73.746) / 2, 1));
         }
 
-        internal void RangeUpdate(int[] data)
+        private async void RangeUpdate(int[] data)
         {
-            if (data.Length < 10)
-            {
-                Debug.WriteLine("Bad ping data");
-                return;
-            }
-
-            _leftAvg.Add(data[0]);
-            _centerAvg.Add(data[1]);
-            _rightAvg.Add(data[2]);
-
-            if (_leftAvg.Count <= 3)
+            if (data.Length < 3)
                 return;
 
-            LeftInches = GetInchesFromPingDuration(_leftAvg.Sum() / _leftAvg.Count);
-            _leftAvg.RemoveAt(0);
+            var left = Left;
+            var center = Center;
+            var right = Right;
 
-            RightInches = GetInchesFromPingDuration(_rightAvg.Sum() / _rightAvg.Count);
-            _rightAvg.RemoveAt(0);
+            LeftInches = GetInchesFromPingDuration(data[0]);
+            left?.Invoke(null, LeftBlocked);
 
-            CenterInches = GetInchesFromPingDuration(_centerAvg.Sum() / _centerAvg.Count);
-            _centerAvg.RemoveAt(0);
+            CenterInches = GetInchesFromPingDuration(data[1]);
+            center?.Invoke(null, CenterBlocked);
+
+            RightInches = GetInchesFromPingDuration(data[2]);
+            right?.Invoke(null, RightBlocked);
+
+            if (LeftBlocked || CenterBlocked || RightBlocked)
+                await Display.Write($"{LeftInches}, {CenterInches}, {RightInches}");
         }
 
-        private void StringMessageReceived(string message)
+        private async void StringMessageReceived(string message)
         {
-            if (!message.Contains("$Ping:"))
-                return;
-
             try
             {
                 message = message.Split(':')[1];
 
                 RangeUpdate(message.Split(',').Select(int.Parse).ToArray());
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Debug.WriteLine($"Range Update exception : {e.Message}");
+                await Display.Write($"Range failed");
             }
         }
     }

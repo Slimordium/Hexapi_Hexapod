@@ -41,7 +41,7 @@ namespace HexapiBackground.Gps.Ntrip
 
                 if (ip == null)
                 {
-                    Debug.WriteLine("Ntrip IP was null?");
+                    Display.Write("NTRIP IP was null?");
                     return;
                 }
 

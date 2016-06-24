@@ -25,7 +25,7 @@ namespace HexapiBackground.Gps
 
             if (aParsed.Length < 5)
             {
-                Debug.WriteLine($"Could not parse waypoint data - {rawData}");
+                Display.Write($"Could not parse waypoint");
 
                 Lat = 0;
                 Lon = 0;

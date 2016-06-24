@@ -8,24 +8,19 @@ using HexapiBackground.IK;
 
 namespace HexapiBackground.Navigation
 {
-    internal sealed class RouteFinder
+    internal sealed class Navigator
     {
         private readonly InverseKinematics _inverseKinematics;
         private readonly Gps.Gps _gps;
         private bool _gpsNavigationEnabled;
         private List<LatLon> _waypoints;
 
-        private double _travelLengthX = 0;
-        private double _travelLengthZ = 0;
-        private double _travelRotationY = 0;
-        private double _nomGaitSpeed = 50;
-
-        internal RouteFinder(InverseKinematics inverseKinematics, Gps.Gps gps)
+        internal Navigator(InverseKinematics inverseKinematics, Gps.Gps gps)
         {
             _inverseKinematics = inverseKinematics;
             _gps = gps;
         }
-
+            
         internal async Task EnableGpsNavigation()
         {
             if (_gpsNavigationEnabled)
@@ -62,12 +57,17 @@ namespace HexapiBackground.Navigation
             var distanceToWaypoint = distanceHeading[0];
             var headingToWaypoint = distanceHeading[1];
 
+            var _travelLengthX = 0D;
+            var _travelLengthZ = 0D;
+            var _travelRotationY = 0D;
+            var _nomGaitSpeed = 50D;
+
             var sw = new Stopwatch();
             sw.Start();
 
             _travelLengthZ = -50;
 
-            await Display.Write($"D/H to WP {distanceToWaypoint}, {headingToWaypoint}", 1);
+            await Display.Write($"WP D/H {distanceToWaypoint}, {headingToWaypoint}", 1);
             await Display.Write($"Heading {_gps.CurrentLatLon.Heading}", 2);
 
             while (distanceToWaypoint > 10) //Inches
@@ -144,7 +144,7 @@ namespace HexapiBackground.Navigation
                 headingToWaypoint = distanceHeading[1];
             }
 
-            await Display.Write($"D/H to WP {distanceToWaypoint}, {headingToWaypoint}", 1);
+            await Display.Write($"WP D/H {distanceToWaypoint}, {headingToWaypoint}", 1);
             await Display.Write($"Heading {_gps.CurrentLatLon.Heading}", 2);
 
             return true;
