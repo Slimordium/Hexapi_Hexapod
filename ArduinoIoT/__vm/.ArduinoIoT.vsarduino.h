@@ -11,9 +11,8 @@
 #ifndef _VSARDUINO_H_
 #define _VSARDUINO_H_
 #define __AVR_ATmega2560__
-#define _VMDEBUG 1
 #define F_CPU 16000000L
-#define ARDUINO 10607
+#define ARDUINO 10608
 #define ARDUINO_AVR_MEGA2560
 #define ARDUINO_ARCH_AVR
 #define __cplusplus 201103L
@@ -21,46 +20,25 @@
 #define __inline__
 #define __asm__(x)
 #define __extension__
-//#define __ATTR_PURE__
-//#define __ATTR_CONST__
 #define __inline__
-//#define __asm__ 
 #define __volatile__
 #define GCC_VERSION 40801
 #define volatile(va_arg) 
 #define _CONST
-typedef void *__builtin_va_list;
 #define __builtin_va_start
 #define __builtin_va_end
-//#define __DOXYGEN__
 #define __attribute__(x)
 #define NOINLINE __attribute__((noinline))
 #define prog_void
 #define PGM_VOID_P int
 #ifndef __builtin_constant_p
-#define __builtin_constant_p __attribute__((__const__))
+	#define __builtin_constant_p __attribute__((__const__))
 #endif
 #ifndef __builtin_strlen
-#define __builtin_strlen  __attribute__((__const__))
+	#define __builtin_strlen  __attribute__((__const__))
 #endif
 #define NEW_H
-/*
-#ifndef __ATTR_CONST__
-#define __ATTR_CONST__ __attribute__((__const__))
-#endif
-
-#ifndef __ATTR_MALLOC__
-#define __ATTR_MALLOC__ __attribute__((__malloc__))
-#endif
-
-#ifndef __ATTR_NORETURN__
-#define __ATTR_NORETURN__ __attribute__((__noreturn__))
-#endif
-
-#ifndef __ATTR_PURE__
-#define __ATTR_PURE__ __attribute__((__pure__))
-#endif            
-*/
+typedef void *__builtin_va_list;
 typedef unsigned char byte;
 extern "C" void __cxa_pure_virtual() {;}
 
@@ -84,5 +62,31 @@ extern "C" void __cxa_pure_virtual() {;}
 #define portOutputRegister(P)
 #define portInputRegister(P)
 #define portModeRegister(P)
-#include <..\ArduinoIoT\ArduinoIoT.ino>
+
+void wireWrite(byte data);
+byte wireRead(void);
+void attachServo(byte pin, int minPulse, int maxPulse);
+void detachServo(byte pin);
+void readAndReportData(byte address, int theRegister, byte numBytes, byte stopTX);
+void outputPort(byte portNumber, byte portValue, byte forceSend);
+void checkDigitalInputs(void);
+void setPinModeCallback(byte pin, int mode);
+void setPinValueCallback(byte pin, int value);
+void analogWriteCallback(byte pin, int value);
+void digitalWriteCallback(byte port, int value);
+void reportAnalogCallback(byte analogPin, int value);
+void reportDigitalCallback(byte port, int value);
+void sysexCallback(byte command, byte argc, byte *argv);
+void enableI2CPins();
+void disableI2CPins();
+void systemResetCallback();
+//
+void PingAll();
+void ReadWriteDebug();
+void OpenTcpConnection();
+void AuthenticateNtrip();
+//
+String Ping(int sensor);
+
+#include <ArduinoIoT.ino>
 #endif

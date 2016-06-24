@@ -18,10 +18,10 @@ namespace HexapiBackground
         private XboxController _xboxController;
         private RemoteArduino _remoteArduino;
         private Gps.Gps _gps;
+        private IkController _ikController;
         private InverseKinematics _inverseKinematics;
         private Hexapi _hexapi;
         private Navigator _navigator;
-        private PingSensors _pingSensors;
 
         public void Run(IBackgroundTaskInstance taskInstance)
         {
@@ -32,10 +32,8 @@ namespace HexapiBackground
             _remoteArduino = new RemoteArduino();
             _remoteArduino.Start();
 
-            _pingSensors = new PingSensors(_remoteArduino);
-
             _xboxController = new XboxController();
-            _xboxController.Open(_pingSensors);
+            _xboxController.Open();
 
             _gps = new Gps.Gps(true);
             _gps.Start();
@@ -43,9 +41,11 @@ namespace HexapiBackground
             _inverseKinematics = new InverseKinematics();
             _inverseKinematics.Start();
 
-            _navigator = new Navigator(_inverseKinematics, _gps);
+            _ikController = new IkController(_inverseKinematics, _remoteArduino);
 
-            _hexapi = new Hexapi(_inverseKinematics, _xboxController, _gps, _navigator, _pingSensors);
+            _navigator = new Navigator(_ikController, _gps);
+
+            _hexapi = new Hexapi(_ikController, _xboxController, _gps, _navigator);
             _hexapi.Start();
 
             _deferral = taskInstance.GetDeferral();

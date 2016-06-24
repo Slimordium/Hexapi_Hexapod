@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Gpio;
+using Windows.Devices.Perception;
 using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
 using HexapiBackground.Enums;
@@ -17,7 +18,11 @@ using HexapiBackground.Navigation;
 
 #pragma warning disable 4014
 
-namespace HexapiBackground.IK{
+namespace HexapiBackground.IK
+{
+
+
+
     /// <summary>
     ///     This is a port of the "Phoenix" 3DOF Hexapod code in C#. Uses CH3-R body from Lynxmotion/robotshop.com
     ///     https://github.com/KurtE/Arduino_Phoenix_Parts/tree/master/Phoenix
@@ -33,10 +38,10 @@ namespace HexapiBackground.IK{
         private readonly byte[] _querySsc = {0x51, 0x0d}; //0x51 = Q, 0x0d = carriage return
         private bool _calibrated;
         private GpioController _gpioController;
-        private SelectedFunction _lastSelectedFunction = SelectedFunction.Translate3D;
+        private SelectedIkFunction _lastSelectedIkFunction = SelectedIkFunction.Translate3D;
         private int _lastSelectedFunctionLeg = -1;
         private bool _movementStarted;
-        private SelectedFunction _selectedFunction = SelectedFunction.Translate3D;
+        private SelectedIkFunction _selectedFunction = SelectedIkFunction.Translate3D;
         private int _selectedFunctionLeg = -1;
         private static SerialDevice _serialDevice;
 
@@ -184,7 +189,7 @@ namespace HexapiBackground.IK{
 
         #endregion
 
-        internal InverseKinematics(Mpu9150New mpu = null)
+        internal InverseKinematics()
         {
             _pi1K = Pi*1000D;
 
@@ -213,7 +218,7 @@ namespace HexapiBackground.IK{
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e);
+                //Debug.WriteLine(e);
             }
 
             if (_gpioController != null)
@@ -326,9 +331,6 @@ namespace HexapiBackground.IK{
 
         internal void RequestBodyPosition(double bodyRotX1, double bodyRotZ1, double bodyPosX, double bodyPosZ, double bodyPosY, double bodyRotY1)
         {
-            if (bodyPosY < 65)
-                bodyPosY = 65;
-
             _bodyRotX = bodyRotX1;
             _bodyRotZ = bodyRotZ1;
 
@@ -352,21 +354,19 @@ namespace HexapiBackground.IK{
             GaitSelect();
         }
 
-        internal async void RequestSetMovement(bool enabled)
+        internal void RequestSetMovement(bool enabled)
         {
             _movementStarted = enabled;
-
-            await Display.Write(enabled ? "Servos on" : "Servos off", 2);
         }
 
-        internal void RequestSetFunction(SelectedFunction selectedFunction)
+        internal void RequestSetFunction(SelectedIkFunction selectedIkFunction)
         {
-            _selectedFunction = selectedFunction;
+            _selectedFunction = selectedIkFunction;
         }
 
         internal void CalibrateFootHeight()
         {
-            _selectedFunction = SelectedFunction.SetFootHeightOffset;
+            _selectedFunction = SelectedIkFunction.SetFootHeightOffset;
 
             Task.Factory.StartNew(() =>
             {
@@ -386,13 +386,11 @@ namespace HexapiBackground.IK{
             });
         }
 
-        internal async void RequestLegYHeight(int leg, double yPos)
+        internal void RequestLegYHeight(int leg, double yPos)
         {
             _selectedFunctionLeg = leg;
 
             LegYHeightCorrector[leg] = _bodyPosY + yPos;
-
-            await Display.Write($"Leg {leg} - {LegYHeightCorrector[leg]}");
         }
 
         //The idea here, is that if a foot hits an object, the corrector is set to the negative value of the current foot height,

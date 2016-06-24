@@ -29,18 +29,15 @@ namespace HexapiBackground.Hardware
         private ControllerVector _rightStickDirectionVector = new ControllerVector();
         private int _rightTrigger;
         private int _leftTrigger;
-        private PingSensors _pingSensors;
-
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="deadZoneTolerance">The amount the stick needs to be moved before movement is registered</param>
         /// <returns></returns>
-        internal async Task Open(PingSensors pingSensors, int deadZoneTolerance = 9000)
+        internal async Task Open(int deadZoneTolerance = 9000)
         {
             _deadzoneTolerance = deadZoneTolerance;
-            _pingSensors = pingSensors;
 
             //USB\VID_045E&PID_0719\E02F1950 - receiver
             //USB\VID_045E & PID_02A1 & IG_00\6 & F079888 & 0 & 00  - XboxController
@@ -69,32 +66,6 @@ namespace HexapiBackground.Hardware
                 _deviceHandle.InputReportReceived += InputReportReceived;
                 return;
             }
-
-
-            _pingSensors.Left += _pingSensors_Left;
-            _pingSensors.Center += _pingSensors_Center;
-            _pingSensors.Right += _pingSensors_Right;
-
-        }
-
-
-        private bool _leftBlocked;
-        private bool _centerBlocked;
-        private bool _rightBlocked;
-
-        private void _pingSensors_Right(object sender, bool e)
-        {
-            _rightBlocked = e;
-        }
-
-        private void _pingSensors_Center(object sender, bool e)
-        {
-            _centerBlocked = e;
-        }
-
-        private void _pingSensors_Left(object sender, bool e)
-        {
-            _leftBlocked = e;
         }
 
         private void InputReportReceived(HidDevice sender, HidInputReportReceivedEventArgs args)

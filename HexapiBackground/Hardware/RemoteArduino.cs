@@ -11,16 +11,22 @@ namespace HexapiBackground.Hardware
 {
     internal sealed class RemoteArduino
     {
+        internal class DigitalPinEventArgs : EventArgs
+        {
+            public int Pin { get; set; }
+            public PinState PinState { get; set; }
+        }
+
+
         private IStream _connection;
         private RemoteDevice _arduino;
 
-        internal List<Action<string>> StringReceivedActions { get; set; }
-        internal List<Action<byte, PinState>>  DigitalPinUpdatedActions { get; set; }
+        internal event EventHandler<DigitalPinEventArgs> DigitalPinUpdated;
+        internal event EventHandler<string> StringReceived;
 
         internal RemoteArduino()
         {
-            StringReceivedActions = new List<Action<string>>();
-            DigitalPinUpdatedActions = new List<Action<byte, PinState>>();
+
         }
 
         internal async Task Start()
@@ -79,20 +85,14 @@ namespace HexapiBackground.Hardware
 
         private void Arduino_StringMessageReceived(string message)
         {
-            foreach (var a in StringReceivedActions)
-            {
-                a.Invoke(message);
-            }
+            var e = StringReceived;
+            e?.Invoke(null, message);
         }
 
         private async void Arduino_DigitalPinUpdated(byte pin, PinState state)
         {
-            await Display.Write($"{pin} state {state}");
-
-            foreach (var a in DigitalPinUpdatedActions)
-            {
-                a.Invoke(pin, state);
-            }
+            var e = DigitalPinUpdated;
+            e?.Invoke(null, new DigitalPinEventArgs() {Pin = pin, PinState = state});
         }
     }
 }

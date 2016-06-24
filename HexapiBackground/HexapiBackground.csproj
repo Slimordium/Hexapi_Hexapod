@@ -112,6 +112,7 @@
     <Compile Include="Enums\Ads1115\Config.cs" />
     <Compile Include="Enums\Ads1115\Gain.cs" />
     <Compile Include="Enums\Ads1115\Pointer.cs" />
+    <Compile Include="Enums\SelectedGpsFunction.cs" />
     <Compile Include="Hardware\Ads1115.cs" />
     <Compile Include="Hardware\Pca9685.cs" />
     <Compile Include="Hardware\Mpr121.cs" />
@@ -127,17 +128,17 @@
     <Compile Include="Extensions\GpsExtensions.cs" />
     <Compile Include="Extensions\FileExtensions.cs" />
     <Compile Include="Gps\Ntrip\NtripClient_Tcp.cs" />
+    <Compile Include="IK\IkController.cs" />
     <Compile Include="Navigation\Navigator.cs" />
     <Compile Include="Enums\GaitType.cs" />
     <Compile Include="Enums\GpsFixQuality.cs" />
-    <Compile Include="Enums\SelectedFunction.cs" />
+    <Compile Include="Enums\SelectedIkFunction.cs" />
     <Compile Include="Gps\LatLon.cs" />
     <Compile Include="Extensions\MathExtensions.cs" />
     <Compile Include="Hexapi.cs" />
     <Compile Include="Hardware\I2CDevice.cs" />
     <Compile Include="Hardware\Mpu\Mpu9150Old.cs" />
     <Compile Include="IK\InverseKinematics.cs" />
-    <Compile Include="Hardware\PingSensors.cs" />
     <Compile Include="Hardware\SerialPort.cs" />
     <Compile Include="SignalR\HexapiLeapMotionClient.cs" />
     <Compile Include="StartupTask.cs" />

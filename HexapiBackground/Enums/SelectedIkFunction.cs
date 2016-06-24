@@ -1,12 +1,17 @@
 ﻿namespace HexapiBackground.Enums
 {
-    internal enum SelectedFunction
+    internal enum SelectedIkFunction
     {
         GaitSpeed,
+        GaitType,
         LegHeight,
         TranslateHorizontal,
         Translate3D,
         SingleLeg,
-        SetFootHeightOffset
+        SetFootHeightOffset,
+        PingSetup,
+        BodyHeight,
+        Posture
+
     }
 }
