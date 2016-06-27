@@ -4,14 +4,13 @@
     {
         GaitSpeed,
         GaitType,
+        BodyHeight,
         LegHeight,
+        Posture,
         TranslateHorizontal,
         Translate3D,
         SingleLeg,
         SetFootHeightOffset,
         PingSetup,
-        BodyHeight,
-        Posture
-
     }
 }

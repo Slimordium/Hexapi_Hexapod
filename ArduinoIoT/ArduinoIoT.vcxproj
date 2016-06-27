@@ -47,10 +47,10 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\arduino\libraries;C:\arduino\hardware\arduino\avr\libraries;C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\Extensions\uvj0kmps.fop\Micro Platforms\default\debuggers;C:\Users\turtle\Documents\Arduino\libraries;C:\arduino\hardware\arduino\avr\cores\arduino;C:\arduino\hardware\arduino\avr\variants\standard;C:\Source\hexapi\ArduinoIoT;C:\arduino\hardware\tools\avr/avr/include/;C:\arduino\hardware\tools\avr//avr/include/avr/;C:\arduino\hardware\tools\avr/lib\gcc\avr\4.8.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ForcedIncludeFiles>C:\Source\hexapi\ArduinoIoT\__vm\.ArduinoIoT.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <AdditionalIncludeDirectories>C:\Arduino\libraries;C:\Arduino\hardware\arduino\avr\libraries;C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\Extensions\wyaoneyx.4gp\Micro Platforms\default\debuggers;C:\Users\lwatk\Documents\Arduino\libraries;C:\Arduino\hardware\arduino\avr\cores\arduino;C:\Arduino\hardware\arduino\avr\variants\standard;C:\Source\HexapodGit\Hexapi_Hexapod\ArduinoIoT;C:\Arduino\hardware\tools\avr/avr/include/;C:\Arduino\hardware\tools\avr//avr/include/avr/;C:\Arduino\hardware\tools\avr/lib\gcc\avr\4.8.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>C:\Source\HexapodGit\Hexapi_Hexapod\ArduinoIoT\__vm\.ArduinoIoT.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
-      <PreprocessorDefinitions>__AVR_ATmega328p__;__AVR_ATmega328P__;_VMDEBUG=1;F_CPU=16000000L;ARDUINO=10607;ARDUINO_AVR_UNO;ARDUINO_ARCH_AVR;__cplusplus=201103L;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__AVR_ATmega328p__;__AVR_ATmega328P__;F_CPU=16000000L;ARDUINO=10608;ARDUINO_AVR_UNO;ARDUINO_ARCH_AVR;__cplusplus=201103L;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

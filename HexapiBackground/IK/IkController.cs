@@ -70,21 +70,21 @@ namespace HexapiBackground.IK
 
                         try
                         {
-                            if (d.Contains('L'))
+                            if (data.Contains('L'))
                             {
-                                data = d.Replace("L", "");
+                                data = data.Replace("L", "");
 
                                 if (int.TryParse(data, out ping))
                                     _leftInches = GetInchesFromPingDuration(ping);
                             }
-                            if (d.Contains('C'))
+                            if (data.Contains('C'))
                             {
-                                data = d.Replace("C", "");
+                                data = data.Replace("C", "");
 
                                 if (int.TryParse(data, out ping))
                                     _centerInches = GetInchesFromPingDuration(ping);
                             }
-                            if (d.Contains('R'))
+                            if (data.Contains('R'))
                             {
                                 data = d.Replace("R", "");
 
@@ -155,6 +155,9 @@ namespace HexapiBackground.IK
                 _perimeterInInches++;
             else
                 _perimeterInInches--;
+
+            if (_perimeterInInches < 1)
+                _perimeterInInches = 1;
 
             Display.Write($"Perimeter {_perimeterInInches}", 1);
             Display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);

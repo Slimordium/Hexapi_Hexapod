@@ -88,21 +88,23 @@ namespace HexapiBackground
             {
                 case 0: //A
                     _selectedFunction--;
+                    Display.Write($"{Enum.GetName(typeof(SelectedIkFunction), _selectedFunction)}", 1);
                     break;
                 case 1: //B
                     _selectedFunction++;
+                    Display.Write($"{Enum.GetName(typeof(SelectedIkFunction), _selectedFunction)}", 1);
                     break;
                 case 2: //X
 
                     if (_selectedGpsFunction == SelectedGpsFunction.GpsDisabled)
                     {
                         _navigator.Start();
-                        Display.Write("GPS Nav Enabled");
+                        Display.Write("GPS Nav Enabled", 1);
                         _selectedGpsFunction = SelectedGpsFunction.GpsEnabled;
                     }
                     else
                     {
-                        Display.Write("GPS Nav Disabled");
+                        Display.Write("GPS Nav Disabled", 1);
                         _navigator.Stop();
                         _selectedGpsFunction = SelectedGpsFunction.GpsDisabled;
                     }
@@ -134,7 +136,7 @@ namespace HexapiBackground
 
                     break;
                 default:
-                    Display.Write($"Unknown button {button}");
+                    Display.Write($"Unknown button {button}", 1);
                     break;
             }
 
@@ -144,7 +146,7 @@ namespace HexapiBackground
             if ((int)_selectedFunction > 9)
                 _selectedFunction = (SelectedIkFunction)9;
 
-            Display.Write($"{Enum.GetName(typeof (SelectedIkFunction), _selectedFunction)}");
+            
         }
 
         private void SetPosture()
@@ -155,7 +157,7 @@ namespace HexapiBackground
             if (_posture < 0)
                 _posture = 0;
 
-            Display.Write($"Posture {_posture}");
+            Display.Write($"Posture {_posture}", 2);
 
             switch (_posture)
             {
@@ -255,20 +257,20 @@ namespace HexapiBackground
                             _gaitType--;
 
                             SetGaitOptions();
-                            Display.Write(Enum.GetName(typeof (GaitType), _gaitType));
+                            Display.Write(Enum.GetName(typeof (GaitType), _gaitType), 2);
                             break;
                         case SelectedIkFunction.GaitSpeed:
                             _gaitSpeed = _gaitSpeed - 2;
                             if (_gaitSpeed < GaitSpeedMin)
                                 _gaitSpeed = GaitSpeedMin;
                             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
-                            Display.Write($"_gaitSpeed = {_gaitSpeed}", 1);
+                            Display.Write($"_gaitSpeed = {_gaitSpeed}", 2);
                             break;
                         case SelectedIkFunction.SetFootHeightOffset:
                             _selectedLeg--;
                             if (_selectedLeg < 0)
                                 _selectedLeg = 0;
-                            Display.Write($"_selectedLeg = {_selectedLeg}");
+                            Display.Write($"_selectedLeg = {_selectedLeg}", 2);
                             break;
                     }
                     break;
@@ -278,7 +280,7 @@ namespace HexapiBackground
                         case SelectedIkFunction.GaitType:
                             _gaitType++;
 
-                            Display.Write(Enum.GetName(typeof (GaitType), _gaitType));
+                            Display.Write(Enum.GetName(typeof (GaitType), _gaitType), 2);
                             if (_gaitType == GaitType.Tripod8)
                             {
                                 _legLiftHeight = 35;
@@ -292,14 +294,14 @@ namespace HexapiBackground
                             if (_gaitSpeed > GaitSpeedMax)
                                 _gaitSpeed = GaitSpeedMax;
                             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
-                            Display.Write($"_gaitSpeed = {_gaitSpeed}");
+                            Display.Write($"_gaitSpeed = {_gaitSpeed}", 2);
                             break;
                         case SelectedIkFunction.SetFootHeightOffset:
                             _selectedLeg++;
                             if (_selectedLeg == 5)
                                 _selectedLeg = 5;
 
-                            Display.Write($"_selectedLeg = {_selectedLeg}");
+                            Display.Write($"_selectedLeg = {_selectedLeg}", 2);
                             break;
                     }
                     break;
@@ -319,7 +321,7 @@ namespace HexapiBackground
                             if (_bodyPosY > 110)
                                 _bodyPosY = 110;
                             _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
-                            Display.Write($"_bodyPosY = {_bodyPosY}");
+                            Display.Write($"_bodyPosY = {_bodyPosY}", 2);
                             break;
                         case SelectedIkFunction.Posture:
                             _posture++;
@@ -343,7 +345,7 @@ namespace HexapiBackground
                             if (_bodyPosY < 10)
                                 _bodyPosY = 10;
                             _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
-                            Display.Write($"_bodyPosY = {_bodyPosY}");
+                            Display.Write($"_bodyPosY = {_bodyPosY}", 2);
                             break;
                         case SelectedIkFunction.Posture:
                             _posture--;
