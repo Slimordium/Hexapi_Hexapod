@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using HexapiBackground.Gps;
 using HexapiBackground.Helpers;
@@ -21,7 +20,7 @@ namespace HexapiBackground.Navigation
             _gps = gps;
         }
             
-        internal async Task EnableGpsNavigation()
+        internal async Task Start()
         {
             if (_gpsNavigationEnabled)
                 return;
@@ -44,7 +43,7 @@ namespace HexapiBackground.Navigation
             }
         }
 
-        internal void DisableGpsNavigation()
+        internal void Stop()
         {
             _gpsNavigationEnabled = false;
         }
@@ -55,12 +54,12 @@ namespace HexapiBackground.Navigation
             var distanceToWaypoint = distanceHeading[0];
             var headingToWaypoint = distanceHeading[1];
 
-            var _travelLengthX = 0D;
-            var _travelLengthZ = 0D;
-            var _travelRotationY = 0D;
-            var _nomGaitSpeed = 50D;
+            var travelLengthX = 0D;
+            var travelLengthZ = 0D;
+            var travelRotationY = 0D;
+            var nomGaitSpeed = 50D;
             
-            _travelLengthZ = -50;
+            travelLengthZ = -50;
 
             var turnDirection = "None";
 
@@ -76,12 +75,12 @@ namespace HexapiBackground.Navigation
                     if (_gps.CurrentLatLon.Heading > tempHeading)
                     {
                         turnDirection = "Right";
-                        _travelRotationY = -1;
+                        travelRotationY = -1;
                     }
                     else
                     {
                         turnDirection = "Left";
-                        _travelRotationY = 1;
+                        travelRotationY = 1;
                     }
                 }
                 else if (headingToWaypoint - 5 < 1 && Math.Abs(headingToWaypoint - _gps.CurrentLatLon.Heading) > 1)
@@ -93,17 +92,17 @@ namespace HexapiBackground.Navigation
                     if (_gps.CurrentLatLon.Heading < tempHeading)
                     {
                         turnDirection = "Right";
-                        _travelRotationY = 1;
+                        travelRotationY = 1;
                     }
                     else
                     {
                         turnDirection = "Left";
-                        _travelRotationY = -1;
+                        travelRotationY = -1;
                     }
                 }
                 else if (_gps.CurrentLatLon.Heading > headingToWaypoint - 5 && _gps.CurrentLatLon.Heading < headingToWaypoint + 5)
                 {
-                    _travelRotationY = 0;
+                    travelRotationY = 0;
                     turnDirection = "None";
                 }
                 else if (headingToWaypoint > _gps.CurrentLatLon.Heading + 20)
@@ -111,12 +110,12 @@ namespace HexapiBackground.Navigation
                     if (_gps.CurrentLatLon.Heading - headingToWaypoint > 180)
                     {
                         turnDirection = "Left+";
-                        _travelRotationY = -2;
+                        travelRotationY = -2;
                     }
                     else
                     {
                         turnDirection = "Right+";
-                        _travelRotationY = 2;
+                        travelRotationY = 2;
                     }
                 }
                 else if (headingToWaypoint > _gps.CurrentLatLon.Heading)
@@ -124,12 +123,12 @@ namespace HexapiBackground.Navigation
                     if (_gps.CurrentLatLon.Heading - headingToWaypoint > 180)
                     {
                         turnDirection = "Left";
-                        _travelRotationY = -1;
+                        travelRotationY = -1;
                     }
                     else
                     {
                         turnDirection = "Right";
-                        _travelRotationY = 1;
+                        travelRotationY = 1;
                     }
                 }
                 else if (headingToWaypoint < _gps.CurrentLatLon.Heading - 20) //If it has a long ways to turn, go fast!
@@ -137,12 +136,12 @@ namespace HexapiBackground.Navigation
                     if (_gps.CurrentLatLon.Heading - headingToWaypoint < 180)
                     {
                         turnDirection = "Left+";
-                        _travelRotationY = -2;
+                        travelRotationY = -2;
                     }
                     else
                     {
                         turnDirection = "Right+";
-                        _travelRotationY = 2; //Turn towards its right
+                        travelRotationY = 2; //Turn towards its right
                     }
                 }
                 else if (headingToWaypoint < _gps.CurrentLatLon.Heading)
@@ -150,16 +149,16 @@ namespace HexapiBackground.Navigation
                     if (_gps.CurrentLatLon.Heading - headingToWaypoint < 180)
                     {
                         turnDirection = "Left";
-                        _travelRotationY = -1;
+                        travelRotationY = -1;
                     }
                     else
                     {
                         turnDirection = "Right";
-                        _travelRotationY = 1;
+                        travelRotationY = 1;
                     }
                 }
 
-                _ikController.RequestMovement(_nomGaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
+                _ikController.RequestMovement(nomGaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
 
                 await Task.Delay(50);
 

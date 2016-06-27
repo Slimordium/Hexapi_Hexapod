@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Windows.Devices.SerialCommunication;
+using Windows.Storage.Streams;
 using HexapiBackground.Enums;
 using HexapiBackground.Hardware;
+#pragma warning disable 4014
 
 namespace HexapiBackground.IK
 {
@@ -16,42 +20,98 @@ namespace HexapiBackground.IK
         private int _centerInches;
         private int _rightInches;
 
-        private bool _leftBlocked;
-        private bool _centerBlocked;
-        private bool _rightBlocked;
-
         private readonly InverseKinematics _inverseKinematics;
         private readonly Mpu9150 _mpu9150;
+        private SerialDevice _arduino;
+        private DataReader _dataReader;
 
-        internal IkController(InverseKinematics inverseKinematics, RemoteArduino remoteArduino, Mpu9150 mpu9150 = null)
+        internal IkController(InverseKinematics inverseKinematics, Mpu9150 mpu9150 = null)
         {
             _inverseKinematics = inverseKinematics;
             _mpu9150 = mpu9150;
 
             _perimeterInInches = 14;
 
-            remoteArduino.StringReceived += RemoteArduino_StringReceived;
-
             _leftInches = _perimeterInInches + 5;
             _centerInches = _perimeterInInches + 5;
             _rightInches = _perimeterInInches + 5;
         }
 
-        private async void RemoteArduino_StringReceived(object sender, string e)
+        internal async Task Start()
         {
-            try
+            _arduino = await SerialDeviceHelper.GetSerialDevice("AH03FK33", 57600);
+            await Task.Delay(500);
+            _dataReader = new DataReader(_arduino.InputStream);
+            await Task.Delay(500);
+
+            while (true)
             {
-                RangeUpdate(e.Split(':')[1].Split(',').Select(int.Parse).ToArray());
-            }
-            catch (Exception)
-            {
-                await Display.Write($"Range failed");
+                try
+                {
+                    var r = await _dataReader.LoadAsync(21);
+
+                    if (r <= 0)
+                        continue;
+
+                    var incoming = _dataReader.ReadString(r);
+
+                    if (string.IsNullOrEmpty(incoming))
+                        continue;
+
+                    var ranges = incoming.Split('!');
+
+                    foreach (var d in ranges)
+                    {
+                        if (string.IsNullOrEmpty(d) || !d.Contains('?'))
+                            continue;
+
+                        var data = d.Replace("?", "");
+                        var ping = 0;
+
+                        try
+                        {
+                            if (d.Contains('L'))
+                            {
+                                data = d.Replace("L", "");
+
+                                if (int.TryParse(data, out ping))
+                                    _leftInches = GetInchesFromPingDuration(ping);
+                            }
+                            if (d.Contains('C'))
+                            {
+                                data = d.Replace("C", "");
+
+                                if (int.TryParse(data, out ping))
+                                    _centerInches = GetInchesFromPingDuration(ping);
+                            }
+                            if (d.Contains('R'))
+                            {
+                                data = d.Replace("R", "");
+
+                                if (int.TryParse(data, out ping))
+                                    _rightInches = GetInchesFromPingDuration(ping);
+                            }
+                        }
+                        catch
+                        {
+                            //
+                        }
+                    }
+
+                    if (_leftInches < _perimeterInInches || _centerInches < _perimeterInInches || _rightInches < _perimeterInInches)
+                        await Display.Write($"{_leftInches} {_centerInches} {_rightInches}");
+                }
+                catch (Exception)
+                {
+
+                }
+
             }
         }
 
         internal void RequestMovement(double gaitSpeed, double travelLengthX, double travelLengthZ, double travelRotationY)
         {
-            if (_centerBlocked && travelLengthZ < 0)
+            if (_centerInches <= _perimeterInInches && travelLengthZ < 0)
                 travelLengthZ = 0;
 
             _inverseKinematics.RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
@@ -72,10 +132,10 @@ namespace HexapiBackground.IK
             _inverseKinematics.RequestSetGaitType(gaitType);
         }
 
-        internal async void RequestSetMovement(bool enabled)
+        internal void RequestSetMovement(bool enabled)
         {
             _inverseKinematics.RequestSetMovement(enabled);
-            await Display.Write(enabled ? "Servos on" : "Servos off", 2);
+            Display.Write(enabled ? "Servos on" : "Servos off", 2);
         }
 
         internal void RequestSetFunction(SelectedIkFunction selectedIkFunction)
@@ -83,51 +143,26 @@ namespace HexapiBackground.IK
             _inverseKinematics.RequestSetFunction(selectedIkFunction);
         }
 
-        internal async void RequestLegYHeight(int leg, double yPos)
+        internal void RequestLegYHeight(int leg, double yPos)
         {
             _inverseKinematics.RequestLegYHeight(leg, yPos);
-            await Display.Write($"Leg {leg} - {yPos}", 1);
+            Display.Write($"Leg {leg} - {yPos}", 1);
         }
 
-        internal async void RequestNewPerimeter(bool increase)
+        internal void RequestNewPerimeter(bool increase)
         {
             if (increase)
                 _perimeterInInches++;
             else
                 _perimeterInInches--;
 
-            await Display.Write($"Perimeter {_perimeterInInches}", 1);
-            await Display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
+            Display.Write($"Perimeter {_perimeterInInches}", 1);
+            Display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
         }
 
         private static int GetInchesFromPingDuration(int duration) //73.746 microseconds per inch
         {
             return Convert.ToInt32(Math.Round(duration / 73.746 / 2, 1));
         }
-
-        private async void RangeUpdate(IReadOnlyList<int> data)
-        {
-            if (data.Count < 3)
-                return;
-
-            try
-            {
-                _leftInches = GetInchesFromPingDuration(data[0]);
-                _centerInches = GetInchesFromPingDuration(data[1]);
-                _rightInches = GetInchesFromPingDuration(data[2]);
-
-                _leftBlocked = _leftInches <= _perimeterInInches;
-                _centerBlocked = _centerInches <= _perimeterInInches;
-                _rightBlocked = _rightInches <= _perimeterInInches;
-            }
-            catch (Exception)
-            {
-                await Display.Write("Range update failed");
-            }
-
-            if (_leftBlocked || _centerBlocked || _rightBlocked)
-                await Display.Write($"{_leftInches} {_centerInches} {_rightInches}");
-        }
-
     }
 }

@@ -31,6 +31,9 @@ namespace HexapiBackground.Hardware{
 
         private async Task Write(string text, byte[] line, bool clear)
         {
+            if (text == null)
+                return;
+
             var stringBuilder = new StringBuilder();
             stringBuilder.Append(text);
 
@@ -70,16 +73,25 @@ namespace HexapiBackground.Hardware{
 
         internal async Task WriteToFirstLine(string text)
         {
+            if (text == null)
+                return;
+
             await Write(text, _startOfFirstLine, false);
         }
 
         internal async Task WriteToSecondLine(string text)
         {
+            if (text == null)
+                return;
+
             await Write(text, _startOfSecondLine, false);
         }
 
         internal async Task Write(string text)
         {
+            if (text == null)
+                return;
+
             await Write(text, _startOfFirstLine, true);
         }
     }

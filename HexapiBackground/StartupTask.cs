@@ -2,7 +2,7 @@
     3DOF Hexapod - Hexapi startup 
 */
 
-using System.Diagnostics;
+using System.Threading.Tasks;
 using Windows.ApplicationModel.Background;
 using HexapiBackground.Hardware;
 using HexapiBackground.IK;
@@ -14,9 +14,8 @@ namespace HexapiBackground
     public sealed class StartupTask : IBackgroundTask
     {
         private BackgroundTaskDeferral _deferral;
-        private readonly Display _display = new Display();
+        private Display _display;
         private XboxController _xboxController;
-        private RemoteArduino _remoteArduino;
         private Gps.Gps _gps;
         private IkController _ikController;
         private InverseKinematics _inverseKinematics;
@@ -25,12 +24,12 @@ namespace HexapiBackground
 
         public void Run(IBackgroundTaskInstance taskInstance)
         {
+            _deferral = taskInstance.GetDeferral();
+
             SerialDeviceHelper.ListAvailablePorts();
 
+            _display = new Display();
             _display.Start();
-
-            _remoteArduino = new RemoteArduino();
-            _remoteArduino.Start();
 
             _xboxController = new XboxController();
             _xboxController.Open();
@@ -41,14 +40,14 @@ namespace HexapiBackground
             _inverseKinematics = new InverseKinematics();
             _inverseKinematics.Start();
 
-            _ikController = new IkController(_inverseKinematics, _remoteArduino);
+            _ikController = new IkController(_inverseKinematics);
+            _ikController.Start();
 
             _navigator = new Navigator(_ikController, _gps);
 
             _hexapi = new Hexapi(_ikController, _xboxController, _gps, _navigator);
+            Task.Delay(1000).Wait();
             _hexapi.Start();
-
-            _deferral = taskInstance.GetDeferral();
         }
 
         internal void Complete()

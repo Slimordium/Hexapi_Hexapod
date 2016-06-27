@@ -134,7 +134,7 @@ namespace HexapiBackground.Hardware
 
             vector = new ControllerVector
             {
-                Direction = (ControllerDirection) dPad,
+                Direction = (ControllerDirection)dPad,
                 Magnitude = 10000
             };
 
