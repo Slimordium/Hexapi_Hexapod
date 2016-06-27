@@ -146,7 +146,7 @@ namespace HexapiBackground.IK
         internal void RequestLegYHeight(int leg, double yPos)
         {
             _inverseKinematics.RequestLegYHeight(leg, yPos);
-            Display.Write($"Leg {leg} - {yPos}", 1);
+            Display.Write($"Leg {leg} - {yPos}", 2);
         }
 
         internal void RequestNewPerimeter(bool increase)
