@@ -452,7 +452,7 @@ namespace HexapiBackground.IK
                             break;
                     }
                     _outputStream.WriteBytes(_querySsc);
-                        await _outputStream.StoreAsync();
+                    await _outputStream.StoreAsync();
                 }
             }
         }

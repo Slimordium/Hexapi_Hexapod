@@ -25,7 +25,7 @@ namespace HexapiBackground.Gps
         #region Serial Communication
 
         public async Task Start()
-        { 
+        {
             _serialPortForGps = await SerialDeviceHelper.GetSerialDevice("AH03F3RY", 57600);
 
             if (_serialPortForGps == null)
@@ -74,6 +74,7 @@ namespace HexapiBackground.Gps
                     CurrentLatLon = latLon;
                 }
             }
+
         }
 
         private async void NtripClient_NtripDataArrivedEvent(object sender, NtripEventArgs e)

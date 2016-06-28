@@ -107,6 +107,7 @@ namespace HexapiBackground.IK
                 }
 
             }
+
         }
 
         internal void RequestMovement(double gaitSpeed, double travelLengthX, double travelLengthZ, double travelRotationY)

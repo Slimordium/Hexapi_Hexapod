@@ -22,31 +22,31 @@ namespace HexapiBackground
         private Hexapi _hexapi;
         private Navigator _navigator;
 
-        public void Run(IBackgroundTaskInstance taskInstance)
+        public async void Run(IBackgroundTaskInstance taskInstance)
         {
             _deferral = taskInstance.GetDeferral();
 
             SerialDeviceHelper.ListAvailablePorts();
 
             _display = new Display();
-            _display.Start();
+            await _display.Start().ConfigureAwait(false);
 
             _xboxController = new XboxController();
-            _xboxController.Open();
+            await _xboxController.Open().ConfigureAwait(false);
 
             _gps = new Gps.Gps(true);
-            _gps.Start();
+            _gps.Start().ConfigureAwait(false);
 
             _inverseKinematics = new InverseKinematics();
-            _inverseKinematics.Start();
-
             _ikController = new IkController(_inverseKinematics);
-            _ikController.Start();
-
             _navigator = new Navigator(_ikController, _gps);
-
             _hexapi = new Hexapi(_ikController, _xboxController, _gps, _navigator);
             Task.Delay(1000).Wait();
+
+            _inverseKinematics.Start().ConfigureAwait(false);
+
+            _ikController.Start().ConfigureAwait(false);
+
             _hexapi.Start();
         }
 
