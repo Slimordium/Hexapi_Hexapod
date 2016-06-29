@@ -39,6 +39,8 @@ namespace HexapiBackground.IK
 
         internal async Task Start()
         {
+            _inverseKinematics.Start().ConfigureAwait(false);
+
             _arduino = await SerialDeviceHelper.GetSerialDevice("AH03FK33", 57600);
             await Task.Delay(500);
             _dataReader = new DataReader(_arduino.InputStream);
@@ -99,15 +101,13 @@ namespace HexapiBackground.IK
                     }
 
                     if (_leftInches < _perimeterInInches || _centerInches < _perimeterInInches || _rightInches < _perimeterInInches)
-                        await Display.Write($"{_leftInches} {_centerInches} {_rightInches}");
+                        await Display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
                 }
                 catch (Exception)
                 {
 
                 }
-
             }
-
         }
 
         internal void RequestMovement(double gaitSpeed, double travelLengthX, double travelLengthZ, double travelRotationY)
@@ -133,10 +133,10 @@ namespace HexapiBackground.IK
             _inverseKinematics.RequestSetGaitType(gaitType);
         }
 
-        internal void RequestSetMovement(bool enabled)
+        internal async void RequestSetMovement(bool enabled)
         {
             _inverseKinematics.RequestSetMovement(enabled);
-            Display.Write(enabled ? "Servos on" : "Servos off", 2);
+            await Display.Write(enabled ? "Servos on" : "Servos off", 2);
         }
 
         internal void RequestSetFunction(SelectedIkFunction selectedIkFunction)
@@ -144,13 +144,13 @@ namespace HexapiBackground.IK
             _inverseKinematics.RequestSetFunction(selectedIkFunction);
         }
 
-        internal void RequestLegYHeight(int leg, double yPos)
+        internal async void RequestLegYHeight(int leg, double yPos)
         {
             _inverseKinematics.RequestLegYHeight(leg, yPos);
-            Display.Write($"Leg {leg} - {yPos}", 2);
+            await Display.Write($"Leg {leg} - {yPos}", 2);
         }
 
-        internal void RequestNewPerimeter(bool increase)
+        internal async void RequestNewPerimeter(bool increase)
         {
             if (increase)
                 _perimeterInInches++;
@@ -160,8 +160,8 @@ namespace HexapiBackground.IK
             if (_perimeterInInches < 1)
                 _perimeterInInches = 1;
 
-            Display.Write($"Perimeter {_perimeterInInches}", 1);
-            Display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
+            await Display.Write($"Perimeter {_perimeterInInches}", 1);
+            await Display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
         }
 
         private static int GetInchesFromPingDuration(int duration) //73.746 microseconds per inch

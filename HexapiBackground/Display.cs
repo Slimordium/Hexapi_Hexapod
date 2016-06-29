@@ -14,16 +14,22 @@ namespace HexapiBackground{
 
         internal static async Task Write(string text, int line)
         {
-            if (line == 1)
-                await Lcd.WriteToFirstLine(text);
+            await Task.Run(async () =>
+            {
+                if (line == 1)
+                    await Lcd.WriteToFirstLine(text);
 
-            if (line == 2)
-                await Lcd.WriteToSecondLine(text);
+                if (line == 2)
+                    await Lcd.WriteToSecondLine(text);
+            }).ConfigureAwait(false);
         }
 
         internal static async Task Write(string text)
         {
-            await Lcd.Write(text);
+            await Task.Run(async () =>
+            {
+                await Lcd.Write(text);
+            }).ConfigureAwait(false);
         }
     }
 }

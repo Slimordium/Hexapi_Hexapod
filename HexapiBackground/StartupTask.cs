@@ -29,10 +29,10 @@ namespace HexapiBackground
             SerialDeviceHelper.ListAvailablePorts();
 
             _display = new Display();
-            await _display.Start().ConfigureAwait(false);
+            await _display.Start();
 
             _xboxController = new XboxController();
-            await _xboxController.Open().ConfigureAwait(false);
+            await _xboxController.Open();
 
             _gps = new Gps.Gps(true);
             _gps.Start().ConfigureAwait(false);
@@ -41,13 +41,10 @@ namespace HexapiBackground
             _ikController = new IkController(_inverseKinematics);
             _navigator = new Navigator(_ikController, _gps);
             _hexapi = new Hexapi(_ikController, _xboxController, _gps, _navigator);
-            Task.Delay(1000).Wait();
-
-            _inverseKinematics.Start().ConfigureAwait(false);
-
-            _ikController.Start().ConfigureAwait(false);
 
             _hexapi.Start();
+
+            await _ikController.Start();
         }
 
         internal void Complete()
