@@ -2,7 +2,6 @@
     3DOF Hexapod - Hexapi startup 
 */
 
-using System.Threading.Tasks;
 using Windows.ApplicationModel.Background;
 using HexapiBackground.Hardware;
 using HexapiBackground.IK;
@@ -21,6 +20,11 @@ namespace HexapiBackground
         private InverseKinematics _inverseKinematics;
         private Hexapi _hexapi;
         private Navigator _navigator;
+
+        ~StartupTask()
+        {
+            Complete();
+        }
 
         public async void Run(IBackgroundTaskInstance taskInstance)
         {
@@ -49,6 +53,8 @@ namespace HexapiBackground
 
         internal void Complete()
         {
+            _inverseKinematics?.RequestSetMovement(false);
+
             _deferral.Complete();
         }
     }

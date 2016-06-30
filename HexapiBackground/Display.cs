@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using HexapiBackground.Hardware;
 
 namespace HexapiBackground{
@@ -14,22 +13,16 @@ namespace HexapiBackground{
 
         internal static async Task Write(string text, int line)
         {
-            await Task.Run(async () =>
-            {
-                if (line == 1)
-                    await Lcd.WriteToFirstLine(text);
+            if (line == 1)
+                await Lcd.WriteToFirstLine(text);
 
-                if (line == 2)
-                    await Lcd.WriteToSecondLine(text);
-            }).ConfigureAwait(false);
+            if (line == 2)
+                await Lcd.WriteToSecondLine(text);
         }
 
         internal static async Task Write(string text)
         {
-            await Task.Run(async () =>
-            {
-                await Lcd.Write(text);
-            }).ConfigureAwait(false);
+             await Lcd.Write(text);
         }
     }
 }

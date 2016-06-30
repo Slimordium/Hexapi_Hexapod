@@ -112,6 +112,7 @@
     <Compile Include="Enums\Ads1115\Config.cs" />
     <Compile Include="Enums\Ads1115\Gain.cs" />
     <Compile Include="Enums\Ads1115\Pointer.cs" />
+    <Compile Include="Enums\Behavior.cs" />
     <Compile Include="Enums\SelectedGpsFunction.cs" />
     <Compile Include="Hardware\Ads1115.cs" />
     <Compile Include="Hardware\Pca9685.cs" />

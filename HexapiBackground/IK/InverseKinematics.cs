@@ -10,12 +10,8 @@ using HexapiBackground.Enums;
 using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
 
-#pragma warning disable 4014
-
 namespace HexapiBackground.IK
 {
-
-
 
     /// <summary>
     ///     This is a port of the "Phoenix" 3DOF Hexapod code in C#. Uses CH3-R body from Lynxmotion/robotshop.com
@@ -32,8 +28,8 @@ namespace HexapiBackground.IK
         private readonly byte[] _querySsc = {0x51, 0x0d}; //0x51 = Q, 0x0d = carriage return
         private bool _calibrated;
         private GpioController _gpioController;
-        private SelectedIkFunction _lastSelectedIkFunction = SelectedIkFunction.Translate3D;
-        private int _lastSelectedFunctionLeg = -1;
+        //private SelectedIkFunction _lastSelectedIkFunction = SelectedIkFunction.Translate3D;
+        //private int _lastSelectedFunctionLeg = -1;
         private bool _movementStarted;
         private SelectedIkFunction _selectedFunction = SelectedIkFunction.Translate3D;
         private int _selectedFunctionLeg = -1;
@@ -62,12 +58,12 @@ namespace HexapiBackground.IK
         private const int Rm = 1;
         private const int Rr = 0;
 
-        private const double CoxaMin = -650;
-        private const double CoxaMax = 650;
-        private const double FemurMin = -670;
-        private const double FemurMax = 670;
-        private const double TibiaMin = -670;
-        private const double TibiaMax = 670; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -640;
+        private const double CoxaMax = 640;
+        private const double FemurMin = -660;
+        private const double FemurMax = 660;
+        private const double TibiaMin = -660;
+        private const double TibiaMax = 660; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double RrCoxaAngle = -450; //450 = 45 degrees off center
         private const double RmCoxaAngle = 0;
@@ -200,11 +196,9 @@ namespace HexapiBackground.IK
 
                 LegYHeightCorrector[legIndex] = 0;
             }
-
-            
         }
 
-        private void ConfigureFootSwitches()
+        private async void ConfigureFootSwitches()
         {
             try
             {
@@ -232,7 +226,7 @@ namespace HexapiBackground.IK
             }
             else
             {
-                Display.Write("Could not find Gpio Controller", 1);
+                await Display.Write("Could not find Gpio Controller", 1);
             }
         }
 
@@ -266,27 +260,27 @@ namespace HexapiBackground.IK
 
             //Calculation of rotation matrix: 
             var bodyFkPosX = (centerOfBodyToFeetX -
-                              ((centerOfBodyToFeetX*bodyRotYCos*bodyRotZCos) -
-                               (centerOfBodyToFeetZ*bodyRotZCos*bodyRotYSin) +
-                               (posY*bodyRotZSin)))/100;
+                              (centerOfBodyToFeetX*bodyRotYCos*bodyRotZCos -
+                               centerOfBodyToFeetZ*bodyRotZCos*bodyRotYSin +
+                               posY*bodyRotZSin))/100;
 
             var bodyFkPosZ = (centerOfBodyToFeetZ -
-                              ((centerOfBodyToFeetX*bodyRotXCos*bodyRotYSin) +
-                               (centerOfBodyToFeetX*bodyRotYCos*bodyRotZSin*bodyRotXSin) +
-                               (centerOfBodyToFeetZ*bodyRotYCos*bodyRotXCos) -
-                               (centerOfBodyToFeetZ*bodyRotYSin*bodyRotZSin*bodyRotXSin) -
-                               (posY*bodyRotZCos*bodyRotXSin)))/100;
+                              (centerOfBodyToFeetX*bodyRotXCos*bodyRotYSin +
+                               centerOfBodyToFeetX*bodyRotYCos*bodyRotZSin*bodyRotXSin +
+                               centerOfBodyToFeetZ*bodyRotYCos*bodyRotXCos -
+                               centerOfBodyToFeetZ*bodyRotYSin*bodyRotZSin*bodyRotXSin -
+                               posY*bodyRotZCos*bodyRotXSin))/100;
 
             var bodyFkPosY = (posY -
-                              ((centerOfBodyToFeetX*bodyRotYSin*bodyRotXSin) -
-                               (centerOfBodyToFeetX*bodyRotYCos*bodyRotXCos*bodyRotZSin) +
-                               (centerOfBodyToFeetZ*bodyRotYCos*bodyRotXSin) +
-                               (centerOfBodyToFeetZ*bodyRotXCos*bodyRotYSin*bodyRotZSin) +
-                               (posY*bodyRotZCos*bodyRotXCos)))/100;
+                              (centerOfBodyToFeetX*bodyRotYSin*bodyRotXSin -
+                               centerOfBodyToFeetX*bodyRotYCos*bodyRotXCos*bodyRotZSin +
+                               centerOfBodyToFeetZ*bodyRotYCos*bodyRotXSin +
+                               centerOfBodyToFeetZ*bodyRotXCos*bodyRotYSin*bodyRotZSin +
+                               posY*bodyRotZCos*bodyRotXCos))/100;
 
             var coxaFemurTibiaAngle = new double[3];
 
-            var feetPosX = 0D;
+            double feetPosX;
             if (legIndex <= 2)
                 feetPosX = legPosX - bodyPosX + bodyFkPosX - gaitPosX;
             else
@@ -298,15 +292,15 @@ namespace HexapiBackground.IK
             double xyhyp;
             var atan2 = GetATan2(feetPosX, feetPosZ, out xyhyp);
 
-            coxaFemurTibiaAngle[0] = ((atan2*180)/_pi1K) + coxaAngle;
+            coxaFemurTibiaAngle[0] = (atan2*180)/_pi1K + coxaAngle;
 
             var ikFeetPosXz = xyhyp/100;
             var ika14 = GetATan2(feetPosY, ikFeetPosXz - CoxaLengthInMm, out xyhyp);
-            var ika24 = GetArcCos((((FemurLengthInMm*FemurLengthInMm) - (TibiaLengthInMm*TibiaLengthInMm))*TenThousand + (xyhyp*xyhyp))/((2*FemurLengthInMm*100*xyhyp)/TenThousand));
+            var ika24 = GetArcCos(((FemurLengthInMm*FemurLengthInMm - TibiaLengthInMm*TibiaLengthInMm)*TenThousand + xyhyp*xyhyp)/(2*FemurLengthInMm*100*xyhyp/TenThousand));
 
             coxaFemurTibiaAngle[1] = -(ika14 + ika24)*180/_pi1K + 900;
 
-            coxaFemurTibiaAngle[2] = -(900 - GetArcCos((((FemurLengthInMm*FemurLengthInMm) + (TibiaLengthInMm*TibiaLengthInMm))*TenThousand - (xyhyp*xyhyp))/(2*FemurLengthInMm*TibiaLengthInMm))*180/_pi1K);
+            coxaFemurTibiaAngle[2] = -(900 - GetArcCos(((FemurLengthInMm*FemurLengthInMm + TibiaLengthInMm*TibiaLengthInMm)*TenThousand - xyhyp*xyhyp)/(2*FemurLengthInMm*TibiaLengthInMm))*180/_pi1K);
 
             return coxaFemurTibiaAngle;
         }
@@ -413,21 +407,31 @@ namespace HexapiBackground.IK
                 return;
             }
 
-            await Task.Delay(500);
-
             _serialDevice = await SerialDeviceHelper.GetSerialDevice("BCM2836", 115200);
-
-            await Task.Delay(500);
 
             _inputStream = new DataReader(_serialDevice.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
             _outputStream = new DataWriter(_serialDevice.OutputStream);
 
-            await Task.Delay(500);
+            var pingData = new PingData(15, 20, 20, 20);
+
+            IkController.CollisionEvent += (s, a) =>
+            {
+                pingData = a;
+            };
 
             while (true)
             {
                 if (_movementStarted)
                 {
+                    if (pingData.LeftBlocked && _travelRotationY > 0)
+                        _travelRotationY = 0;
+
+                    if (pingData.CenterBlocked && _travelLengthZ < 0)
+                        _travelLengthZ = 0;
+
+                    if (pingData.RightBlocked && _travelRotationY < 0)
+                        _travelRotationY = 0;
+
                     _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) || (Math.Abs(_travelLengthZ) > TravelDeadZone) || (Math.Abs(_travelRotationY) > TravelDeadZone);
 
                     IkLoop();
@@ -435,13 +439,11 @@ namespace HexapiBackground.IK
                     _lastLeg = false;
 
                     _outputStream.WriteString(GetServoPositions(_coxaAngle, _femurAngle, _tibiaAngle));
-                    await _outputStream.StoreAsync();
                 }
                 else
-                {
                     _outputStream.WriteString(TurnOffServos());
-                    await _outputStream.StoreAsync();
-                }
+
+                await _outputStream.StoreAsync();
 
                 while (true)
                 {

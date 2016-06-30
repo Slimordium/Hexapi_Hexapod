@@ -34,6 +34,7 @@ namespace HexapiBackground
         private int _posture;
         private SelectedIkFunction _selectedIkFunction = SelectedIkFunction.GaitSpeed;
         private SelectedGpsFunction _selectedGpsFunction = SelectedGpsFunction.GpsDisabled;
+        private Behavior _selectedBehavior = Behavior.Avoid;
         private int _selectedLeg;
 
         private double _travelLengthX;
@@ -95,8 +96,8 @@ namespace HexapiBackground
                     break;
                 case 1: //B
                     _selectedIkFunction++;
-                    if ((int) _selectedIkFunction > 9)
-                        _selectedIkFunction = (SelectedIkFunction) 9;
+                    if ((int) _selectedIkFunction > 10)
+                        _selectedIkFunction = (SelectedIkFunction) 10;
 
                     await Display.Write($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
                     break;
@@ -145,14 +146,6 @@ namespace HexapiBackground
                     await Display.Write($"Unknown button {button}", 1);
                     break;
             }
-
-            if (_selectedIkFunction < 0)
-                _selectedIkFunction = 0;
-
-            if ((int)_selectedIkFunction > 9)
-                _selectedIkFunction = (SelectedIkFunction)9;
-
-            
         }
 
         private async Task SetPosture()
@@ -207,14 +200,14 @@ namespace HexapiBackground
             switch (_gaitType)
             {
                 case GaitType.Tripod8:
-                    _bodyPosY = 100;
+                    _bodyPosY = 120;
                     _legLiftHeight = 35;
                     _gaitSpeed = 55;
                     GaitSpeedMax = 500;
                     GaitSpeedMin = 40;
                     LegLiftHeightUpperLimit = 45;
                     LegLiftHeightLowerLimit = 30;
-                    TravelLengthZupperLimit = 130;
+                    TravelLengthZupperLimit = 110;
                     TravelLengthZlowerLimit = 80;
                     TravelLengthXlimit = 25;
                     LegLiftHeightUpperLimit = 110;
@@ -223,7 +216,7 @@ namespace HexapiBackground
                     break;
                 default:
                     _gaitSpeed = 45;
-                    _bodyPosY = 100;
+                    _bodyPosY = 120;
                     _legLiftHeight = 35;
                     GaitSpeedMax = 500;
                     GaitSpeedMin = 20;
@@ -259,6 +252,14 @@ namespace HexapiBackground
 
                     switch (_selectedIkFunction)
                     {
+                        case SelectedIkFunction.Behavior:
+                            _selectedBehavior--;
+
+                            if ((int)_selectedBehavior <= 0)
+                                _selectedBehavior = (Behavior)0;
+
+                            await Display.Write($"{Enum.GetName(typeof(Behavior), _selectedBehavior)}", 2);
+                            break;
                         case SelectedIkFunction.GaitType:
                             _gaitType--;
 
@@ -286,6 +287,14 @@ namespace HexapiBackground
                 case ControllerDirection.Right:
                     switch (_selectedIkFunction)
                     {
+                        case SelectedIkFunction.Behavior:
+                            _selectedBehavior++;
+
+                            if ((int)_selectedBehavior > 4)
+                                _selectedBehavior = (Behavior)4;
+
+                            await Display.Write($"{Enum.GetName(typeof(Behavior), _selectedBehavior)}", 2);
+                            break;
                         case SelectedIkFunction.GaitType:
                             _gaitType++;
 
@@ -320,8 +329,18 @@ namespace HexapiBackground
                 case ControllerDirection.Up:
                     switch (_selectedIkFunction)
                     {
+                        case SelectedIkFunction.LegLiftHeight:
+                            _legLiftHeight++;
+
+                            if (_legLiftHeight > LegLiftHeightUpperLimit)
+                                _legLiftHeight = LegLiftHeightUpperLimit;
+
+                            await Display.Write($"Height {_legLiftHeight}", 2);
+
+                            _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
+                            break;
                         case SelectedIkFunction.SetFootHeightOffset:
-                            _legPosY = _legPosY + 2;
+                            _legPosY = _legPosY + 1;
                             _ik.RequestLegYHeight(_selectedLeg, _legPosY);
                             break;
                         case SelectedIkFunction.PingSetup:
@@ -336,15 +355,29 @@ namespace HexapiBackground
                             break;
                         case SelectedIkFunction.Posture:
                             _posture++;
-                            SetPosture();
+                            await SetPosture();
+                            break;
+                        case SelectedIkFunction.Behavior:
+                            _ik.RequestBehavior(_selectedBehavior, true);
+                            await Display.Write($"{Enum.GetName(typeof(Behavior), _selectedBehavior)} start");
                             break;
                     }
                     break;
                 case ControllerDirection.Down:
                     switch (_selectedIkFunction)
                     {
+                        case SelectedIkFunction.LegLiftHeight:
+                            _legLiftHeight--;
+
+                            if (_legLiftHeight < LegLiftHeightLowerLimit)
+                                _legLiftHeight = LegLiftHeightLowerLimit;
+
+                            await Display.Write($"Height = {_legLiftHeight}", 2);
+
+                            _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
+                            break;
                         case SelectedIkFunction.SetFootHeightOffset:
-                            _legPosY = _legPosY - 2;
+                            _legPosY = _legPosY - 1;
                             _ik.RequestLegYHeight(_selectedLeg, _legPosY);
                             break;
                         case SelectedIkFunction.PingSetup:
@@ -359,7 +392,11 @@ namespace HexapiBackground
                             break;
                         case SelectedIkFunction.Posture:
                             _posture--;
-                            SetPosture();
+                            await SetPosture();
+                            break;
+                        case SelectedIkFunction.Behavior:
+                            _ik.RequestBehavior(_selectedBehavior, true);
+                            await Display.Write($"{Enum.GetName(typeof(Behavior), _selectedBehavior)} stop");
                             break;
                     }
                     break;
