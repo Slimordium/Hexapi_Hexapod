@@ -4,46 +4,11 @@ using System.Threading.Tasks;
 using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
 using HexapiBackground.Enums;
-using HexapiBackground.Hardware;
 // ReSharper disable FunctionNeverReturns
 #pragma warning disable 4014
 
 namespace HexapiBackground.IK
 {
-
-    internal class PingData : EventArgs
-    {
-        internal PingData(int perimeterInInches, int left, int center, int right)
-        {
-            LeftWarning = left <= perimeterInInches + 5;
-            CenterWarning = center <= perimeterInInches + 5;
-            RightWarning = right <= perimeterInInches + 5;
-
-            LeftBlocked = left <= perimeterInInches;
-            CenterBlocked = center <= perimeterInInches;
-            RightBlocked = right <= perimeterInInches;
-
-            LeftInches = left;
-            CenterInches = center;
-            RightInches = right;
-        }
-
-        public bool LeftWarning { get; private set; }
-        public bool CenterWarning { get; private set; }
-        public bool RightWarning { get; private set; }
-
-        public bool LeftBlocked { get; private set; }
-        public bool CenterBlocked { get; private set; }
-        public bool RightBlocked { get; private set; }
-
-        public int LeftInches { get; private set; }
-        public int CenterInches { get; private set; }
-        public int RightInches { get; private set; }
-    }
-
-    /// <summary>
-    /// This semi-protects against running the robot into things
-    /// </summary>
     internal class IkController
     {
         private int _perimeterInInches; 
@@ -59,17 +24,24 @@ namespace HexapiBackground.IK
         private bool _behaviorStarted;
 
         private readonly InverseKinematics _inverseKinematics;
-        private SerialDevice _arduino;
-        private SerialDevice _sparkFunRazorMpu;
+        private readonly SerialDevice _arduino;
+        private readonly SerialDevice _sparkFunRazorMpu;
+
         private DataReader _arduinoDataReader;
         private DataReader _razorDataReader;
+        private DataWriter _razorDataWriter;
 
-        public static event EventHandler<PingData> CollisionEvent;
+        public static event EventHandler<PingEventData> CollisionEvent;
 
-        internal IkController(InverseKinematics inverseKinematics)
+        private bool _isCollisionEvent;
+
+        internal IkController(InverseKinematics inverseKinematics, SerialDevice arduino = null, SerialDevice razor = null)
         {
             _inverseKinematics = inverseKinematics;
             _perimeterInInches = 18;
+
+            _arduino = arduino;
+            _sparkFunRazorMpu = razor;
 
             _leftInches = _perimeterInInches + 5;
             _centerInches = _perimeterInInches + 5;
@@ -80,98 +52,115 @@ namespace HexapiBackground.IK
         {
             _inverseKinematics.Start().ConfigureAwait(false);
 
-            _sparkFunRazorMpu = await SerialDeviceHelper.GetSerialDevice("DN01E09J", 57600);
-
-            _arduino = await SerialDeviceHelper.GetSerialDevice("AH03FK33", 57600);
-
             if (_arduino != null)
                 _arduinoDataReader = new DataReader(_arduino.InputStream) {InputStreamOptions = InputStreamOptions.Partial};
 
             if (_sparkFunRazorMpu != null)
+            {
                 _razorDataReader = new DataReader(_sparkFunRazorMpu.InputStream) {InputStreamOptions = InputStreamOptions.Partial};
-
-            var collisionEvent = false;
+                _razorDataWriter = new DataWriter(_sparkFunRazorMpu.OutputStream);
+            }
 
             if (_arduino == null && _sparkFunRazorMpu == null)
                 return;
 
+            if (_sparkFunRazorMpu != null)
+            {
+                // #o0 - DISABLE continuous streaming output.Also see #f below.
+                // #o1 - ENABLE continuous streaming output.
+                _razorDataWriter.WriteString("#o0");
+                await _razorDataWriter.StoreAsync();
+            }
+
             while (true)
             {
-
-                //Arduino Ping ------------------------------------------
                 if (_arduino != null && _behavior != Behavior.None)
-                    try
-                    {
-                        var r = await _arduinoDataReader.LoadAsync(30);
-
-                        if (r <= 0)
-                            continue;
-
-                        var incoming = _arduinoDataReader.ReadString(r);
-
-                        if (string.IsNullOrEmpty(incoming))
-                            continue;
-
-                        if (ParseRanges(incoming.Split('!')) <= 0)
-                            continue;
-
-                        if (_leftInches <= _perimeterInInches || _centerInches <= _perimeterInInches || _rightInches <= _perimeterInInches)
-                        {
-                            await Display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
-
-                            collisionEvent = true;
-
-                            if (_behavior == Behavior.Avoid)
-                            {
-                                var e = CollisionEvent;
-                                e?.Invoke(null, new PingData(_perimeterInInches, _leftInches, _centerInches, _rightInches));
-                            }
-                        }
-                        else
-                        {
-                            if (!collisionEvent)
-                                continue;
-
-                            collisionEvent = false;
-
-                            if (_behavior != Behavior.Avoid)
-                                continue;
-
-                            var e = CollisionEvent;
-                            e?.Invoke(null, new PingData(_perimeterInInches, _leftInches, _centerInches, _rightInches));
-                        }
-                    }
-                    catch
-                    {
-                        //
-                    }
-                // ------------------------------------------
-
+                    await GetPingRanges();
 
                 if (_sparkFunRazorMpu == null)
                     continue;
-                
-                try
+
+                await GetYawPitchRoll();
+            }
+        }
+
+        private async Task GetPingRanges()
+        {
+            try
+            {
+                var incoming = await _arduinoDataReader.LoadAsync(30);
+
+                if (incoming <= 0)
+                    return;
+
+                var pingData = _arduinoDataReader.ReadString(incoming);
+
+                if (string.IsNullOrEmpty(pingData))
+                    return;
+
+                if (ParseRanges(pingData.Split('!')) <= 0)
+                    return;
+
+                if (_leftInches <= _perimeterInInches || _centerInches <= _perimeterInInches || _rightInches <= _perimeterInInches)
                 {
-                    var incoming = await _razorDataReader.LoadAsync(28);
+                    await Display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
 
-                    if (incoming <= 0)
-                        continue;
+                    _isCollisionEvent = true;
 
-                    var yprData = _razorDataReader.ReadString(incoming);
-
-                    yprData = yprData.Replace("#YPR=", "");
-
-                    var yprArray = yprData.Split(',');
-
-                    double.TryParse(yprArray[0], out _yaw);
-                    double.TryParse(yprArray[1], out _pitch);
-                    double.TryParse(yprArray[2], out _roll);
+                    if (_behavior == Behavior.Avoid)
+                    {
+                        var e = CollisionEvent;
+                        e?.Invoke(null, new PingEventData(_perimeterInInches, _leftInches, _centerInches, _rightInches));
+                    }
                 }
-                catch
+                else
                 {
-                    //
+                    if (!_isCollisionEvent)
+                        return;
+
+                    _isCollisionEvent = false;
+
+                    if (_behavior != Behavior.Avoid)
+                        return;
+
+                    var e = CollisionEvent;
+                    e?.Invoke(null, new PingEventData(_perimeterInInches, _leftInches, _centerInches, _rightInches));
                 }
+            }
+            catch
+            {
+                //
+            }
+        }
+
+        private async Task GetYawPitchRoll()
+        {
+            try
+            {
+                // #f - Request one output frame - useful when continuous output is disabled and updates are
+                // required in larger intervals only.Though #f only requests one reply, replies are still
+                // bound to the internal 20ms(50Hz) time raster.So worst case delay that #f can add is 19.99ms.
+                _razorDataWriter.WriteString("#f");
+                await _razorDataWriter.StoreAsync();
+
+                var incoming = await _razorDataReader.LoadAsync(30);
+
+                if (incoming <= 0)
+                    return;
+
+                var yprData = _razorDataReader.ReadString(incoming);
+
+                yprData = yprData.Replace("#YPR=", "");
+
+                var yprArray = yprData.Split(',');
+
+                double.TryParse(yprArray[0], out _yaw);
+                double.TryParse(yprArray[1], out _pitch);
+                double.TryParse(yprArray[2], out _roll);
+            }
+            catch
+            {
+                //
             }
         }
 

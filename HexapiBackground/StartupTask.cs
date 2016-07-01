@@ -38,11 +38,14 @@ namespace HexapiBackground
             _xboxController = new XboxController();
             await _xboxController.Open();
 
+            var sparkFunRazorMpu = await SerialDeviceHelper.GetSerialDevice("DN01E09J", 57600);
+            var arduino = await SerialDeviceHelper.GetSerialDevice("AH03FK33", 57600);
+
             _gps = new Gps.Gps(true);
             _gps.Start().ConfigureAwait(false);
 
             _inverseKinematics = new InverseKinematics();
-            _ikController = new IkController(_inverseKinematics);
+            _ikController = new IkController(_inverseKinematics, arduino, sparkFunRazorMpu);
             _navigator = new Navigator(_ikController, _gps);
             _hexapi = new Hexapi(_ikController, _xboxController, _gps, _navigator);
 
