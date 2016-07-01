@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
 using HexapiBackground.Enums;
+using HexapiBackground.Hardware;
+
 // ReSharper disable FunctionNeverReturns
 #pragma warning disable 4014
 
@@ -24,24 +27,18 @@ namespace HexapiBackground.IK
         private bool _behaviorStarted;
 
         private readonly InverseKinematics _inverseKinematics;
-        private readonly SerialDevice _arduino;
-        private readonly SerialDevice _sparkFunRazorMpu;
+        
 
-        private DataReader _arduinoDataReader;
-        private DataReader _razorDataReader;
-        private DataWriter _razorDataWriter;
+        
 
         public static event EventHandler<PingEventData> CollisionEvent;
 
         private bool _isCollisionEvent;
 
-        internal IkController(InverseKinematics inverseKinematics, SerialDevice arduino = null, SerialDevice razor = null)
+        internal IkController(InverseKinematics inverseKinematics)
         {
             _inverseKinematics = inverseKinematics;
             _perimeterInInches = 18;
-
-            _arduino = arduino;
-            _sparkFunRazorMpu = razor;
 
             _leftInches = _perimeterInInches + 5;
             _centerInches = _perimeterInInches + 5;
@@ -52,118 +49,141 @@ namespace HexapiBackground.IK
         {
             _inverseKinematics.Start().ConfigureAwait(false);
 
-            if (_arduino != null)
-                _arduinoDataReader = new DataReader(_arduino.InputStream) {InputStreamOptions = InputStreamOptions.Partial};
-
-            if (_sparkFunRazorMpu != null)
-            {
-                _razorDataReader = new DataReader(_sparkFunRazorMpu.InputStream) {InputStreamOptions = InputStreamOptions.Partial};
-                _razorDataWriter = new DataWriter(_sparkFunRazorMpu.OutputStream);
-            }
-
-            if (_arduino == null && _sparkFunRazorMpu == null)
-                return;
-
-            if (_sparkFunRazorMpu != null)
-            {
-                // #o0 - DISABLE continuous streaming output.Also see #f below.
-                // #o1 - ENABLE continuous streaming output.
-                _razorDataWriter.WriteString("#o0");
-                await _razorDataWriter.StoreAsync();
-            }
+            var arduino = await SerialDeviceHelper.GetSerialDevice("AH03FK33", 57600);
+            var arduinoDataReader = new DataReader(arduino.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
 
             while (true)
             {
-                if (_arduino != null && _behavior != Behavior.None)
-                    await GetPingRanges();
-
-                if (_sparkFunRazorMpu == null)
-                    continue;
-
-                await GetYawPitchRoll();
-            }
-        }
-
-        private async Task GetPingRanges()
-        {
-            try
-            {
-                var incoming = await _arduinoDataReader.LoadAsync(30);
-
-                if (incoming <= 0)
-                    return;
-
-                var pingData = _arduinoDataReader.ReadString(incoming);
-
-                if (string.IsNullOrEmpty(pingData))
-                    return;
-
-                if (ParseRanges(pingData.Split('!')) <= 0)
-                    return;
-
-                if (_leftInches <= _perimeterInInches || _centerInches <= _perimeterInInches || _rightInches <= _perimeterInInches)
+                if (_behavior != Behavior.None)
                 {
-                    await Display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
-
-                    _isCollisionEvent = true;
-
-                    if (_behavior == Behavior.Avoid)
+                    try
                     {
-                        var e = CollisionEvent;
-                        e?.Invoke(null, new PingEventData(_perimeterInInches, _leftInches, _centerInches, _rightInches));
+                        var incoming = await arduinoDataReader.LoadAsync(30);
+
+                        if (incoming <= 0)
+                            return;
+
+                        var pingData = arduinoDataReader.ReadString(incoming);
+
+                        if (string.IsNullOrEmpty(pingData))
+                            return;
+
+                        if (ParseRanges(pingData.Split('!')) <= 0)
+                            return;
+
+                        if (_leftInches <= _perimeterInInches || _centerInches <= _perimeterInInches || _rightInches <= _perimeterInInches)
+                        {
+                            await Display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
+
+                            _isCollisionEvent = true;
+
+                            if (_behavior == Behavior.Avoid)
+                            {
+                                var e = CollisionEvent;
+                                e?.Invoke(null, new PingEventData(_perimeterInInches, _leftInches, _centerInches, _rightInches));
+                            }
+                        }
+                        else
+                        {
+                            if (!_isCollisionEvent)
+                                return;
+
+                            _isCollisionEvent = false;
+
+                            if (_behavior != Behavior.Avoid)
+                                return;
+
+                            var e = CollisionEvent;
+                            e?.Invoke(null, new PingEventData(_perimeterInInches, _leftInches, _centerInches, _rightInches));
+                        }
+                    }
+                    catch
+                    {
+                        //
                     }
                 }
-                else
+            }
+        }
+
+        internal async Task StartReadYawPitchRoll()
+        {
+            var sparkFunRazorMpu = await SerialDeviceHelper.GetSerialDevice("DN01E09J", 57600);
+
+            if (sparkFunRazorMpu == null)
+                return;
+
+            var razorDataWriter = new DataWriter(sparkFunRazorMpu.OutputStream);
+
+            razorDataWriter.WriteString("#o0\r\n");
+            await razorDataWriter.StoreAsync();
+
+            await Task.Delay(1000);
+
+            var razorDataReader = new DataReader(sparkFunRazorMpu.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
+
+            while (true)
+            {
+                try
                 {
-                    if (!_isCollisionEvent)
+                    // #f - Request one output frame - useful when continuous output is disabled and updates are
+                    // required in larger intervals only.Though #f only requests one reply, replies are still
+                    // bound to the internal 20ms(50Hz) time raster.So worst case delay that #f can add is 19.99ms.
+                    razorDataWriter.WriteString("#f\r\n");
+                    await razorDataWriter.StoreAsync();
+                   
+                    //while (true)
+                    //{
+                    //    var inB = await razorDataReader.LoadAsync(1);
+
+                    //    if (inB > 0)
+                    //    {
+                    //        if (razorDataReader.ReadString(1).Equals("#"))
+                    //            break;
+                    //    }
+                    //}
+
+                    var incoming = await razorDataReader.LoadAsync(30);
+
+                    if (incoming <= 0)
                         return;
 
-                    _isCollisionEvent = false;
+                    var yprData = razorDataReader.ReadString(incoming);
 
-                    if (_behavior != Behavior.Avoid)
+                    var i = yprData.IndexOf('Y');
+                    var cri = yprData.LastIndexOf('\r');
+
+                    if (i == -1 || cri == -1)
                         return;
 
-                    var e = CollisionEvent;
-                    e?.Invoke(null, new PingEventData(_perimeterInInches, _leftInches, _centerInches, _rightInches));
+                    var length = cri - i;
+
+                    if (length < 20)
+                        continue;
+
+                    var substr = yprData.Substring(i, length);
+
+                    yprData = substr.Replace("YPR=", "");
+
+                    var yprArray = yprData.Split(',');
+
+                    if (yprArray.Length >= 1)
+                        double.TryParse(yprArray[0], out _yaw);
+
+                    if (yprArray.Length >= 2)
+                        double.TryParse(yprArray[1], out _pitch);
+
+                    if (yprArray.Length >= 3)
+                        double.TryParse(yprArray[2], out _roll);
+
+                    Debug.WriteLine($"{_yaw} {_pitch} {_roll}", 1);
+                }
+                catch
+                {
+                    //
                 }
             }
-            catch
-            {
-                //
-            }
         }
-
-        private async Task GetYawPitchRoll()
-        {
-            try
-            {
-                // #f - Request one output frame - useful when continuous output is disabled and updates are
-                // required in larger intervals only.Though #f only requests one reply, replies are still
-                // bound to the internal 20ms(50Hz) time raster.So worst case delay that #f can add is 19.99ms.
-                _razorDataWriter.WriteString("#f");
-                await _razorDataWriter.StoreAsync();
-
-                var incoming = await _razorDataReader.LoadAsync(30);
-
-                if (incoming <= 0)
-                    return;
-
-                var yprData = _razorDataReader.ReadString(incoming);
-
-                yprData = yprData.Replace("#YPR=", "");
-
-                var yprArray = yprData.Split(',');
-
-                double.TryParse(yprArray[0], out _yaw);
-                double.TryParse(yprArray[1], out _pitch);
-                double.TryParse(yprArray[2], out _roll);
-            }
-            catch
-            {
-                //
-            }
-        }
-
+      
         internal int ParseRanges(string[] ranges)
         {
             var success = ranges.Length;
