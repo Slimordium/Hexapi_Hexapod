@@ -80,9 +80,13 @@ namespace HexapiBackground.IK
         {
             _inverseKinematics.Start().ConfigureAwait(false);
 
-            _sparkFunRazorMpu = await SerialDeviceHelper.GetSerialDevice("DN01E09J", 57600);
-
             _arduino = await SerialDeviceHelper.GetSerialDevice("AH03FK33", 57600);
+
+            //await Task.Delay(1000);
+
+            //_sparkFunRazorMpu = await SerialDeviceHelper.GetSerialDevice("DN01E09J", 57600);
+
+            //await Task.Delay(1000);
 
             if (_arduino != null)
                 _arduinoDataReader = new DataReader(_arduino.InputStream) {InputStreamOptions = InputStreamOptions.Partial};
@@ -160,7 +164,11 @@ namespace HexapiBackground.IK
 
                     var yprData = _razorDataReader.ReadString(incoming);
 
-                    yprData = yprData.Replace("#YPR=", "");
+                    yprData = yprData.Replace("#", "");
+                    yprData = yprData.Replace("Y", "");
+                    yprData = yprData.Replace("P", "");
+                    yprData = yprData.Replace("R", "");
+                    yprData = yprData.Replace("=", "");
 
                     var yprArray = yprData.Split(',');
 
@@ -260,7 +268,7 @@ namespace HexapiBackground.IK
 
             while (_behaviorStarted)
             {
-                await Task.Delay(100);
+                await Task.Delay(60);
 
                 if (_leftInches > _perimeterInInches && _centerInches > _perimeterInInches && _rightInches > _perimeterInInches)
                 {
