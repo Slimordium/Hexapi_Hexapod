@@ -206,7 +206,8 @@ namespace HexapiBackground.IK
             }
             catch (Exception e)
             {
-                //Debug.WriteLine(e);
+                await Display.Write(e.Message);
+                return;
             }
 
             if (_gpioController != null)
@@ -412,7 +413,7 @@ namespace HexapiBackground.IK
             _inputStream = new DataReader(_serialDevice.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
             _outputStream = new DataWriter(_serialDevice.OutputStream);
 
-            var pingData = new PingData(15, 20, 20, 20);
+            var pingData = new PingEventData(15, 20, 20, 20);
 
             IkController.CollisionEvent += (s, a) =>
             {

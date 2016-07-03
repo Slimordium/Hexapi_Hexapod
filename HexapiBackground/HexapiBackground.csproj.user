@@ -5,7 +5,7 @@
     <UseEmulator>false</UseEmulator>
     <RemoteDebugEnabled>true</RemoteDebugEnabled>
     <AuthenticationMode>Universal</AuthenticationMode>
-    <RemoteDebugMachine>hexapi</RemoteDebugMachine>
+    <RemoteDebugMachine>10.130.16.183</RemoteDebugMachine>
     <DoNotLaunchApp>false</DoNotLaunchApp>
     <AllowLocalNetworkLoopback>true</AllowLocalNetworkLoopback>
   </PropertyGroup>

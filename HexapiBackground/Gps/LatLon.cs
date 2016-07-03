@@ -25,8 +25,6 @@ namespace HexapiBackground.Gps
 
             if (aParsed.Length < 5)
             {
-                Display.Write($"Could not parse waypoint");
-
                 Lat = 0;
                 Lon = 0;
                 DateTime = DateTime.MinValue;

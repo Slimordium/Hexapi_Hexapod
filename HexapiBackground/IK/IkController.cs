@@ -1,49 +1,17 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
 using HexapiBackground.Enums;
 using HexapiBackground.Hardware;
+
 // ReSharper disable FunctionNeverReturns
 #pragma warning disable 4014
 
 namespace HexapiBackground.IK
 {
-
-    internal class PingData : EventArgs
-    {
-        internal PingData(int perimeterInInches, int left, int center, int right)
-        {
-            LeftWarning = left <= perimeterInInches + 5;
-            CenterWarning = center <= perimeterInInches + 5;
-            RightWarning = right <= perimeterInInches + 5;
-
-            LeftBlocked = left <= perimeterInInches;
-            CenterBlocked = center <= perimeterInInches;
-            RightBlocked = right <= perimeterInInches;
-
-            LeftInches = left;
-            CenterInches = center;
-            RightInches = right;
-        }
-
-        public bool LeftWarning { get; private set; }
-        public bool CenterWarning { get; private set; }
-        public bool RightWarning { get; private set; }
-
-        public bool LeftBlocked { get; private set; }
-        public bool CenterBlocked { get; private set; }
-        public bool RightBlocked { get; private set; }
-
-        public int LeftInches { get; private set; }
-        public int CenterInches { get; private set; }
-        public int RightInches { get; private set; }
-    }
-
-    /// <summary>
-    /// This semi-protects against running the robot into things
-    /// </summary>
     internal class IkController
     {
         private int _perimeterInInches; 
@@ -59,12 +27,13 @@ namespace HexapiBackground.IK
         private bool _behaviorStarted;
 
         private readonly InverseKinematics _inverseKinematics;
-        private SerialDevice _arduino;
-        private SerialDevice _sparkFunRazorMpu;
-        private DataReader _arduinoDataReader;
-        private DataReader _razorDataReader;
+        
 
-        public static event EventHandler<PingData> CollisionEvent;
+        
+
+        public static event EventHandler<PingEventData> CollisionEvent;
+
+        private bool _isCollisionEvent;
 
         internal IkController(InverseKinematics inverseKinematics)
         {
@@ -80,101 +49,133 @@ namespace HexapiBackground.IK
         {
             _inverseKinematics.Start().ConfigureAwait(false);
 
-            _arduino = await SerialDeviceHelper.GetSerialDevice("AH03FK33", 57600);
-
-            //await Task.Delay(1000);
-
-            //_sparkFunRazorMpu = await SerialDeviceHelper.GetSerialDevice("DN01E09J", 57600);
-
-            //await Task.Delay(1000);
-
-            if (_arduino != null)
-                _arduinoDataReader = new DataReader(_arduino.InputStream) {InputStreamOptions = InputStreamOptions.Partial};
-
-            if (_sparkFunRazorMpu != null)
-                _razorDataReader = new DataReader(_sparkFunRazorMpu.InputStream) {InputStreamOptions = InputStreamOptions.Partial};
-
-            var collisionEvent = false;
-
-            if (_arduino == null && _sparkFunRazorMpu == null)
-                return;
+            var arduino = await SerialDeviceHelper.GetSerialDevice("AH03FK33", 57600);
+            var arduinoDataReader = new DataReader(arduino.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
 
             while (true)
             {
-
-                //Arduino Ping ------------------------------------------
-                if (_arduino != null && _behavior != Behavior.None)
+                if (_behavior != Behavior.None)
+                {
                     try
                     {
-                        var r = await _arduinoDataReader.LoadAsync(30);
+                        var incoming = await arduinoDataReader.LoadAsync(30);
 
-                        if (r <= 0)
-                            continue;
+                        if (incoming <= 0)
+                            return;
 
-                        var incoming = _arduinoDataReader.ReadString(r);
+                        var pingData = arduinoDataReader.ReadString(incoming);
 
-                        if (string.IsNullOrEmpty(incoming))
-                            continue;
+                        if (string.IsNullOrEmpty(pingData))
+                            return;
 
-                        if (ParseRanges(incoming.Split('!')) <= 0)
-                            continue;
+                        if (ParseRanges(pingData.Split('!')) <= 0)
+                            return;
 
                         if (_leftInches <= _perimeterInInches || _centerInches <= _perimeterInInches || _rightInches <= _perimeterInInches)
                         {
                             await Display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
 
-                            collisionEvent = true;
+                            _isCollisionEvent = true;
 
                             if (_behavior == Behavior.Avoid)
                             {
                                 var e = CollisionEvent;
-                                e?.Invoke(null, new PingData(_perimeterInInches, _leftInches, _centerInches, _rightInches));
+                                e?.Invoke(null, new PingEventData(_perimeterInInches, _leftInches, _centerInches, _rightInches));
                             }
                         }
                         else
                         {
-                            if (!collisionEvent)
-                                continue;
+                            if (!_isCollisionEvent)
+                                return;
 
-                            collisionEvent = false;
+                            _isCollisionEvent = false;
 
                             if (_behavior != Behavior.Avoid)
-                                continue;
+                                return;
 
                             var e = CollisionEvent;
-                            e?.Invoke(null, new PingData(_perimeterInInches, _leftInches, _centerInches, _rightInches));
+                            e?.Invoke(null, new PingEventData(_perimeterInInches, _leftInches, _centerInches, _rightInches));
                         }
                     }
                     catch
                     {
                         //
                     }
-                // ------------------------------------------
+                }
+            }
+        }
 
+        internal async Task StartReadYawPitchRoll()
+        {
+            var sparkFunRazorMpu = await SerialDeviceHelper.GetSerialDevice("DN01E09J", 57600);
 
-                if (_sparkFunRazorMpu == null)
-                    continue;
-                
+            if (sparkFunRazorMpu == null)
+                return;
+
+            var razorDataWriter = new DataWriter(sparkFunRazorMpu.OutputStream);
+
+            razorDataWriter.WriteString("#o0\r\n");
+            await razorDataWriter.StoreAsync();
+
+            await Task.Delay(1000);
+
+            var razorDataReader = new DataReader(sparkFunRazorMpu.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
+
+            while (true)
+            {
                 try
                 {
-                    var incoming = await _razorDataReader.LoadAsync(28);
+                    // #f - Request one output frame - useful when continuous output is disabled and updates are
+                    // required in larger intervals only.Though #f only requests one reply, replies are still
+                    // bound to the internal 20ms(50Hz) time raster.So worst case delay that #f can add is 19.99ms.
+                    razorDataWriter.WriteString("#f\r\n");
+                    await razorDataWriter.StoreAsync();
+                   
+                    //while (true)
+                    //{
+                    //    var inB = await razorDataReader.LoadAsync(1);
+
+                    //    if (inB > 0)
+                    //    {
+                    //        if (razorDataReader.ReadString(1).Equals("#"))
+                    //            break;
+                    //    }
+                    //}
+
+                    var incoming = await razorDataReader.LoadAsync(30);
 
                     if (incoming <= 0)
+                        return;
+
+                    var yprData = razorDataReader.ReadString(incoming);
+
+                    var i = yprData.IndexOf('Y');
+                    var cri = yprData.LastIndexOf('\r');
+
+                    if (i == -1 || cri == -1)
+                        return;
+
+                    var length = cri - i;
+
+                    if (length < 20)
                         continue;
 
-                    var yprData = _razorDataReader.ReadString(incoming);
+                    var substr = yprData.Substring(i, length);
 
-                    yprData = yprData.Replace("#", "");
-                    yprData = yprData.Replace("Y", "");
-                    yprData = yprData.Replace("P", "");
-                    yprData = yprData.Replace("R", "");
-                    yprData = yprData.Replace("=", "");
+                    yprData = substr.Replace("YPR=", "");
 
                     var yprArray = yprData.Split(',');
 
-                    double.TryParse(yprArray[0], out _yaw);
-                    double.TryParse(yprArray[1], out _pitch);
-                    double.TryParse(yprArray[2], out _roll);
+                    if (yprArray.Length >= 1)
+                        double.TryParse(yprArray[0], out _yaw);
+
+                    if (yprArray.Length >= 2)
+                        double.TryParse(yprArray[1], out _pitch);
+
+                    if (yprArray.Length >= 3)
+                        double.TryParse(yprArray[2], out _roll);
+
+                    Debug.WriteLine($"{_yaw} {_pitch} {_roll}", 1);
                 }
                 catch
                 {
@@ -182,7 +183,7 @@ namespace HexapiBackground.IK
                 }
             }
         }
-
+      
         internal int ParseRanges(string[] ranges)
         {
             var success = ranges.Length;
@@ -268,7 +269,7 @@ namespace HexapiBackground.IK
 
             while (_behaviorStarted)
             {
-                await Task.Delay(60);
+                await Task.Delay(100);
 
                 if (_leftInches > _perimeterInInches && _centerInches > _perimeterInInches && _rightInches > _perimeterInInches)
                 {

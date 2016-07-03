@@ -47,6 +47,8 @@ namespace HexapiBackground
             _hexapi = new Hexapi(_ikController, _xboxController, _gps, _navigator);
 
             _hexapi.Start();
+           
+             _ikController.StartReadYawPitchRoll().ConfigureAwait(false);
 
             await _ikController.Start();
         }

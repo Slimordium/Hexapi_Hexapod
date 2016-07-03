@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.HumanInterfaceDevice;
@@ -48,7 +47,6 @@ namespace HexapiBackground.Hardware
             if (deviceInformationCollection.Count == 0)
             {
                 await Display.Write("No Xbox controller");
-                await Task.Delay(2000);
                 return;
             }
 
@@ -59,7 +57,6 @@ namespace HexapiBackground.Hardware
                 if (_deviceHandle == null)
                 {
                     await Display.Write("No Xbox controller");
-                    await Task.Delay(2000);
                     continue;
                 }
 

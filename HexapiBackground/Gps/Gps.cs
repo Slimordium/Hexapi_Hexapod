@@ -48,9 +48,10 @@ namespace HexapiBackground.Gps
                 }
             }
 
-            await Display.Write("RTK GPS Started");
+            if (_serialPortForGps == null)
+                return;
 
-            await Task.Delay(500);
+            await Display.Write("RTK GPS Started");
 
             while (true)
             {
