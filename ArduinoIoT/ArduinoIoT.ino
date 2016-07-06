@@ -8,7 +8,6 @@
 #define rightTrigPin 12
 #define rightEchoPin 13
 
-char pingData[8];
 
 void setup()
 {
@@ -23,27 +22,49 @@ void setup()
 
 	Serial.begin(57600);
 
-	while (!Serial) {
-		// wait for serial port to connect. Needed for ATmega32u4-based boards and Arduino 101
-	}
+	Serial1.begin(57600);
+
+	Serial2.begin(57600);
+
+	delay(100);
+
+	Serial2.println("#o0"); //Disable streaming
 }
+
+String center = "";
+String left = "";
+String right = "";
+
+String inYpr = "";
 
 void loop()
 {
-	String center = String("!C" + Ping(2) + "?");
-	center.toCharArray(pingData, 8);
-	Serial.write(pingData);
-	delay(30);
+	center = String("!C" + Ping(2) + "?");
+	Serial.println(center);
+	Serial1.println(center);
 
-	String left = String("!L" + Ping(1) +"?");
-	left.toCharArray(pingData, 8);
-	Serial.write(pingData);
-	delay(30);
+	GetYpr();
 
-	String right = String("!R" + Ping(3) + "?");
-	right.toCharArray(pingData, 8);
-	Serial.write(pingData);
-	delay(30);
+	left = String("!L" + Ping(1) + "?");
+	Serial.println(left);
+	Serial1.println(left);
+
+	GetYpr();
+
+	right = String("!R" + Ping(3) + "?");
+	Serial.println(right);
+	Serial1.println(right);
+
+	GetYpr();
+}
+
+void GetYpr()
+{
+	Serial2.println("#f"); //Request frame 
+	inYpr = Serial2.readStringUntil('\n');
+	Serial.println(String("!" + inYpr + "?"));
+	Serial1.println(String("!" + inYpr + "?"));
+	delay(20);
 }
 
 String Ping(int sensor)

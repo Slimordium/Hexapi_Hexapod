@@ -14,23 +14,34 @@ namespace HexapiBackground.Hardware{
     {
         private readonly byte[] _startOfFirstLine = {0xfe, 0x80};
         private readonly byte[] _startOfSecondLine = {0xfe, 0xc0};
-        private SerialDevice _serialDevice;
         private DataWriter _outputStream;
 
-        internal async Task Start()
+        private SerialDevice _lcdSerialDevice;
+
+        private readonly SerialDeviceHelper _serialDeviceHelper;
+
+        internal SparkFunSerial16X2Lcd(SerialDeviceHelper serialDeviceHelper)
         {
-            _serialDevice = await SerialDeviceHelper.GetSerialDevice("DN01E099A", 9600);
-            await Task.Delay(500);
+            _serialDeviceHelper = serialDeviceHelper;
+        }
 
-            if (_serialDevice == null)
-                return;
+        internal async Task<bool> Initialize()
+        {
+            _lcdSerialDevice = await _serialDeviceHelper.GetSerialDevice("DN01E099", 9600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+         
+            if (_lcdSerialDevice == null)
+                return false;
 
-            _outputStream = new DataWriter(_serialDevice.OutputStream);
-            await Task.Delay(500);
+            _outputStream = new DataWriter(_lcdSerialDevice.OutputStream);
+
+            return true;
         }
 
         private async Task Write(string text, byte[] line, bool clear)
         {
+            //_outputStream.WriteBytes(new byte[] { 0x81, 0x09 }); //Set LCD to 57600 baud
+            //await _outputStream.StoreAsync().AsTask();
+
             if (text == null)
                 return;
 
@@ -52,7 +63,7 @@ namespace HexapiBackground.Hardware{
                 }
             }
 
-            if (_outputStream == null || _serialDevice == null)
+            if (_outputStream == null || _lcdSerialDevice == null)
             {
                 Debug.WriteLine(text);
                 return;
@@ -62,7 +73,7 @@ namespace HexapiBackground.Hardware{
             {
                 _outputStream.WriteBytes(line);
                 _outputStream.WriteString(stringBuilder.ToString());
-                await _outputStream.StoreAsync();
+                await _outputStream.StoreAsync().AsTask();
             }
             catch (Exception e)
             {
@@ -71,7 +82,7 @@ namespace HexapiBackground.Hardware{
 
         }
 
-        internal async Task WriteToFirstLine(string text)
+        private async Task WriteToFirstLine(string text)
         {
             if (text == null)
                 return;
@@ -79,7 +90,7 @@ namespace HexapiBackground.Hardware{
             await Write(text, _startOfFirstLine, false);
         }
 
-        internal async Task WriteToSecondLine(string text)
+        private async Task WriteToSecondLine(string text)
         {
             if (text == null)
                 return;
@@ -94,5 +105,15 @@ namespace HexapiBackground.Hardware{
 
             await Write(text, _startOfFirstLine, true);
         }
+
+        internal async Task Write(string text, int line)
+        {
+            if (line == 1)
+                await WriteToFirstLine(text);
+
+            if (line == 2)
+                await WriteToSecondLine(text);
+        }
+        
     }
 }

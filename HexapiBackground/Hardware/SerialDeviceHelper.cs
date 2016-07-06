@@ -7,27 +7,18 @@ using Windows.Devices.SerialCommunication;
 
 namespace HexapiBackground.Hardware
 {
-    internal static class SerialDeviceHelper
+    internal class SerialDeviceHelper
     {
-        /// <summary>
-        /// Default 1 second read/write timeout
-        /// </summary>
-        /// <param name="identifier">Serial Number from device manager</param>
-        /// <param name="baudRate"></param>
-        /// <returns></returns>
-        internal static async Task<SerialDevice> GetSerialDevice(string identifier, int baudRate)
-        {
-            return await GetSerialDevice(identifier, baudRate, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
-        }
 
-        internal static async Task<SerialDevice> GetSerialDevice(string identifier, int baudRate, TimeSpan readTimeout, TimeSpan writeTimeout)
+
+        internal async Task<SerialDevice> GetSerialDevice(string identifier, int baudRate, TimeSpan readTimeout, TimeSpan writeTimeout)
         {
             var deviceInformationCollection = await DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector());
             var selectedPort = deviceInformationCollection.FirstOrDefault(d => d.Id.Contains(identifier) || d.Name.Equals(identifier));
 
             if (selectedPort == null)
             {
-                await Display.Write($"not found {identifier}");
+                //await Display.Write($"not found {identifier}");
                 return null;
             }
 
@@ -35,11 +26,11 @@ namespace HexapiBackground.Hardware
 
             if (serialDevice == null)
             {
-                await Display.Write($"not opened {identifier}");
+                //await Display.Write($"not opened {identifier}");
                 return null;
             }
 
-            await Display.Write($"Found - {identifier}");
+            //await Display.Write($"Found - {identifier}");
 
             serialDevice.ReadTimeout = readTimeout;
             serialDevice.WriteTimeout = writeTimeout;
@@ -48,6 +39,8 @@ namespace HexapiBackground.Hardware
             serialDevice.StopBits = SerialStopBitCount.One;
             serialDevice.DataBits = 8;
             serialDevice.Handshake = SerialHandshake.None;
+
+            Debug.WriteLine($"Found - {identifier}");
 
             return serialDevice;
         }

@@ -11,56 +11,55 @@ namespace HexapiBackground.Gps
 {
     internal class Gps
     {
-        private SerialDevice _serialPortForRtkCorrectionData;
         private SerialDevice _serialPortForGps;
-        private readonly bool _useRtk;
         public LatLon CurrentLatLon { get; private set; }
 
-        public Gps(bool useRtk)
+        private readonly SerialDeviceHelper _serialDeviceHelper;
+        private readonly SparkFunSerial16X2Lcd _display;
+        private readonly NtripClientTcp _ntripClientTcp;
+
+        public Gps(bool useRtk, SerialDeviceHelper serialDeviceHelper, SparkFunSerial16X2Lcd display, NtripClientTcp ntripClientTcp)
         {
-            _useRtk = useRtk;
+            _serialDeviceHelper = serialDeviceHelper;
+            _display = display;
+            _ntripClientTcp = ntripClientTcp;
+
+            _ntripClientTcp.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
+
             CurrentLatLon = new LatLon();
         }
 
+        private DataReader _inputStream;
+
+        public async Task<bool> Initialize()
+        {
+            _serialPortForGps = await _serialDeviceHelper.GetSerialDevice("AH03F3RY", 57600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+
+            if (_serialPortForGps == null)
+                return false;
+
+            _inputStream = new DataReader(_serialPortForGps.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
+
+            return true;
+        }
+        
         #region Serial Communication
 
         public async Task Start()
         {
-            _serialPortForGps = await SerialDeviceHelper.GetSerialDevice("AH03F3RY", 57600);
-
-            if (_serialPortForGps == null)
-                return;
-
-            await Task.Delay(500);
-
-            var inputStream = new DataReader(_serialPortForGps.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
-
-            if (_useRtk)
-            {
-                _serialPortForRtkCorrectionData = await SerialDeviceHelper.GetSerialDevice("A104OHRX", 57600);  //FTDIBUS\VID_0403+PID_6001+A104OHRXA\0000
-
-                await Task.Delay(500);
-
-                if (_serialPortForRtkCorrectionData != null)
-                {
-                    var ntripClient = new NtripClientTcp("172.16.0.226", 8000, "", "", "");
-                    ntripClient.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
-                }
-            }
-
-            if (_serialPortForGps == null)
-                return;
-
-            await Display.Write("RTK GPS Started");
-
             while (true)
             {
-                var bytesIn = await inputStream.LoadAsync(32);
+                if (_inputStream == null)
+                {
+                    continue;
+                }
+
+                var bytesIn = await _inputStream.LoadAsync(32).AsTask();
 
                 if (bytesIn == 0)
                     continue;
 
-                var sentences = inputStream.ReadString(bytesIn);
+                var sentences = _inputStream.ReadString(bytesIn);
 
                 foreach (var sentence in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
                 {
@@ -70,7 +69,7 @@ namespace HexapiBackground.Gps
                         continue;
 
                     if (CurrentLatLon.Quality != latLon.Quality)
-                        await Display.Write(latLon.Quality.ToString(), 2);
+                        await _display.Write(latLon.Quality.ToString(), 2);
 
                     CurrentLatLon = latLon;
                 }
@@ -82,15 +81,15 @@ namespace HexapiBackground.Gps
         {
             try
             {
-                using (var outputStream = new DataWriter(_serialPortForRtkCorrectionData.OutputStream))
+                using (var outputStream = new DataWriter(_serialPortForGps.OutputStream))
                 {
                     outputStream.WriteBytes(e.NtripBytes);
-                    await outputStream.StoreAsync();
+                    await outputStream.StoreAsync().AsTask();
                 }
             }
             catch
             {
-                await Display.Write("NTRIP update failed");
+                await _display.Write("NTRIP update failed");
             }
         }
 

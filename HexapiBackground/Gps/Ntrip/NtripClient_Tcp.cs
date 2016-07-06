@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using HexapiBackground.Hardware;
 
 namespace HexapiBackground.Gps.Ntrip
 {
@@ -16,6 +17,7 @@ namespace HexapiBackground.Gps.Ntrip
         private readonly string _password;
         private readonly Socket _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         private readonly string _username;
+        private SparkFunSerial16X2Lcd _display;
 
         //rtgpsout.unavco.org:2101
         //69.44.86.36 
@@ -27,12 +29,15 @@ namespace HexapiBackground.Gps.Ntrip
         /// <param name="ntripMountPoint"></param>
         /// <param name="userName"></param>
         /// <param name="password"></param>
-        public NtripClientTcp(string ntripIpAddress, int ntripPort, string ntripMountPoint, string userName, string password)
+        /// <param name="display"></param>
+        public NtripClientTcp(string ntripIpAddress, int ntripPort, string ntripMountPoint, string userName, string password, SparkFunSerial16X2Lcd display)
         {
             _username = userName;
             _password = password;
 
             _ntripMountPoint = ntripMountPoint;
+
+            _display = display;
 
             try
             {
@@ -66,7 +71,7 @@ namespace HexapiBackground.Gps.Ntrip
             {
                 if (((Socket)sender).Connected)
                 {
-                    await Display.Write("NTRIP Connected");
+                    await _display.Write("NTRIP Connected");
 
                     await Task.Delay(500);
 
@@ -74,7 +79,7 @@ namespace HexapiBackground.Gps.Ntrip
                 }
                 else
                 {
-                    await Display.Write("NTRIP Connection failed");
+                    await _display.Write("NTRIP Connection failed");
                 }
             };
 
@@ -107,7 +112,7 @@ namespace HexapiBackground.Gps.Ntrip
 
             args.Completed += async (sender, eventArgs) =>
             {
-                await Display.Write($"NTRIP {eventArgs.SocketError}");
+                await _display.Write($"NTRIP {eventArgs.SocketError}");
 
                 await Task.Delay(1500);
 

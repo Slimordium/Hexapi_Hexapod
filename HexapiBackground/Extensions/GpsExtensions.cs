@@ -19,7 +19,7 @@ namespace HexapiBackground.Helpers{
 
         internal static async Task SaveWaypoint(this LatLon latLon)
         {
-            await Display.Write($"{latLon}");
+            //await Display.Write($"{latLon}");
 
             await FileExtensions.SaveStringToFile("waypoints.config", latLon.ToString());
         }
@@ -32,7 +32,7 @@ namespace HexapiBackground.Helpers{
 
             if (string.IsNullOrEmpty(config))
             {
-                await Display.Write("Empty waypoints");
+                //await Display.Write("Empty waypoints");
                 return waypoints;
             }
 
@@ -49,7 +49,7 @@ namespace HexapiBackground.Helpers{
 
                     if (latlon.DateTime == DateTime.MinValue)
                     {
-                        await Display.Write("Invalid way point");
+                        //await Display.Write("Invalid way point");
                         continue;
                     }
 
@@ -58,7 +58,7 @@ namespace HexapiBackground.Helpers{
                 }
                 catch (Exception e)
                 {
-                    await Display.Write(e.Message);
+                    //await Display.Write(e.Message);
                 }
             }
 
@@ -114,7 +114,7 @@ namespace HexapiBackground.Helpers{
             }
             catch (Exception e)
             {
-                Display.Write(e.Message);
+                //Display.Write(e.Message);
                 return new double[] {0, 0};
             }
         }
@@ -277,7 +277,7 @@ namespace HexapiBackground.Helpers{
             {
                 if (_quality != GpsFixQuality.NoFix)
                 {
-                    Display.Write($"GPS {e.Message}");
+                    //Display.Write($"GPS {e.Message}");
                 }
             }
 

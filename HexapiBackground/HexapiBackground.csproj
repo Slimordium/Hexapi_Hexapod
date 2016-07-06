@@ -108,7 +108,6 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Display.cs" />
     <Compile Include="Enums\Ads1115\Config.cs" />
     <Compile Include="Enums\Ads1115\Gain.cs" />
     <Compile Include="Enums\Ads1115\Pointer.cs" />
@@ -130,6 +129,7 @@
     <Compile Include="Extensions\FileExtensions.cs" />
     <Compile Include="Gps\Ntrip\NtripClient_Tcp.cs" />
     <Compile Include="IK\IkController.cs" />
+    <Compile Include="IK\YprData.cs" />
     <Compile Include="Navigation\Navigator.cs" />
     <Compile Include="Enums\GaitType.cs" />
     <Compile Include="Enums\GpsFixQuality.cs" />
@@ -141,7 +141,7 @@
     <Compile Include="Hardware\Mpu\Mpu9150Old.cs" />
     <Compile Include="IK\InverseKinematics.cs" />
     <Compile Include="Hardware\SerialPort.cs" />
-    <Compile Include="IK\PingEventData.cs" />
+    <Compile Include="IK\PingData.cs" />
     <Compile Include="SignalR\HexapiLeapMotionClient.cs" />
     <Compile Include="StartupTask.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

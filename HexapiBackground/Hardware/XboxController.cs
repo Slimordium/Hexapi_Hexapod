@@ -21,23 +21,22 @@ namespace HexapiBackground.Hardware
         internal event DirectionChangedHandler DpadDirectionChanged;
         internal event TriggerChangedHandler LeftTriggerChanged;
         internal event TriggerChangedHandler RightTriggerChanged;
-        private static double _deadzoneTolerance = 6000;
+        private static double _deadzoneTolerance = 9000;
         private HidDevice _deviceHandle;
         private ControllerVector _dpadDirectionVector = new ControllerVector();
         private ControllerVector _leftStickDirectionVector = new ControllerVector();
         private ControllerVector _rightStickDirectionVector = new ControllerVector();
         private int _rightTrigger;
         private int _leftTrigger;
+        private readonly SparkFunSerial16X2Lcd _display;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="deadZoneTolerance">The amount the stick needs to be moved before movement is registered</param>
-        /// <returns></returns>
-        internal async Task Open(int deadZoneTolerance = 9000)
+        internal XboxController(SparkFunSerial16X2Lcd display)
         {
-            _deadzoneTolerance = deadZoneTolerance;
+            _display = display;
+        }
 
+        internal async Task<bool> Initialize()
+        {
             //USB\VID_045E&PID_0719\E02F1950 - receiver
             //USB\VID_045E & PID_02A1 & IG_00\6 & F079888 & 0 & 00  - XboxController
             //0x01, 0x05 = game controllers
@@ -46,8 +45,8 @@ namespace HexapiBackground.Hardware
 
             if (deviceInformationCollection.Count == 0)
             {
-                await Display.Write("No Xbox controller");
-                return;
+                await _display.Write("No Xbox controller");
+                return false;
             }
 
             foreach (var d in deviceInformationCollection)
@@ -56,13 +55,15 @@ namespace HexapiBackground.Hardware
 
                 if (_deviceHandle == null)
                 {
-                    await Display.Write("No Xbox controller");
+                    await _display.Write("No Xbox controller");
                     continue;
                 }
 
                 _deviceHandle.InputReportReceived += InputReportReceived;
-                return;
+                break;
             }
+
+            return true;
         }
 
         private void InputReportReceived(HidDevice sender, HidInputReportReceivedEventArgs args)

@@ -179,8 +179,13 @@ namespace HexapiBackground.IK
 
         #endregion
 
-        internal InverseKinematics()
+        private SparkFunSerial16X2Lcd _display;
+
+        internal InverseKinematics(SerialDeviceHelper serialDeviceHelper, SparkFunSerial16X2Lcd display)
         {
+            _serialDeviceHelper = serialDeviceHelper;
+            _display = display;
+
             _pi1K = Pi*1000D;
 
             for (var i = 0; i < 6; i++)
@@ -206,7 +211,7 @@ namespace HexapiBackground.IK
             }
             catch (Exception e)
             {
-                await Display.Write(e.Message);
+                await _display.Write(e.Message);
                 return;
             }
 
@@ -227,7 +232,7 @@ namespace HexapiBackground.IK
             }
             else
             {
-                await Display.Write("Could not find Gpio Controller", 1);
+                await _display.Write("Could not find Gpio Controller", 1);
             }
         }
 
@@ -400,37 +405,53 @@ namespace HexapiBackground.IK
         private DataReader _inputStream;
         private DataWriter _outputStream;
 
-        internal async Task Start()
+        PingData _pingData = new PingData(15, 20, 20, 20);
+
+        private readonly SerialDeviceHelper _serialDeviceHelper;
+
+        internal async Task<bool> Initialize()
         {
             if (!await LoadLegDefaults())
             {
-                await Display.Write("Could not setup IK. Exiting...");
-                return;
+                await _display.Write("Could not setup IK. Exiting...");
+                return false;
             }
 
-            _serialDevice = await SerialDeviceHelper.GetSerialDevice("BCM2836", 115200);
+            _serialDevice = await _serialDeviceHelper.GetSerialDevice("BCM2836", 115200, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+
+            IkController.CollisionEvent += (s, a) =>
+            {
+                _pingData = a;
+            };
+
+            if (_serialDevice == null)
+                return false;
 
             _inputStream = new DataReader(_serialDevice.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
             _outputStream = new DataWriter(_serialDevice.OutputStream);
 
-            var pingData = new PingEventData(15, 20, 20, 20);
+            return true;
+        }
 
-            IkController.CollisionEvent += (s, a) =>
-            {
-                pingData = a;
-            };
-
+        internal async Task Start()
+        {
             while (true)
             {
+                if (_inputStream == null || _outputStream == null)
+                {
+                    //await Task.Delay(250);
+                    continue;
+                }
+
                 if (_movementStarted)
                 {
-                    if (pingData.LeftBlocked && _travelRotationY > 0)
+                    if (_pingData.LeftBlocked && _travelRotationY > 0)
                         _travelRotationY = 0;
 
-                    if (pingData.CenterBlocked && _travelLengthZ < 0)
+                    if (_pingData.CenterBlocked && _travelLengthZ < 0)
                         _travelLengthZ = 0;
 
-                    if (pingData.RightBlocked && _travelRotationY < 0)
+                    if (_pingData.RightBlocked && _travelRotationY < 0)
                         _travelRotationY = 0;
 
                     _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) || (Math.Abs(_travelLengthZ) > TravelDeadZone) || (Math.Abs(_travelRotationY) > TravelDeadZone);
@@ -444,18 +465,18 @@ namespace HexapiBackground.IK
                 else
                     _outputStream.WriteString(TurnOffServos());
 
-                await _outputStream.StoreAsync();
+                await _outputStream.StoreAsync().AsTask();
 
                 while (true)
                 {
-                    var bytesIn = await _inputStream.LoadAsync(1);
+                    var bytesIn = await _inputStream.LoadAsync(1).AsTask();
                     if (bytesIn > 0)
                     {
                         if (_inputStream.ReadByte() == 0x2e)
                             break;
                     }
                     _outputStream.WriteBytes(_querySsc);
-                    await _outputStream.StoreAsync();
+                    await _outputStream.StoreAsync().AsTask();
                 }
             }
         }
@@ -734,7 +755,7 @@ namespace HexapiBackground.IK
 
             if (string.IsNullOrEmpty(config))
             {
-                await Display.Write("Empty hexapod.config");
+                await _display.Write("Empty hexapod.config");
                 return false;
             }
 
@@ -755,7 +776,7 @@ namespace HexapiBackground.IK
             }
             catch (Exception e)
             {
-                await Display.Write(e.Message, 1);
+                await _display.Write(e.Message, 1);
                 return false;
             }
 

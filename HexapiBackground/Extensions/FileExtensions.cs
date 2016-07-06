@@ -32,7 +32,7 @@ namespace HexapiBackground.Helpers
             }
             catch (Exception)
             {
-                await Display.Write($"Read failed {filename}");
+                //await Display.Write($"Read failed {filename}");
             }
 
             return text;
@@ -47,7 +47,7 @@ namespace HexapiBackground.Helpers
             {
                 var file = await ApplicationData.Current.LocalFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists).AsTask();
 
-                await Display.Write($"Write {file.Path}");
+                //await Display.Write($"Write {file.Path}");
 
                 using (var stream = await file.OpenStreamForWriteAsync())
                 {
@@ -57,7 +57,7 @@ namespace HexapiBackground.Helpers
             }
             catch (Exception)
             {
-                await Display.Write($"Save failed {filename}");
+                //await Display.Write($"Save failed {filename}");
             }
         }
     }

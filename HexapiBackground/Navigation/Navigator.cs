@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HexapiBackground.Gps;
+using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
 using HexapiBackground.IK;
 
@@ -13,15 +14,20 @@ namespace HexapiBackground.Navigation
         private readonly Gps.Gps _gps;
         private bool _gpsNavigationEnabled;
         private List<LatLon> _waypoints;
+        private readonly SparkFunSerial16X2Lcd _display;
 
-        internal Navigator(IkController ikController, Gps.Gps gps)
+        internal Navigator(IkController ikController,  SparkFunSerial16X2Lcd display, Gps.Gps gps)
         {
             _ikController = ikController;
             _gps = gps;
+            _display = display;
         }
             
         internal async Task Start()
         {
+            if (_gps == null)
+                return;
+
             if (_gpsNavigationEnabled)
                 return;
 
@@ -29,7 +35,7 @@ namespace HexapiBackground.Navigation
 
             _gpsNavigationEnabled = true;
 
-            await Display.Write($"{_waypoints.Count} waypoints");
+            await _display.Write($"{_waypoints.Count} waypoints");
 
             foreach (var wp in _waypoints)
             {
@@ -65,8 +71,8 @@ namespace HexapiBackground.Navigation
 
             while (distanceToWaypoint > 10) //Inches
             {
-                await Display.Write($"WP D/H {distanceToWaypoint}, {headingToWaypoint}", 1);
-                await Display.Write($"{turnDirection} {_gps.CurrentLatLon.Heading}", 2);
+                await _display.Write($"WP D/H {distanceToWaypoint}, {headingToWaypoint}", 1);
+                await _display.Write($"{turnDirection} {_gps.CurrentLatLon.Heading}", 2);
 
                 if (headingToWaypoint + 5 > 359 && Math.Abs(headingToWaypoint - _gps.CurrentLatLon.Heading) > 1)
                 {
@@ -170,8 +176,8 @@ namespace HexapiBackground.Navigation
                     return false;
             }
 
-            await Display.Write($"WP D/H {distanceToWaypoint}, {headingToWaypoint}", 1);
-            await Display.Write($"Heading {_gps.CurrentLatLon.Heading}", 2);
+            await _display.Write($"WP D/H {distanceToWaypoint}, {headingToWaypoint}", 1);
+            await _display.Write($"Heading {_gps.CurrentLatLon.Heading}", 2);
 
             return true;
         }
