@@ -6,17 +6,20 @@ using Windows.Storage.Streams;
 using HexapiBackground.Gps.Ntrip;
 using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
+// ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
 
 namespace HexapiBackground.Gps
 {
     internal class Gps
     {
-        private SerialDevice _serialPortForGps;
+        private SerialDevice _gpsSerialDevice;
         public LatLon CurrentLatLon { get; private set; }
 
         private readonly SerialDeviceHelper _serialDeviceHelper;
         private readonly SparkFunSerial16X2Lcd _display;
         private readonly NtripClientTcp _ntripClientTcp;
+
+        private DataReader _inputStream;
 
         public Gps(bool useRtk, SerialDeviceHelper serialDeviceHelper, SparkFunSerial16X2Lcd display, NtripClientTcp ntripClientTcp)
         {
@@ -29,16 +32,14 @@ namespace HexapiBackground.Gps
             CurrentLatLon = new LatLon();
         }
 
-        private DataReader _inputStream;
-
         public async Task<bool> Initialize()
         {
-            _serialPortForGps = await _serialDeviceHelper.GetSerialDevice("AH03F3RY", 57600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+            _gpsSerialDevice = await _serialDeviceHelper.GetSerialDevice("AH03F3RY", 57600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
 
-            if (_serialPortForGps == null)
+            if (_gpsSerialDevice == null)
                 return false;
 
-            _inputStream = new DataReader(_serialPortForGps.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
+            _inputStream = new DataReader(_gpsSerialDevice.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
 
             return true;
         }
@@ -74,14 +75,13 @@ namespace HexapiBackground.Gps
                     CurrentLatLon = latLon;
                 }
             }
-
         }
 
         private async void NtripClient_NtripDataArrivedEvent(object sender, NtripEventArgs e)
         {
             try
             {
-                using (var outputStream = new DataWriter(_serialPortForGps.OutputStream))
+                using (var outputStream = new DataWriter(_gpsSerialDevice.OutputStream))
                 {
                     outputStream.WriteBytes(e.NtripBytes);
                     await outputStream.StoreAsync().AsTask();

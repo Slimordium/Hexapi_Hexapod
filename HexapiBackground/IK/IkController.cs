@@ -18,7 +18,7 @@ namespace HexapiBackground.IK
     {
         private Behavior _behavior = Behavior.Avoid;
         private bool _behaviorStarted;
-        private PingData _pingData = new PingData(15, 20, 20, 20);
+        private PingDataEventArgs _pingDataEventArgs = new PingDataEventArgs(15, 20, 20, 20);
 
         private readonly InverseKinematics _inverseKinematics;
         private readonly SparkFunSerial16X2Lcd _display;
@@ -31,8 +31,8 @@ namespace HexapiBackground.IK
         private int _centerInches;
         private int _rightInches;
 
-        public static event EventHandler<PingData> CollisionEvent;
-        public static event EventHandler<YprData> YprEvent;
+        public static event EventHandler<PingDataEventArgs> CollisionEvent;
+        public static event EventHandler<YprDataEventArgs> YprEvent;
 
         private SerialDevice _arduinoSerialDevice;
 
@@ -102,7 +102,7 @@ namespace HexapiBackground.IK
                         _isCollisionEvent = true;
 
                         var e = CollisionEvent;
-                        e?.Invoke(null, new PingData(_perimeterInInches, _leftInches, _centerInches, _rightInches));
+                        e?.Invoke(null, new PingDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches));
                     }
                     else
                     {
@@ -112,7 +112,7 @@ namespace HexapiBackground.IK
                         _isCollisionEvent = false;
 
                         var e = CollisionEvent;
-                        e?.Invoke(null, new PingData(_perimeterInInches, _leftInches, _centerInches, _rightInches));
+                        e?.Invoke(null, new PingDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches));
                     }
                 }
                 catch
@@ -159,7 +159,7 @@ namespace HexapiBackground.IK
             {
                 await Task.Delay(100);
 
-                if (_pingData.LeftInches > _perimeterInInches && _pingData.CenterInches > _perimeterInInches && _pingData.RightInches > _perimeterInInches)
+                if (_pingDataEventArgs.LeftInches > _perimeterInInches && _pingDataEventArgs.CenterInches > _perimeterInInches && _pingDataEventArgs.RightInches > _perimeterInInches)
                 {
                     await _display.Write("Forward", 2);
 
@@ -168,32 +168,32 @@ namespace HexapiBackground.IK
                     travelRotationY = 0;
                 }
 
-                if (_pingData.LeftInches <= _perimeterInInches && _pingData.RightInches > _perimeterInInches)
+                if (_pingDataEventArgs.LeftInches <= _perimeterInInches && _pingDataEventArgs.RightInches > _perimeterInInches)
                 {
                     await _display.Write("Turn Right", 2);
 
-                    travelLengthZ = _pingData.CenterInches > _perimeterInInches ? -20 : 0;
+                    travelLengthZ = _pingDataEventArgs.CenterInches > _perimeterInInches ? -20 : 0;
 
                     travelLengthX = 0;
                     travelRotationY = -30;
                 }
 
-                if (_pingData.LeftInches > _perimeterInInches && _pingData.RightInches <= _perimeterInInches)
+                if (_pingDataEventArgs.LeftInches > _perimeterInInches && _pingDataEventArgs.RightInches <= _perimeterInInches)
                 {
                     await _display.Write("Turn Left", 2);
 
-                    travelLengthZ = _pingData.CenterInches > _perimeterInInches ? -20 : 0;
+                    travelLengthZ = _pingDataEventArgs.CenterInches > _perimeterInInches ? -20 : 0;
 
                     travelLengthX = 0;
                     travelRotationY = 30;
                 }
 
-                if (_pingData.LeftInches <= _perimeterInInches && _pingData.RightInches <= _perimeterInInches)
+                if (_pingDataEventArgs.LeftInches <= _perimeterInInches && _pingDataEventArgs.RightInches <= _perimeterInInches)
                 {
                     travelLengthX = 0;
                     travelRotationY = 0;
 
-                    if (_pingData.CenterInches < _perimeterInInches)
+                    if (_pingDataEventArgs.CenterInches < _perimeterInInches)
                     {
                         await _display.Write("Reverse", 2);
 
@@ -280,7 +280,7 @@ namespace HexapiBackground.IK
                 _perimeterInInches = 1;
 
             await _display.Write($"Perimeter {_perimeterInInches}", 1);
-            await _display.Write($"{_pingData.LeftInches} {_pingData.CenterInches} {_pingData.RightInches}", 2);
+            await _display.Write($"{_pingDataEventArgs.LeftInches} {_pingDataEventArgs.CenterInches} {_pingDataEventArgs.RightInches}", 2);
         }
 
         internal int Parse(string[] ranges)

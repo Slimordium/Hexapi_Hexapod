@@ -40,7 +40,7 @@ namespace HexapiBackground
         private double _travelLengthX;
         private double _travelLengthZ;
         private double _travelRotationY;
-        private SparkFunSerial16X2Lcd _display;
+        private readonly SparkFunSerial16X2Lcd _display;
 
 #pragma warning disable 4014
 
@@ -53,8 +53,6 @@ namespace HexapiBackground
             _display = display;
 
             SetGaitOptions();
-
-
         }
 
         internal static double LegLiftHeightUpperLimit { get; set; }
@@ -80,7 +78,6 @@ namespace HexapiBackground
                 _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
                 _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
             });
-
         }
 
         #region XBox 360 Controller related...

@@ -17,7 +17,8 @@ namespace HexapiBackground.Gps.Ntrip
         private readonly string _password;
         private readonly Socket _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         private readonly string _username;
-        private SparkFunSerial16X2Lcd _display;
+        private readonly SparkFunSerial16X2Lcd _display;
+        internal event EventHandler<NtripEventArgs> NtripDataArrivedEvent;
 
         //rtgpsout.unavco.org:2101
         //69.44.86.36 
@@ -151,9 +152,9 @@ namespace HexapiBackground.Gps.Ntrip
             ReadData();
         }
 
-        private Task SendToGps(byte[] data)
+        private async Task SendToGps(byte[] data)
         {
-            return Task.Run(() =>
+            await Task.Run(() =>
             {
                 var handler = NtripDataArrivedEvent;
 
@@ -169,8 +170,6 @@ namespace HexapiBackground.Gps.Ntrip
             var byteArray = Encoding.GetBytes(str);
             return Convert.ToBase64String(byteArray, 0, byteArray.Length);
         }
-
-        internal event EventHandler<NtripEventArgs> NtripDataArrivedEvent;
     }
 
     internal class NtripEventArgs : EventArgs

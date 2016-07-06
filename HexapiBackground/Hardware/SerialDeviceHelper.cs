@@ -9,8 +9,6 @@ namespace HexapiBackground.Hardware
 {
     internal class SerialDeviceHelper
     {
-
-
         internal async Task<SerialDevice> GetSerialDevice(string identifier, int baudRate, TimeSpan readTimeout, TimeSpan writeTimeout)
         {
             var deviceInformationCollection = await DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector());
@@ -18,7 +16,6 @@ namespace HexapiBackground.Hardware
 
             if (selectedPort == null)
             {
-                //await Display.Write($"not found {identifier}");
                 return null;
             }
 
@@ -26,11 +23,8 @@ namespace HexapiBackground.Hardware
 
             if (serialDevice == null)
             {
-                //await Display.Write($"not opened {identifier}");
                 return null;
             }
-
-            //await Display.Write($"Found - {identifier}");
 
             serialDevice.ReadTimeout = readTimeout;
             serialDevice.WriteTimeout = writeTimeout;

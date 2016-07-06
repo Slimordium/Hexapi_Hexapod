@@ -1,5 +1,5 @@
 ﻿namespace HexapiBackground.IK{
-    internal sealed class YprData
+    internal sealed class YprDataEventArgs
     {
         internal double Yaw { get; set; }
         internal double Pitch { get; set; }

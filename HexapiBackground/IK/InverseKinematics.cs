@@ -405,7 +405,7 @@ namespace HexapiBackground.IK
         private DataReader _inputStream;
         private DataWriter _outputStream;
 
-        PingData _pingData = new PingData(15, 20, 20, 20);
+        PingDataEventArgs _pingDataEventArgs = new PingDataEventArgs(15, 20, 20, 20);
 
         private readonly SerialDeviceHelper _serialDeviceHelper;
 
@@ -421,7 +421,7 @@ namespace HexapiBackground.IK
 
             IkController.CollisionEvent += (s, a) =>
             {
-                _pingData = a;
+                _pingDataEventArgs = a;
             };
 
             if (_serialDevice == null)
@@ -445,13 +445,13 @@ namespace HexapiBackground.IK
 
                 if (_movementStarted)
                 {
-                    if (_pingData.LeftBlocked && _travelRotationY > 0)
+                    if (_pingDataEventArgs.LeftBlocked && _travelRotationY > 0)
                         _travelRotationY = 0;
 
-                    if (_pingData.CenterBlocked && _travelLengthZ < 0)
+                    if (_pingDataEventArgs.CenterBlocked && _travelLengthZ < 0)
                         _travelLengthZ = 0;
 
-                    if (_pingData.RightBlocked && _travelRotationY < 0)
+                    if (_pingDataEventArgs.RightBlocked && _travelRotationY < 0)
                         _travelRotationY = 0;
 
                     _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) || (Math.Abs(_travelLengthZ) > TravelDeadZone) || (Math.Abs(_travelRotationY) > TravelDeadZone);

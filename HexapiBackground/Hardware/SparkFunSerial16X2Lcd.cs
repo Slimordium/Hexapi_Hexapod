@@ -39,9 +39,6 @@ namespace HexapiBackground.Hardware{
 
         private async Task Write(string text, byte[] line, bool clear)
         {
-            //_outputStream.WriteBytes(new byte[] { 0x81, 0x09 }); //Set LCD to 57600 baud
-            //await _outputStream.StoreAsync().AsTask();
-
             if (text == null)
                 return;
 
@@ -79,7 +76,6 @@ namespace HexapiBackground.Hardware{
             {
                 Debug.WriteLine(e.Message);
             }
-
         }
 
         private async Task WriteToFirstLine(string text)
