@@ -9,6 +9,7 @@ using HexapiBackground.Gps.Ntrip;
 using HexapiBackground.Hardware;
 using HexapiBackground.IK;
 using HexapiBackground.Navigation;
+#pragma warning disable 4014
 
 namespace HexapiBackground
 {

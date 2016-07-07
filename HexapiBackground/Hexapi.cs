@@ -51,8 +51,6 @@ namespace HexapiBackground
             _gps = gps;
             _navigator = navigator;
             _display = display;
-
-            SetGaitOptions();
         }
 
         internal static double LegLiftHeightUpperLimit { get; set; }
@@ -68,6 +66,8 @@ namespace HexapiBackground
 
         public async Task Start()
         {
+            SetGaitOptions();
+
             await Task.Run(() =>
             {
                 _xboxController.LeftDirectionChanged += XboxController_LeftDirectionChanged;

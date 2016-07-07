@@ -23,7 +23,7 @@ namespace HexapiBackground.IK
         private readonly InverseKinematics _inverseKinematics;
         private readonly SparkFunSerial16X2Lcd _display;
 
-        private readonly SerialDevice _serialDevice;
+        private SerialDevice _serialDevice;
         private DataReader _arduinoDataReader;
 
         private int _perimeterInInches;
@@ -33,8 +33,6 @@ namespace HexapiBackground.IK
 
         public static event EventHandler<PingDataEventArgs> CollisionEvent;
         public static event EventHandler<YprDataEventArgs> YprEvent;
-
-        private SerialDevice _arduinoSerialDevice;
 
         private readonly SerialDeviceHelper _serialDeviceHelper;
 
@@ -48,6 +46,7 @@ namespace HexapiBackground.IK
         {
             _inverseKinematics = inverseKinematics;
             _display = display;
+            _serialDeviceHelper = serialDeviceHelper;
 
             _perimeterInInches = 15;
 
@@ -58,7 +57,7 @@ namespace HexapiBackground.IK
 
         internal async Task<bool> Initialize()
         {
-             _arduinoSerialDevice = await _serialDeviceHelper.GetSerialDevice("AH03FK33", 57600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+            _serialDevice = await _serialDeviceHelper.GetSerialDevice("AH03FK33", 57600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
 
             if (_serialDevice == null)
                 return false;
