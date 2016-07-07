@@ -1,58 +1,56 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
 using HexapiBackground.Enums;
 using HexapiBackground.Hardware;
-
 // ReSharper disable FunctionNeverReturns
-#pragma warning disable 4014
 
 namespace HexapiBackground.IK
 {
     internal class IkController
     {
-        private Behavior _behavior = Behavior.Avoid;
+        private Behavior _behavior;
         private bool _behaviorStarted;
         private PingDataEventArgs _pingDataEventArgs = new PingDataEventArgs(15, 20, 20, 20);
 
         private readonly InverseKinematics _inverseKinematics;
         private readonly SparkFunSerial16X2Lcd _display;
+        private readonly IoTClient _ioTClient;
 
         private SerialDevice _serialDevice;
         private DataReader _arduinoDataReader;
 
         private int _perimeterInInches;
-        private int _leftInches;
-        private int _centerInches;
-        private int _rightInches;
 
-        public static event EventHandler<PingDataEventArgs> CollisionEvent;
-        public static event EventHandler<YprDataEventArgs> YprEvent;
+        private double _leftInches;
+        private double _centerInches;
+        private double _rightInches;
+
+        internal static event EventHandler<PingDataEventArgs> CollisionEvent;
+        internal static event EventHandler<YprDataEventArgs> YprEvent;
 
         private readonly SerialDeviceHelper _serialDeviceHelper;
 
         private bool _isCollisionEvent;
 
-        double _yaw = 0;
-        double _pitch = 0;
-        double _roll = 0;
+        private double _yaw;
+        private double _pitch;
+        private double _roll;
 
-        internal IkController(InverseKinematics inverseKinematics, SparkFunSerial16X2Lcd display, SerialDeviceHelper serialDeviceHelper)
+        internal IkController(InverseKinematics inverseKinematics, 
+                              SparkFunSerial16X2Lcd display, 
+                              SerialDeviceHelper serialDeviceHelper,
+                              IoTClient ioTClient)
         {
             _inverseKinematics = inverseKinematics;
             _display = display;
             _serialDeviceHelper = serialDeviceHelper;
+            _ioTClient = ioTClient;
 
             _perimeterInInches = 15;
-
-            _leftInches = _perimeterInInches + 5;
-            _centerInches = _perimeterInInches + 5;
-            _rightInches = _perimeterInInches + 5;
         }
 
         internal async Task<bool> Initialize()
@@ -63,6 +61,8 @@ namespace HexapiBackground.IK
                 return false;
 
             _arduinoDataReader = new DataReader(_serialDevice.InputStream);
+
+            await _ioTClient.SendEvent($"IkController Initialized");
 
             return true;
         }
@@ -94,14 +94,16 @@ namespace HexapiBackground.IK
                     if (Parse(pingData.Split('!')) <= 0)
                         continue;
 
-                    if (_leftInches <= _perimeterInInches || _centerInches <= _perimeterInInches || _rightInches <= _perimeterInInches)
+                    if (_pingDataEventArgs.LeftInches <= _perimeterInInches || _pingDataEventArgs.CenterInches <= _perimeterInInches || _pingDataEventArgs.RightInches <= _perimeterInInches)
                     {
                         await _display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
 
                         _isCollisionEvent = true;
 
+                        _pingDataEventArgs = new PingDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches);
+
                         var e = CollisionEvent;
-                        e?.Invoke(null, new PingDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches));
+                        e?.Invoke(null, _pingDataEventArgs);
                     }
                     else
                     {
@@ -110,8 +112,10 @@ namespace HexapiBackground.IK
 
                         _isCollisionEvent = false;
 
+                        _pingDataEventArgs = new PingDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches);
+
                         var e = CollisionEvent;
-                        e?.Invoke(null, new PingDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches));
+                        e?.Invoke(null, _pingDataEventArgs);
                     }
                 }
                 catch
@@ -295,7 +299,7 @@ namespace HexapiBackground.IK
 
                 try
                 {
-                    int ping;
+                    double ping;
 
                     if (data.Contains("YPR")) //"#YPR=58.29,1.00,-7.29"
                     {
@@ -319,7 +323,7 @@ namespace HexapiBackground.IK
                     {
                         data = data.Replace("L", "");
 
-                        if (int.TryParse(data, out ping))
+                        if (double.TryParse(data, out ping))
                             _leftInches = GetInchesFromPingDuration(ping);
 
                         continue;
@@ -328,7 +332,7 @@ namespace HexapiBackground.IK
                     {
                         data = data.Replace("C", "");
 
-                        if (int.TryParse(data, out ping))
+                        if (double.TryParse(data, out ping))
                             _centerInches = GetInchesFromPingDuration(ping);
 
                         continue;
@@ -337,7 +341,7 @@ namespace HexapiBackground.IK
                     {
                         data = data.Replace("R", "");
 
-                        if (int.TryParse(data, out ping))
+                        if (double.TryParse(data, out ping))
                             _rightInches = GetInchesFromPingDuration(ping);
                     }
                 }
@@ -350,7 +354,7 @@ namespace HexapiBackground.IK
             return success;
         }
 
-        private static int GetInchesFromPingDuration(int duration) //73.746 microseconds per inch
+        private static int GetInchesFromPingDuration(double duration) //73.746 microseconds per inch
         {
             return Convert.ToInt32(Math.Round(duration / 73.746 / 2, 1));
         }

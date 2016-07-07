@@ -9,7 +9,6 @@ using HexapiBackground.Gps.Ntrip;
 using HexapiBackground.Hardware;
 using HexapiBackground.IK;
 using HexapiBackground.Navigation;
-#pragma warning disable 4014
 
 namespace HexapiBackground
 {
@@ -18,6 +17,7 @@ namespace HexapiBackground
         private readonly SerialDeviceHelper _serialDeviceHelper = new SerialDeviceHelper();
 
         private BackgroundTaskDeferral _deferral;
+
         private SparkFunSerial16X2Lcd _display;
         private XboxController _xboxController;
         private Gps.Gps _gps;
@@ -26,6 +26,7 @@ namespace HexapiBackground
         private Hexapi _hexapi;
         private Navigator _navigator;
         private NtripClientTcp _ntripClient;
+        private IoTClient _ioTClient;
 
         private readonly List<Task> _initializeTasks = new List<Task>();
         private readonly List<Task> _startTasks = new List<Task>();
@@ -34,20 +35,29 @@ namespace HexapiBackground
         {
             _deferral = taskInstance.GetDeferral();
 
-            SerialDeviceHelper.ListAvailablePorts();
+            //_ioTClient = new IoTClient();
+            //await _ioTClient.Start();
+
+            //await _ioTClient.SendEvent("Initializing...");
+
+            //foreach (var d in await SerialDeviceHelper.ListAvailablePorts())
+            //{
+            //    await _ioTClient.SendEvent(d);
+            //}
 
             _display = new SparkFunSerial16X2Lcd(_serialDeviceHelper);
             _xboxController = new XboxController(_display);
             _ntripClient = new NtripClientTcp("172.16.0.226", 8000, "", "", "", _display);
             _gps = new Gps.Gps(true, _serialDeviceHelper, _display, _ntripClient);
             _inverseKinematics = new InverseKinematics(_serialDeviceHelper, _display);
-            _ikController = new IkController(_inverseKinematics, _display, _serialDeviceHelper); //Range and yaw/pitch/roll data from Arduino and SparkFun Razor IMU
+            _ikController = new IkController(_inverseKinematics, _display, _serialDeviceHelper, _ioTClient); //Range and yaw/pitch/roll data from Arduino and SparkFun Razor IMU
             _navigator = new Navigator(_ikController, _display, _gps);
-            _hexapi = new Hexapi(_ikController, _xboxController, _navigator, _display, _gps);
+            _hexapi = new Hexapi(_ikController, _xboxController, _navigator, _display, _gps, _ioTClient);
+
 
             _initializeTasks.Add(_display.Initialize());
-            _initializeTasks.Add(_ikController.Initialize());
             _initializeTasks.Add(_xboxController.Initialize());
+            _initializeTasks.Add(_ikController.Initialize());
             _initializeTasks.Add(_gps.Initialize());
             _initializeTasks.Add(_inverseKinematics.Initialize());
 

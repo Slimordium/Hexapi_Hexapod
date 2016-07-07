@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Contacts;
 using Windows.Devices.Enumeration;
 using Windows.Devices.SerialCommunication;
 
@@ -39,14 +41,9 @@ namespace HexapiBackground.Hardware
             return serialDevice;
         }
 
-        internal static async void ListAvailablePorts()
+        internal static async Task<List<string>> ListAvailablePorts()
         {
-            Debug.WriteLine("Available Serial Ports------------------");
-            foreach (var d in await DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()))
-            {
-                Debug.WriteLine($"{d.Id}");
-            }
-            Debug.WriteLine("----------------------------------------");
+            return (from d in await DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector()) select $"{d.Id}").ToList();
         }
     }
 }

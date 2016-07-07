@@ -24,6 +24,14 @@ namespace HexapiBackground.IK
         internal static ManualResetEventSlim SscCommandCompleteEvent = new ManualResetEventSlim(false);
         private readonly GpioPin[] _legGpioPins = new GpioPin[6];
 
+        private DataReader _inputStream;
+        private DataWriter _outputStream;
+
+        private PingDataEventArgs _pingDataEventArgs = new PingDataEventArgs(15, 20, 20, 20);
+
+        private readonly SerialDeviceHelper _serialDeviceHelper;
+        private readonly SparkFunSerial16X2Lcd _display;
+
         private readonly StringBuilder _pinChangedStringBuilder = new StringBuilder();
         private readonly byte[] _querySsc = {0x51, 0x0d}; //0x51 = Q, 0x0d = carriage return
         private bool _calibrated;
@@ -179,10 +187,13 @@ namespace HexapiBackground.IK
 
         #endregion
 
-        private SparkFunSerial16X2Lcd _display;
-
         internal InverseKinematics(SerialDeviceHelper serialDeviceHelper, SparkFunSerial16X2Lcd display)
         {
+            IkController.CollisionEvent += (s, a) =>
+            {
+                _pingDataEventArgs = a;
+            };
+
             _serialDeviceHelper = serialDeviceHelper;
             _display = display;
 
@@ -400,15 +411,6 @@ namespace HexapiBackground.IK
 
         #endregion
 
-        #region Main loop  
-
-        private DataReader _inputStream;
-        private DataWriter _outputStream;
-
-        PingDataEventArgs _pingDataEventArgs = new PingDataEventArgs(15, 20, 20, 20);
-
-        private readonly SerialDeviceHelper _serialDeviceHelper;
-
         internal async Task<bool> Initialize()
         {
             if (!await LoadLegDefaults())
@@ -419,10 +421,7 @@ namespace HexapiBackground.IK
 
             _serialDevice = await _serialDeviceHelper.GetSerialDevice("BCM2836", 115200, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
 
-            IkController.CollisionEvent += (s, a) =>
-            {
-                _pingDataEventArgs = a;
-            };
+
 
             if (_serialDevice == null)
                 return false;
@@ -433,13 +432,14 @@ namespace HexapiBackground.IK
             return true;
         }
 
+        #region Main loop  
+
         internal async Task Start()
         {
             while (true)
             {
                 if (_inputStream == null || _outputStream == null)
                 {
-                    //await Task.Delay(250);
                     continue;
                 }
 
@@ -779,8 +779,6 @@ namespace HexapiBackground.IK
                 await _display.Write(e.Message, 1);
                 return false;
             }
-
-            GaitSelect();
 
             return true;
         }

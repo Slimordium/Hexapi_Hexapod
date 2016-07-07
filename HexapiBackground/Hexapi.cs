@@ -16,6 +16,8 @@ namespace HexapiBackground
         private readonly IkController _ik;
         private readonly Navigator _navigator;
         private readonly XboxController _xboxController;
+        private readonly SparkFunSerial16X2Lcd _display;
+        private readonly IoTClient _ioTClient;
 
         private double _bodyPosX;
         private double _bodyPosY; //45
@@ -40,17 +42,20 @@ namespace HexapiBackground
         private double _travelLengthX;
         private double _travelLengthZ;
         private double _travelRotationY;
-        private readonly SparkFunSerial16X2Lcd _display;
-
-#pragma warning disable 4014
-
-        internal Hexapi(IkController ikController, XboxController xboxController, Navigator navigator, SparkFunSerial16X2Lcd display, Gps.Gps gps = null)
+        
+        internal Hexapi(IkController ikController, 
+                        XboxController xboxController, 
+                        Navigator navigator, 
+                        SparkFunSerial16X2Lcd display, 
+                        Gps.Gps gps,
+                        IoTClient ioTClient)
         {
             _ik = ikController;
             _xboxController = xboxController;
             _gps = gps;
             _navigator = navigator;
             _display = display;
+            _ioTClient = ioTClient;
         }
 
         internal static double LegLiftHeightUpperLimit { get; set; }
@@ -110,7 +115,7 @@ namespace HexapiBackground
 
                     if (_selectedGpsFunction == SelectedGpsFunction.GpsDisabled)
                     {
-                        _navigator.Start();
+                        await _navigator.Start();
                         await _display.Write("GPS Nav Enabled", 1);
                         _selectedGpsFunction = SelectedGpsFunction.GpsEnabled;
                     }
@@ -144,7 +149,7 @@ namespace HexapiBackground
                     _ik.RequestSetMovement(_isMovementStarted);
                     break;
                 case 6: //back button
-                    _gps?.CurrentLatLon.SaveWaypoint();
+                    await _gps.CurrentLatLon.SaveWaypoint();
 
                     break;
                 default:
@@ -340,7 +345,7 @@ namespace HexapiBackground
                             if (_legLiftHeight > LegLiftHeightUpperLimit)
                                 _legLiftHeight = LegLiftHeightUpperLimit;
 
-                            await _display.Write($"Height {_legLiftHeight}", 2);
+                            await _display.Write($"Height = {_legLiftHeight}", 2);
 
                             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
                             break;
@@ -356,7 +361,7 @@ namespace HexapiBackground
                             if (_bodyPosY > 110)
                                 _bodyPosY = 110;
                             _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
-                            _display.Write($"_bodyPosY = {_bodyPosY}", 2);
+                            await _display.Write($"_bodyPosY = {_bodyPosY}", 2);
                             break;
                         case SelectedIkFunction.Posture:
                             _posture++;

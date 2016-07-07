@@ -18,3 +18,8 @@
 /RtkGpsNavTest
 /HexapiBackground/obj/ARM/Release
 /HexapiBackground/obj/x64/Release
+/Microsoft.Azure.Devices.Client
+/Microsoft.Azure.Devices.Client.NetMF
+/Microsoft.Azure.Devices.Client.PCL
+/Microsoft.Azure.Devices.Client.WinRT
+/packages

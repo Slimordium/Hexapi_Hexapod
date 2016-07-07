@@ -5,7 +5,7 @@ namespace HexapiBackground
 {
     internal class PingDataEventArgs : EventArgs
     {
-        internal PingDataEventArgs(int perimeterInInches, int left, int center, int right)
+        internal PingDataEventArgs(int perimeterInInches, double left, double center, double right)
         {
             LeftWarning = left <= perimeterInInches + 5;
             CenterWarning = center <= perimeterInInches + 5;
@@ -28,8 +28,8 @@ namespace HexapiBackground
         public bool CenterBlocked { get; private set; }
         public bool RightBlocked { get; private set; }
 
-        public int LeftInches { get; private set; }
-        public int CenterInches { get; private set; }
-        public int RightInches { get; private set; }
+        public double LeftInches { get; private set; }
+        public double CenterInches { get; private set; }
+        public double RightInches { get; private set; }
     }
 }
