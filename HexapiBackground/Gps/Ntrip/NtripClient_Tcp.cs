@@ -56,35 +56,35 @@ namespace HexapiBackground.Gps.Ntrip
             {
                 return;
             }
-
-            Connect();
         }
 
-        private void Connect()
+        internal async Task Initialize()
         {
-            var args = new SocketAsyncEventArgs
+            await Task.Run(() =>
             {
-                UserToken = _socket,
-                RemoteEndPoint = _endPoint
-            };
-
-            args.Completed += async (sender, eventArgs) =>
-            {
-                if (((Socket)sender).Connected)
+                var args = new SocketAsyncEventArgs
                 {
-                    await _display.Write("NTRIP Connected");
+                    UserToken = _socket,
+                    RemoteEndPoint = _endPoint
+                };
 
-                    await Task.Delay(500);
-
-                    Authenticate();
-                }
-                else
+                args.Completed += async (sender, eventArgs) =>
                 {
-                    await _display.Write("NTRIP Connection failed");
-                }
-            };
+                    if (((Socket) sender).Connected)
+                    {
+                        await _display.Write("NTRIP Connected");
 
-            _socket.ConnectAsync(args);
+                        await Task.Delay(500);
+
+                        Authenticate();
+                    }
+                    else
+                        await _display.Write("NTRIP Connection failed");
+                };
+
+                _socket.ConnectAsync(args);
+
+            });
         }
 
         private byte[] CreateAuthRequest()

@@ -29,7 +29,6 @@ namespace HexapiBackground.IK
 
         private PingDataEventArgs _pingDataEventArgs = new PingDataEventArgs(15, 20, 20, 20);
 
-        private readonly SerialDeviceHelper _serialDeviceHelper;
         private readonly SparkFunSerial16X2Lcd _display;
 
         private readonly StringBuilder _pinChangedStringBuilder = new StringBuilder();
@@ -187,13 +186,12 @@ namespace HexapiBackground.IK
 
         #endregion
 
-        internal InverseKinematics(SerialDeviceHelper serialDeviceHelper, SparkFunSerial16X2Lcd display)
+        internal InverseKinematics(SparkFunSerial16X2Lcd display)
         {
             IkController.CollisionEvent += IkController_CollisionEvent;
 
             IkController.YprEvent += IkController_YprEvent;
 
-            _serialDeviceHelper = serialDeviceHelper;
             _display = display;
 
             _pi1K = Pi*1000D;
@@ -218,12 +216,27 @@ namespace HexapiBackground.IK
             _pingDataEventArgs = e;
         }
 
-        private async void IkController_YprEvent(object sender, YprDataEventArgs e)
+        private void IkController_YprEvent(object sender, YprDataEventArgs e)
         {
-            var newBodyRotZ = e.Roll.Map(0, 360, 0, 5);
+            var newBodyRotZ = 0d;
+                
+            if (e.Roll < 0)
+                newBodyRotZ = Math.Round(e.Roll.Map(0, 30, 0, 5), 1);
+            else
+                newBodyRotZ = -Math.Round(e.Roll.Map(0, 30, 0, 5), 1);
 
-            await _display.Write($"{e.Yaw} {e.Pitch} {e.Roll}", 2);
-            await _display.Write($"RotZ {newBodyRotZ}", 2);
+            if (newBodyRotZ < -5)
+                newBodyRotZ = 5;
+
+            if (newBodyRotZ > 5)
+                newBodyRotZ = 5;
+
+            if (e.Roll < 0)
+                newBodyRotZ = Math.Abs(newBodyRotZ);
+            
+            //await _display.Write($" {e.Roll}", 1);
+
+            //await _display.Write($" {newBodyRotZ}", 2);
         }
 
         private async void ConfigureFootSwitches()
@@ -431,7 +444,7 @@ namespace HexapiBackground.IK
                 return false;
             }
 
-            _serialDevice = await _serialDeviceHelper.GetSerialDevice("BCM2836", 115200, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+            _serialDevice = await StartupTask.SerialDeviceHelper.GetSerialDevice("BCM2836", 115200, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
 
 
 

@@ -20,6 +20,7 @@ namespace HexapiBackground.IK
         private readonly InverseKinematics _inverseKinematics;
         private readonly SparkFunSerial16X2Lcd _display;
         private readonly IoTClient _ioTClient;
+        private readonly Gps.Gps _gps;
 
         private SerialDevice _serialDevice;
         private DataReader _arduinoDataReader;
@@ -33,37 +34,37 @@ namespace HexapiBackground.IK
         internal static event EventHandler<PingDataEventArgs> CollisionEvent;
         internal static event EventHandler<YprDataEventArgs> YprEvent;
 
-        private readonly SerialDeviceHelper _serialDeviceHelper;
-
         private bool _isCollisionEvent;
 
         private double _yaw;
         private double _pitch;
         private double _roll;
 
+        private SelectedIkFunction _selectedIkFunction;
+
         internal IkController(InverseKinematics inverseKinematics, 
                               SparkFunSerial16X2Lcd display, 
-                              SerialDeviceHelper serialDeviceHelper,
-                              IoTClient ioTClient)
+                              IoTClient ioTClient,
+                              Gps.Gps gps)
         {
             _inverseKinematics = inverseKinematics;
             _display = display;
-            _serialDeviceHelper = serialDeviceHelper;
             _ioTClient = ioTClient;
+            _gps = gps;
 
             _perimeterInInches = 15;
+
+            _selectedIkFunction = SelectedIkFunction.BodyHeight;
         }
 
         internal async Task<bool> Initialize()
         {
-            _serialDevice = await _serialDeviceHelper.GetSerialDevice("AH03FK33", 57600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+            _serialDevice = await StartupTask.SerialDeviceHelper.GetSerialDevice("AH03FK33", 57600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
 
             if (_serialDevice == null)
                 return false;
 
             _arduinoDataReader = new DataReader(_serialDevice.InputStream);
-
-            await _ioTClient.SendEvent($"IkController Initialized");
 
             return true;
         }
@@ -103,12 +104,20 @@ namespace HexapiBackground.IK
                         var e = YprEvent;
                         e?.Invoke(null, new YprDataEventArgs {Yaw = _yaw, Pitch = _pitch, Roll = _roll});
 
-                        stopwatch.Reset();
+                        stopwatch.Restart();
                     }
 
-                    if (_pingDataEventArgs.LeftInches <= _perimeterInInches || _pingDataEventArgs.CenterInches <= _perimeterInInches || _pingDataEventArgs.RightInches <= _perimeterInInches)
-                    {
+                    if (_selectedIkFunction == SelectedIkFunction.DisplayPing)
                         await _display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
+
+                    if (_selectedIkFunction == SelectedIkFunction.DisplayYPR)
+                        await _display.Write($"{_yaw} {_pitch} {_roll}", 2);
+
+                    if (_pingDataEventArgs.LeftInches <= _perimeterInInches || 
+                        _pingDataEventArgs.CenterInches <= _perimeterInInches || 
+                        _pingDataEventArgs.RightInches <= _perimeterInInches)
+                    {
+                        //await _display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
 
                         _isCollisionEvent = true;
 
@@ -210,14 +219,23 @@ namespace HexapiBackground.IK
                     travelLengthX = 0;
                     travelRotationY = 0;
 
+                    if (!_behaviorStarted)
+                        return;
+
                     if (_pingDataEventArgs.CenterInches < _perimeterInInches)
                     {
+                        if (!_behaviorStarted)
+                            return;
+
                         await _display.Write("Reverse", 2);
 
                         travelLengthZ = 30; //Reverse
                         RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
 
                         await Task.Delay(2000);
+
+                        if (!_behaviorStarted)
+                            return;
 
                         await _display.Write("Turn Left", 2);
                         travelLengthZ = 0;
@@ -226,6 +244,9 @@ namespace HexapiBackground.IK
 
                         await Task.Delay(2000);
 
+                        if (!_behaviorStarted)
+                            return;
+
                         await _display.Write("Stop", 2);
 
                         travelLengthZ = 0;
@@ -233,11 +254,14 @@ namespace HexapiBackground.IK
                         travelRotationY = 0;
 
                         RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
-                        
+
                         continue;
                     }
                 }
-                
+
+                if (!_behaviorStarted)
+                    return;
+
                 RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
             }
         }
@@ -278,6 +302,11 @@ namespace HexapiBackground.IK
         internal void RequestSetFunction(SelectedIkFunction selectedIkFunction)
         {
             _inverseKinematics.RequestSetFunction(selectedIkFunction);
+
+            _selectedIkFunction = selectedIkFunction;
+
+            if (_selectedIkFunction == SelectedIkFunction.DisplayCoordinate)
+                _gps.DisplayCoordinates();
         }
 
         internal async void RequestLegYHeight(int leg, double yPos)
@@ -297,7 +326,7 @@ namespace HexapiBackground.IK
                 _perimeterInInches = 1;
 
             await _display.Write($"Perimeter {_perimeterInInches}", 1);
-            await _display.Write($"{_pingDataEventArgs.LeftInches} {_pingDataEventArgs.CenterInches} {_pingDataEventArgs.RightInches}", 2);
+            await _display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
         }
 
         internal int Parse(string[] ranges)

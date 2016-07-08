@@ -13,5 +13,10 @@
         SingleLeg,
         SetFootHeightOffset,
         PingSetup,
+        DisplayYPR,
+        DisplayPing,
+        DisplayCoordinate,
+
+
     }
 }

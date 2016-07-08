@@ -18,16 +18,13 @@ namespace HexapiBackground.Hardware{
 
         private SerialDevice _lcdSerialDevice;
 
-        private readonly SerialDeviceHelper _serialDeviceHelper;
-
-        internal SparkFunSerial16X2Lcd(SerialDeviceHelper serialDeviceHelper)
+        internal SparkFunSerial16X2Lcd()
         {
-            _serialDeviceHelper = serialDeviceHelper;
         }
 
         internal async Task<bool> Initialize()
         {
-            _lcdSerialDevice = await _serialDeviceHelper.GetSerialDevice("DN01E099", 9600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+            _lcdSerialDevice = await StartupTask.SerialDeviceHelper.GetSerialDevice("DN01E099", 9600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
          
             if (_lcdSerialDevice == null)
                 return false;
