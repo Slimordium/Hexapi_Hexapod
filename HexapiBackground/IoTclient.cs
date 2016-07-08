@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using Amazon.IoT;
+using Amazon.IoT.Model;
 using Amazon.Runtime;
 
 
@@ -14,9 +15,27 @@ namespace HexapiBackground
 
         internal async Task<bool> Start()
         {
-            //var creds = new BasicAWSCredentials();
+            var credentials = new BasicAWSCredentials("AKIAJ65L4IEEOERWDLIA", "uGmcAXcDYMIN96OfW32XZMx4BgMMbYLbzfs7coLV");
 
-            //var asdf = new AmazonIoTClient();
+            var config = new AmazonIoTConfig();
+            config.ServiceURL = @"https://av37z0myd83yw.iot.us-west-2.amazonaws.com/things/Hexapod/shadow";
+
+
+
+            var client = new AmazonIoTClient(credentials, config);
+            
+                        
+
+
+            var payload = new AttributePayload();
+            payload.Attributes.Add("YPR", "1,2,3");
+            
+
+            var request = new UpdateThingRequest();
+            request.ThingName = "Hexapod";
+            request.AttributePayload = payload;
+
+            var r = await client.UpdateThingAsync(request);
 
 
             try

@@ -5,6 +5,7 @@
         Avoid,
         Bounce,
         Defensive,
-        Offensive
+        Offensive,
+        Balance
     }
 }
