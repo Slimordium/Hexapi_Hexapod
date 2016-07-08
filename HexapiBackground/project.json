@@ -2,8 +2,8 @@
   "dependencies": {
     "AWSSDK.IoT": "3.1.6",
     "Microsoft.AspNet.SignalR.Client": "2.2.0",
-    "Microsoft.NETCore.UniversalWindowsPlatform": "5.1.0",
-    "Windows-Remote-Arduino": "1.4.0"
+    "Microsoft.NETCore.Targets.UniversalWindowsPlatform": "5.0.0",
+    "Microsoft.NETCore.UniversalWindowsPlatform": "5.1.0"
   },
   "frameworks": {
     "uap10.0": {}

@@ -102,6 +102,7 @@
     <None Include="project.json" />
     <Content Include="hexapod.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </Content>
     <Content Include="rtkGps.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -122,12 +123,11 @@
     <Compile Include="Hardware\SparkFunSerial16X2Lcd.cs" />
     <Compile Include="Enums\ControllerDirection.cs" />
     <Compile Include="Gps\Gps.cs" />
-    <Compile Include="Gps\Ntrip\NtripClient_Fona.cs" />
     <Compile Include="Hardware\AdafruitFona.cs" />
     <Compile Include="Hardware\RemoteArduino.cs" />
     <Compile Include="Extensions\GpsExtensions.cs" />
     <Compile Include="Extensions\FileExtensions.cs" />
-    <Compile Include="Gps\Ntrip\NtripClient_Tcp.cs" />
+    <Compile Include="Gps\NtripClient.cs" />
     <Compile Include="IK\IkController.cs" />
     <Compile Include="IK\YprDataEventArgs.cs" />
     <Compile Include="IoTclient.cs" />
@@ -141,7 +141,6 @@
     <Compile Include="Hardware\I2CDevice.cs" />
     <Compile Include="Hardware\Mpu\Mpu9150Old.cs" />
     <Compile Include="IK\InverseKinematics.cs" />
-    <Compile Include="Hardware\SerialPort.cs" />
     <Compile Include="IK\PingDataEventArgs.cs" />
     <Compile Include="SignalR\HexapiLeapMotionClient.cs" />
     <Compile Include="StartupTask.cs" />
