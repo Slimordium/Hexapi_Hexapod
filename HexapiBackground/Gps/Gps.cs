@@ -17,11 +17,11 @@ namespace HexapiBackground.Gps
         internal LatLon CurrentLatLon { get; private set; }
 
         private readonly SparkFunSerial16X2Lcd _display;
-        private readonly NtripClientTcp _ntripClientTcp;
+        private readonly NtripClient _ntripClientTcp;
 
         private DataReader _inputStream;
 
-        internal Gps(SparkFunSerial16X2Lcd display, NtripClientTcp ntripClientTcp = null)
+        internal Gps(SparkFunSerial16X2Lcd display, NtripClient ntripClientTcp = null)
         {
             _display = display;
             _ntripClientTcp = ntripClientTcp;
