@@ -106,8 +106,8 @@ namespace HexapiBackground
                     break;
                 case 1: //B
                     _selectedIkFunction++;
-                    if ((int) _selectedIkFunction > 10)
-                        _selectedIkFunction = (SelectedIkFunction) 10;
+                    if ((int) _selectedIkFunction > 13)
+                        _selectedIkFunction = (SelectedIkFunction) 13;
 
                     await _display.Write($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
                     break;

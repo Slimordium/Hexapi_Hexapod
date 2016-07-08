@@ -14,7 +14,7 @@ namespace HexapiBackground
 {
     public sealed class StartupTask : IBackgroundTask
     {
-        private readonly SerialDeviceHelper _serialDeviceHelper = new SerialDeviceHelper();
+        internal static readonly SerialDeviceHelper SerialDeviceHelper = new SerialDeviceHelper();
 
         private BackgroundTaskDeferral _deferral;
 
@@ -45,19 +45,19 @@ namespace HexapiBackground
             //    await _ioTClient.SendEvent(d);
             //}
 
-            _display = new SparkFunSerial16X2Lcd(_serialDeviceHelper);
+            _display = new SparkFunSerial16X2Lcd();
             _xboxController = new XboxController(_display);
             _ntripClient = new NtripClientTcp("172.16.0.226", 8000, "", "", "", _display);
-            _gps = new Gps.Gps(true, _serialDeviceHelper, _display, _ntripClient);
-            _inverseKinematics = new InverseKinematics(_serialDeviceHelper, _display);
-            _ikController = new IkController(_inverseKinematics, _display, _serialDeviceHelper, _ioTClient); //Range and yaw/pitch/roll data from Arduino and SparkFun Razor IMU
+            _gps = new Gps.Gps( _display, _ntripClient);
+            _inverseKinematics = new InverseKinematics( _display);
+            _ikController = new IkController(_inverseKinematics, _display, _ioTClient, _gps); //Range and yaw/pitch/roll data from Arduino and SparkFun Razor IMU
             _navigator = new Navigator(_ikController, _display, _gps);
             _hexapi = new Hexapi(_ikController, _xboxController, _navigator, _display, _gps, _ioTClient);
-
 
             _initializeTasks.Add(_display.Initialize());
             _initializeTasks.Add(_xboxController.Initialize());
             _initializeTasks.Add(_ikController.Initialize());
+            _initializeTasks.Add(_ntripClient.Initialize());
             _initializeTasks.Add(_gps.Initialize());
             _initializeTasks.Add(_inverseKinematics.Initialize());
 

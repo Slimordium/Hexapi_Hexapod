@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Devices.SerialCommunication;
@@ -10,31 +11,30 @@ using HexapiBackground.Helpers;
 
 namespace HexapiBackground.Gps
 {
-    internal class Gps
+    internal sealed class Gps
     {
         private SerialDevice _gpsSerialDevice;
-        public LatLon CurrentLatLon { get; private set; }
+        internal LatLon CurrentLatLon { get; private set; }
 
-        private readonly SerialDeviceHelper _serialDeviceHelper;
         private readonly SparkFunSerial16X2Lcd _display;
         private readonly NtripClientTcp _ntripClientTcp;
 
         private DataReader _inputStream;
 
-        public Gps(bool useRtk, SerialDeviceHelper serialDeviceHelper, SparkFunSerial16X2Lcd display, NtripClientTcp ntripClientTcp)
+        internal Gps(SparkFunSerial16X2Lcd display, NtripClientTcp ntripClientTcp = null)
         {
-            _serialDeviceHelper = serialDeviceHelper;
             _display = display;
             _ntripClientTcp = ntripClientTcp;
 
-            _ntripClientTcp.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
+            if (_ntripClientTcp != null)
+                _ntripClientTcp.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
 
             CurrentLatLon = new LatLon();
         }
 
-        public async Task<bool> Initialize()
+        internal async Task<bool> Initialize()
         {
-            _gpsSerialDevice = await _serialDeviceHelper.GetSerialDevice("AH03F3RY", 57600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+            _gpsSerialDevice = await StartupTask.SerialDeviceHelper.GetSerialDevice("AH03F3RY", 57600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
 
             if (_gpsSerialDevice == null)
                 return false;
@@ -43,10 +43,16 @@ namespace HexapiBackground.Gps
 
             return true;
         }
-        
+
+        internal async void DisplayCoordinates()
+        {
+            await _display.Write(CurrentLatLon.Lat.ToString(CultureInfo.InvariantCulture), 1);
+            await _display.Write(CurrentLatLon.Lon.ToString(CultureInfo.InvariantCulture), 2);
+        }
+
         #region Serial Communication
 
-        public async Task Start()
+        internal async Task Start()
         {
             while (true)
             {

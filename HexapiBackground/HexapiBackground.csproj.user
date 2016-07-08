@@ -5,7 +5,7 @@
     <UseEmulator>false</UseEmulator>
     <RemoteDebugEnabled>true</RemoteDebugEnabled>
     <AuthenticationMode>Universal</AuthenticationMode>
-    <RemoteDebugMachine>hexapi</RemoteDebugMachine>
+    <RemoteDebugMachine>169.254.173.250</RemoteDebugMachine>
     <DoNotLaunchApp>false</DoNotLaunchApp>
     <AllowLocalNetworkLoopback>true</AllowLocalNetworkLoopback>
   </PropertyGroup>
@@ -15,5 +15,10 @@
     <RemoteDebugEnabled>true</RemoteDebugEnabled>
     <AuthenticationMode>Universal</AuthenticationMode>
     <RemoteDebugMachine>hexapi</RemoteDebugMachine>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <RemoteDebugEnabled>true</RemoteDebugEnabled>
+    <RemoteDebugMachine>hexapi</RemoteDebugMachine>
+    <AuthenticationMode>Universal</AuthenticationMode>
   </PropertyGroup>
 </Project>
