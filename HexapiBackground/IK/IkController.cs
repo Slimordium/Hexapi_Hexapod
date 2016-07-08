@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -69,6 +70,9 @@ namespace HexapiBackground.IK
 
         internal async Task Start()
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             while (true)
             {
                 if (_arduinoDataReader == null)
@@ -93,6 +97,14 @@ namespace HexapiBackground.IK
 
                     if (Parse(pingData.Split('!')) <= 0)
                         continue;
+
+                    if (stopwatch.ElapsedMilliseconds >= 250)
+                    {
+                        var e = YprEvent;
+                        e?.Invoke(null, new YprDataEventArgs {Yaw = _yaw, Pitch = _pitch, Roll = _roll});
+
+                        stopwatch.Reset();
+                    }
 
                     if (_pingDataEventArgs.LeftInches <= _perimeterInInches || _pingDataEventArgs.CenterInches <= _perimeterInInches || _pingDataEventArgs.RightInches <= _perimeterInInches)
                     {
@@ -138,6 +150,8 @@ namespace HexapiBackground.IK
                     break;
                 case Behavior.Bounce:
                     await BehaviorBounce().ConfigureAwait(false);
+                    break;
+                case Behavior.Balance:
                     break;
                 default:
                     _behaviorStarted = false;

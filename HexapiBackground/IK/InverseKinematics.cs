@@ -189,10 +189,9 @@ namespace HexapiBackground.IK
 
         internal InverseKinematics(SerialDeviceHelper serialDeviceHelper, SparkFunSerial16X2Lcd display)
         {
-            IkController.CollisionEvent += (s, a) =>
-            {
-                _pingDataEventArgs = a;
-            };
+            IkController.CollisionEvent += IkController_CollisionEvent;
+
+            IkController.YprEvent += IkController_YprEvent;
 
             _serialDeviceHelper = serialDeviceHelper;
             _display = display;
@@ -212,6 +211,19 @@ namespace HexapiBackground.IK
 
                 LegYHeightCorrector[legIndex] = 0;
             }
+        }
+
+        private void IkController_CollisionEvent(object sender, PingDataEventArgs e)
+        {
+            _pingDataEventArgs = e;
+        }
+
+        private async void IkController_YprEvent(object sender, YprDataEventArgs e)
+        {
+            var newBodyRotZ = e.Roll.Map(0, 360, 0, 5);
+
+            await _display.Write($"{e.Yaw} {e.Pitch} {e.Roll}", 2);
+            await _display.Write($"RotZ {newBodyRotZ}", 2);
         }
 
         private async void ConfigureFootSwitches()
