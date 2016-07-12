@@ -195,7 +195,7 @@ namespace HexapiBackground
                     break;
                 case 7:
                     _ik.RequestBodyPosition(0, 0, 0, 0, _bodyPosY, _bodyRotY);
-                    _bodyPosY = 50;
+                    _bodyPosY = 80;
                     _ik.RequestBodyPosition(0, 0, 0, 0, _bodyPosY, _bodyRotY);
                     break;
                 case 8:
@@ -210,11 +210,11 @@ namespace HexapiBackground
             switch (_gaitType)
             {
                 case GaitType.Tripod8:
-                    _bodyPosY = 120;
+                    _bodyPosY = 80;
                     _legLiftHeight = 35;
-                    _gaitSpeed = 55;
+                    _gaitSpeed = 38;
                     GaitSpeedMax = 500;
-                    GaitSpeedMin = 30;
+                    GaitSpeedMin = 35;
                     LegLiftHeightUpperLimit = 45;
                     LegLiftHeightLowerLimit = 30;
                     TravelLengthZupperLimit = 100;
@@ -225,8 +225,8 @@ namespace HexapiBackground
                     TravelRotationYlimit = 30;
                     break;
                 default:
-                    _gaitSpeed = 45;
-                    _bodyPosY = 120;
+                    _gaitSpeed = 40;
+                    _bodyPosY = 80;
                     _legLiftHeight = 35;
                     GaitSpeedMax = 500;
                     GaitSpeedMin = 25;
@@ -358,8 +358,8 @@ namespace HexapiBackground
                             break;
                         case SelectedIkFunction.BodyHeight:
                             _bodyPosY = _bodyPosY + 5;
-                            if (_bodyPosY > 110)
-                                _bodyPosY = 110;
+                            if (_bodyPosY > 100)
+                                _bodyPosY = 100;
                             _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                             await _display.Write($"_bodyPosY = {_bodyPosY}", 2);
                             break;
@@ -405,7 +405,7 @@ namespace HexapiBackground
                             await SetPosture();
                             break;
                         case SelectedIkFunction.Behavior:
-                            _ik.RequestBehavior(_selectedBehavior, true);
+                            _ik.RequestBehavior(_selectedBehavior, false);
                             await _display.Write($"{Enum.GetName(typeof(Behavior), _selectedBehavior)} stop");
                             break;
                     }

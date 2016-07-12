@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Gpio;
 using Windows.Devices.SerialCommunication;
@@ -21,7 +20,6 @@ namespace HexapiBackground.IK
     internal sealed class InverseKinematics{
         private const double Pi = 3.1415926535897932384626433832795028841971693993751058209749445923078164; //This seemed to help 
         private static readonly StringBuilder StringBuilder = new StringBuilder();
-        internal static ManualResetEventSlim SscCommandCompleteEvent = new ManualResetEventSlim(false);
         private readonly GpioPin[] _legGpioPins = new GpioPin[6];
 
         private DataReader _inputStream;
@@ -65,12 +63,12 @@ namespace HexapiBackground.IK
         private const int Rm = 1;
         private const int Rr = 0;
 
-        private const double CoxaMin = -640;
-        private const double CoxaMax = 640;
-        private const double FemurMin = -660;
-        private const double FemurMax = 660;
-        private const double TibiaMin = -660;
-        private const double TibiaMax = 660; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -630;
+        private const double CoxaMax = 630;
+        private const double FemurMin = -610;
+        private const double FemurMax = 610;
+        private const double TibiaMin = -610;
+        private const double TibiaMax = 610; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double RrCoxaAngle = -450; //450 = 45 degrees off center
         private const double RmCoxaAngle = 0;
@@ -219,11 +217,11 @@ namespace HexapiBackground.IK
         private void IkController_YprEvent(object sender, YprDataEventArgs e)
         {
             var newBodyRotZ = 0d;
-                
+
             if (e.Roll < 0)
-                newBodyRotZ = Math.Round(e.Roll.Map(0, 30, 0, 5), 1);
+                newBodyRotZ = Math.Round(e.Roll.Map(0, 20, 0, 8), 1);
             else
-                newBodyRotZ = -Math.Round(e.Roll.Map(0, 30, 0, 5), 1);
+                newBodyRotZ = -Math.Round(e.Roll.Map(0, 20, 0, 8), 1);
 
             if (newBodyRotZ < -5)
                 newBodyRotZ = 5;
@@ -233,10 +231,25 @@ namespace HexapiBackground.IK
 
             if (e.Roll < 0)
                 newBodyRotZ = Math.Abs(newBodyRotZ);
-            
-            //await _display.Write($" {e.Roll}", 1);
 
-            //await _display.Write($" {newBodyRotZ}", 2);
+            var newBodyRotX = 0d;
+
+            if (e.Pitch < 0)
+                newBodyRotX = Math.Round(e.Pitch.Map(0, 20, 0, 8), 1);
+            else
+                newBodyRotX = -Math.Round(e.Pitch.Map(0, 20, 0, 8), 1);
+
+            if (newBodyRotX < -5)
+                newBodyRotX = 5;
+
+            if (newBodyRotX > 5)
+                newBodyRotX = 5;
+
+            if (e.Roll < 0)
+                newBodyRotX = Math.Abs(newBodyRotX);
+
+            _bodyRotZ = newBodyRotZ;
+            _bodyRotX = newBodyRotX;
         }
 
         private async void ConfigureFootSwitches()
@@ -268,7 +281,7 @@ namespace HexapiBackground.IK
             }
             else
             {
-                await _display.Write("Could not find Gpio Controller", 1);
+                await _display.Write("No Gpio?");
             }
         }
 
@@ -440,13 +453,11 @@ namespace HexapiBackground.IK
         {
             if (!await LoadLegDefaults())
             {
-                await _display.Write("Could not setup IK. Exiting...");
+                await _display.Write("Setup of IK failed!");
                 return false;
             }
 
             _serialDevice = await StartupTask.SerialDeviceHelper.GetSerialDevice("BCM2836", 115200, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
-
-
 
             if (_serialDevice == null)
                 return false;

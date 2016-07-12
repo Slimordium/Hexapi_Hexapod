@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
@@ -14,8 +15,10 @@ namespace HexapiBackground.IK
     internal class IkController
     {
         private Behavior _behavior;
-        private bool _behaviorStarted;
+        private bool _behaviorRunning;
         private PingDataEventArgs _pingDataEventArgs = new PingDataEventArgs(15, 20, 20, 20);
+
+        private readonly ManualResetEventSlim _manualResetEventSlim = new ManualResetEventSlim(false);
 
         private readonly InverseKinematics _inverseKinematics;
         private readonly SparkFunSerial16X2Lcd _display;
@@ -55,6 +58,7 @@ namespace HexapiBackground.IK
             _perimeterInInches = 15;
 
             _selectedIkFunction = SelectedIkFunction.BodyHeight;
+            _behavior = Behavior.Bounce;
         }
 
         internal async Task<bool> Initialize()
@@ -81,7 +85,7 @@ namespace HexapiBackground.IK
                     continue;
                 }
 
-                var bytesRead = await _arduinoDataReader.LoadAsync(60).AsTask();
+                var bytesRead = await _arduinoDataReader.LoadAsync(30).AsTask();
 
                 if (bytesRead == 0)
                     continue;
@@ -99,7 +103,7 @@ namespace HexapiBackground.IK
                     if (Parse(pingData.Split('!')) <= 0)
                         continue;
 
-                    if (stopwatch.ElapsedMilliseconds >= 250)
+                    if (stopwatch.ElapsedMilliseconds >= 60)
                     {
                         var e = YprEvent;
                         e?.Invoke(null, new YprDataEventArgs {Yaw = _yaw, Pitch = _pitch, Roll = _roll});
@@ -113,9 +117,9 @@ namespace HexapiBackground.IK
                     if (_selectedIkFunction == SelectedIkFunction.DisplayYPR)
                         await _display.Write($"{_yaw} {_pitch} {_roll}", 2);
 
-                    if (_pingDataEventArgs.LeftInches <= _perimeterInInches || 
-                        _pingDataEventArgs.CenterInches <= _perimeterInInches || 
-                        _pingDataEventArgs.RightInches <= _perimeterInInches)
+                    if (_leftInches <= _perimeterInInches || 
+                        _centerInches <= _perimeterInInches || 
+                        _rightInches <= _perimeterInInches)
                     {
                         //await _display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
 
@@ -149,7 +153,14 @@ namespace HexapiBackground.IK
         internal async void RequestBehavior(Behavior behavior, bool start)
         {
             _behavior = behavior;
-            _behaviorStarted = start;
+            
+            if (start)
+                _manualResetEventSlim.Reset();
+            else
+                _manualResetEventSlim.Set();
+
+            if (!start)
+                return;
 
             switch (behavior)
             {
@@ -158,19 +169,22 @@ namespace HexapiBackground.IK
                 case Behavior.Defensive:
                     break;
                 case Behavior.Bounce:
-                    await BehaviorBounce().ConfigureAwait(false);
+                    await BehaviorBounce();
                     break;
                 case Behavior.Balance:
-                    break;
-                default:
-                    _behaviorStarted = false;
-
                     break;
             }
         }
 
         private async Task BehaviorBounce()
         {
+            if (_behaviorRunning)
+                return;
+
+            _behaviorRunning = true;
+
+            var randomNumber = new Random(DateTime.Now.Millisecond);
+
             await _display.Write("Bounce started", 2);
 
             RequestSetMovement(true);
@@ -179,13 +193,13 @@ namespace HexapiBackground.IK
             double travelLengthZ = 40;
             double travelLengthX = 0;
             double travelRotationY = 0;
-            double gaitSpeed = 45;
+            double gaitSpeed = 50;
 
-            while (_behaviorStarted)
+            while (!_manualResetEventSlim.IsSet)
             {
                 await Task.Delay(100);
 
-                if (_pingDataEventArgs.LeftInches > _perimeterInInches && _pingDataEventArgs.CenterInches > _perimeterInInches && _pingDataEventArgs.RightInches > _perimeterInInches)
+                if (_leftInches > _perimeterInInches && _centerInches > _perimeterInInches && _rightInches > _perimeterInInches)
                 {
                     await _display.Write("Forward", 2);
 
@@ -194,38 +208,44 @@ namespace HexapiBackground.IK
                     travelRotationY = 0;
                 }
 
-                if (_pingDataEventArgs.LeftInches <= _perimeterInInches && _pingDataEventArgs.RightInches > _perimeterInInches)
+                if (_leftInches <= _perimeterInInches && _rightInches > _perimeterInInches)
                 {
-                    await _display.Write("Turn Right", 2);
+                    await _display.Write("Turn Left", 2);
 
-                    travelLengthZ = _pingDataEventArgs.CenterInches > _perimeterInInches ? -20 : 0;
-
+                    travelLengthZ = _centerInches > _perimeterInInches ? -20 : 0;
                     travelLengthX = 0;
                     travelRotationY = -30;
                 }
 
-                if (_pingDataEventArgs.LeftInches > _perimeterInInches && _pingDataEventArgs.RightInches <= _perimeterInInches)
+                if (_leftInches > _perimeterInInches && _rightInches <= _perimeterInInches)
                 {
-                    await _display.Write("Turn Left", 2);
+                    await _display.Write("Turn Right", 2);
 
-                    travelLengthZ = _pingDataEventArgs.CenterInches > _perimeterInInches ? -20 : 0;
-
+                    travelLengthZ = _centerInches > _perimeterInInches ? -20 : 0;
                     travelLengthX = 0;
                     travelRotationY = 30;
                 }
 
-                if (_pingDataEventArgs.LeftInches <= _perimeterInInches && _pingDataEventArgs.RightInches <= _perimeterInInches)
+                if (_leftInches <= _perimeterInInches && _rightInches <= _perimeterInInches)
                 {
                     travelLengthX = 0;
                     travelRotationY = 0;
 
-                    if (!_behaviorStarted)
-                        return;
-
-                    if (_pingDataEventArgs.CenterInches < _perimeterInInches)
+                    if (_manualResetEventSlim.IsSet)
                     {
-                        if (!_behaviorStarted)
+                        RequestMovement(50, 0, 0, 0);
+                        _behaviorRunning = false;
+                        return;
+                    }
+
+                    if (_centerInches < _perimeterInInches)
+                    {
+                        if (_manualResetEventSlim.IsSet)
+                        {
+                            RequestMovement(50, 0, 0, 0);
+                            _behaviorRunning = false;
                             return;
+                        }
 
                         await _display.Write("Reverse", 2);
 
@@ -234,22 +254,38 @@ namespace HexapiBackground.IK
 
                         await Task.Delay(2000);
 
-                        if (!_behaviorStarted)
+                        if (_manualResetEventSlim.IsSet)
+                        {
+                            RequestMovement(50, 0, 0, 0);
+                            _behaviorRunning = false;
                             return;
+                        }
 
-                        await _display.Write("Turn Left", 2);
                         travelLengthZ = 0;
-                        travelRotationY = 30;
-                        RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
 
+                        if (randomNumber.Next(0, 5) >= 3)
+                        {
+                            await _display.Write("Turn Right", 2);
+                            travelRotationY = 30;
+                        }
+                        else
+                        {
+                            await _display.Write("Turn Left", 2);
+                            travelRotationY = -30;
+                        }
+
+                        RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
                         await Task.Delay(2000);
 
-                        if (!_behaviorStarted)
+                        if (_manualResetEventSlim.IsSet)
+                        {
+                            RequestMovement(50, 0, 0, 0);
+                            _behaviorRunning = false;
                             return;
+                        }
 
                         await _display.Write("Stop", 2);
 
-                        travelLengthZ = 0;
                         travelLengthX = 0;
                         travelRotationY = 0;
 
@@ -259,11 +295,17 @@ namespace HexapiBackground.IK
                     }
                 }
 
-                if (!_behaviorStarted)
+                if (_manualResetEventSlim.IsSet)
+                {
+                    RequestMovement(50, 0, 0, 0);
+                    _behaviorRunning = false;
                     return;
+                }
 
                 RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
             }
+
+            _behaviorRunning = false;
         }
 
         /// <summary>

@@ -49,7 +49,7 @@ namespace HexapiBackground
             _xboxController = new XboxController(_display);
             _ntripClient = new NtripClient("172.16.0.226", 8000, "", "", "", _display);
             _gps = new Gps.Gps( _display, _ntripClient);
-            _inverseKinematics = new InverseKinematics( _display);
+            _inverseKinematics = new InverseKinematics(_display);
             _ikController = new IkController(_inverseKinematics, _display, _ioTClient, _gps); //Range and yaw/pitch/roll data from Arduino and SparkFun Razor IMU
             _navigator = new Navigator(_ikController, _display, _gps);
             _hexapi = new Hexapi(_ikController, _xboxController, _navigator, _display, _gps, _ioTClient);
