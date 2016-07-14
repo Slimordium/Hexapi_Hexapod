@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
@@ -39,12 +41,12 @@ namespace HexapiBackground.Gps
             if (_gpsSerialDevice == null)
                 return false;
 
-            _inputStream = new DataReader(_gpsSerialDevice.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
+            _inputStream = new DataReader(_gpsSerialDevice.InputStream);
 
             return true;
         }
 
-        internal async void DisplayCoordinates()
+        internal async Task DisplayCoordinates()
         {
             await _display.Write(CurrentLatLon.Lat.ToString(CultureInfo.InvariantCulture), 1);
             await _display.Write(CurrentLatLon.Lon.ToString(CultureInfo.InvariantCulture), 2);
@@ -61,25 +63,31 @@ namespace HexapiBackground.Gps
                     continue;
                 }
 
-                var bytesIn = await _inputStream.LoadAsync(32).AsTask();
+                while (true)
+                {
+                    await _inputStream.LoadAsync(1).AsTask();
+                    if (_inputStream.ReadString(1) == "$")
+                        break;
+                }
 
-                if (bytesIn == 0)
+                var byteList = new List<byte> {0x00};
+                while (byteList.Last() != 0x0d)
+                {
+                    await _inputStream.LoadAsync(1).AsTask();
+                    byteList.Add(_inputStream.ReadByte());
+                }
+
+                var sentence = Encoding.ASCII.GetString(byteList.ToArray()).Replace("\0","").Replace("\r","");
+
+                var latLon = sentence.ParseNmea();
+
+                if (latLon == null)
                     continue;
 
-                var sentences = _inputStream.ReadString(bytesIn);
+                if (CurrentLatLon.Quality != latLon.Quality)
+                    await _display.Write(latLon.Quality.ToString(), 2);
 
-                foreach (var sentence in sentences.Split('$').Where(s => s.Contains('\r') && s.Length > 16))
-                {
-                    var latLon = sentence.ParseNmea();
-
-                    if (latLon == null)
-                        continue;
-
-                    if (CurrentLatLon.Quality != latLon.Quality)
-                        await _display.Write(latLon.Quality.ToString(), 2);
-
-                    CurrentLatLon = latLon;
-                }
+                CurrentLatLon = latLon;
             }
         }
 

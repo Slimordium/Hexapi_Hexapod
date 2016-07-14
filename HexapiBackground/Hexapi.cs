@@ -104,7 +104,7 @@ namespace HexapiBackground
 
                     await _display.Write($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
 
-                    _ik.RequestSetFunction(_selectedIkFunction);
+                    await _ik.RequestSetFunction(_selectedIkFunction);
                     break;
                 case 1: //B
                     _selectedIkFunction++;
@@ -113,7 +113,7 @@ namespace HexapiBackground
 
                     await _display.Write($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
 
-                    _ik.RequestSetFunction(_selectedIkFunction);
+                    await _ik.RequestSetFunction(_selectedIkFunction);
                     break;
                 case 2: //X
 
@@ -140,7 +140,7 @@ namespace HexapiBackground
 
                     if (_isMovementStarted)
                     {
-                        _ik.RequestSetFunction(SelectedIkFunction.GaitSpeed);
+                        await _ik.RequestSetFunction(SelectedIkFunction.GaitSpeed);
                         _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                         _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
                         _ik.RequestSetGaitType(GaitType.TripleTripod16);
@@ -214,11 +214,11 @@ namespace HexapiBackground
             switch (_gaitType)
             {
                 case GaitType.Tripod8:
-                    _bodyPosY = 80;
+                    _bodyPosY = 90;
                     _legLiftHeight = 35;
                     _gaitSpeed = 38;
                     GaitSpeedMax = 500;
-                    GaitSpeedMin = 35;
+                    GaitSpeedMin = 40;
                     LegLiftHeightUpperLimit = 45;
                     LegLiftHeightLowerLimit = 30;
                     TravelLengthZupperLimit = 100;
@@ -230,7 +230,7 @@ namespace HexapiBackground
                     break;
                 default:
                     _gaitSpeed = 40;
-                    _bodyPosY = 80;
+                    _bodyPosY = 90;
                     _legLiftHeight = 35;
                     GaitSpeedMax = 500;
                     GaitSpeedMin = 25;
@@ -244,6 +244,7 @@ namespace HexapiBackground
             }
 
             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
+            _ik.RequestSetGaitType(_gaitType);
         }
 
         private void XboxController_RightTriggerChanged(int trigger)

@@ -235,7 +235,7 @@ namespace HexapiBackground.IK
 
                 if (_leftInches <= _perimeterInInches && _rightInches > _perimeterInInches)
                 {
-                    await _display.Write("Turn Left", 2);
+                    await _display.Write("Left", 2);
 
                     travelLengthZ = _centerInches > _perimeterInInches ? -20 : 0;
                     travelLengthX = 0;
@@ -244,7 +244,15 @@ namespace HexapiBackground.IK
 
                 if (_leftInches > _perimeterInInches && _rightInches <= _perimeterInInches)
                 {
-                    await _display.Write("Turn Right", 2);
+                    await _display.Write("Right", 2);
+
+                    travelLengthZ = _centerInches > _perimeterInInches ? -20 : 0;
+                    travelLengthX = 0;
+                    travelRotationY = 30;
+                }
+                else if (_leftInches > _perimeterInInches && _rightInches <= _perimeterInInches)
+                {
+                    await _display.Write("Right", 2);
 
                     travelLengthZ = _centerInches > _perimeterInInches ? -20 : 0;
                     travelLengthX = 0;
@@ -277,7 +285,7 @@ namespace HexapiBackground.IK
                         travelLengthZ = 30; //Reverse
                         RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
 
-                        await Task.Delay(2000);
+                        await Task.Delay(6000);
 
                         if (_manualResetEventSlim.IsSet)
                         {
@@ -292,15 +300,39 @@ namespace HexapiBackground.IK
                         {
                             await _display.Write("Turn Right", 2);
                             travelRotationY = 30;
+
+                            RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
+
+                            var targetYaw = _yaw + 5;
+
+                            if (targetYaw > 359)
+                                targetYaw = targetYaw - 359;
+                            
+                            while (_yaw < targetYaw)
+                            {
+                                
+                            }
                         }
                         else
                         {
                             await _display.Write("Turn Left", 2);
                             travelRotationY = -30;
+
+                            RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
+
+                            var targetYaw = _yaw - 5;
+
+                            if (targetYaw < 0)
+                                targetYaw = targetYaw + 359;
+
+                            while (_yaw > targetYaw)
+                            {
+
+                            }
                         }
 
-                        RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
-                        await Task.Delay(2000);
+                        //RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
+                        //await Task.Delay(2000);
 
                         if (_manualResetEventSlim.IsSet)
                         {
@@ -366,14 +398,14 @@ namespace HexapiBackground.IK
             await _display.Write(enabled ? "Servos on" : "Servos off", 2);
         }
 
-        internal void RequestSetFunction(SelectedIkFunction selectedIkFunction)
+        internal async Task RequestSetFunction(SelectedIkFunction selectedIkFunction)
         {
             _inverseKinematics.RequestSetFunction(selectedIkFunction);
 
             _selectedIkFunction = selectedIkFunction;
 
             if (_selectedIkFunction == SelectedIkFunction.DisplayCoordinate)
-                _gps.DisplayCoordinates();
+                await _gps.DisplayCoordinates();
         }
 
         internal async void RequestLegYHeight(int leg, double yPos)
