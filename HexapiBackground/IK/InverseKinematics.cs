@@ -34,7 +34,7 @@ namespace HexapiBackground.IK
         private double _oscillations;
 
         private readonly Stopwatch _oscillateStopwatch = new Stopwatch();
-        private double _restAccelY = -29;
+        private double _restAccelY = -20;//This needs to be adjusted to match whatever the calibrated Razor IMU output value is at rest
 
         private readonly StringBuilder _pinChangedStringBuilder = new StringBuilder();
         private readonly byte[] _querySsc = {0x51, 0x0d}; //0x51 = Q, 0x0d = carriage return
@@ -192,9 +192,9 @@ namespace HexapiBackground.IK
 
         internal InverseKinematics(SparkFunSerial16X2Lcd display)
         {
-            IkController.CollisionEvent += IkController_CollisionEvent;
+            IkController.RangingEvent += RangingEventHandler;
 
-            IkController.YprEvent += IkController_ImuEvent;
+            IkController.ImuEvent += ImuEventHandler;
 
             _display = display;
 
@@ -217,58 +217,78 @@ namespace HexapiBackground.IK
             _oscillateStopwatch.Start();
         }
 
-        private void IkController_CollisionEvent(object sender, RangeDataEventArgs e)
+        private void RangingEventHandler(object sender, RangeDataEventArgs e)
         {
             _rangeDataEventArgs = e;
         }
 
-        private async void IkController_ImuEvent(object sender, ImuDataEventArgs e)
+        private async void ImuEventHandler(object sender, ImuDataEventArgs e)
         {
+            //Pitch/Roll correction
             var newBodyRotZ = 0d;
-
-            if (e.Roll < 0)
-                newBodyRotZ = Math.Round(e.Roll.Map(0, 25, 0, 8), 1);
-            else
-                newBodyRotZ = -Math.Round(e.Roll.Map(0, 25, 0, 8), 1);
-
-            if (newBodyRotZ < -5)
-                newBodyRotZ = 5;
-
-            if (newBodyRotZ > 5)
-                newBodyRotZ = 5;
-
             var newBodyRotX = 0d;
 
-            if (e.Pitch < 0)
-                newBodyRotX = Math.Round(e.Pitch.Map(0, 25, 0, 8), 1);
+            if (e.Roll < 0)
+                e.Roll = e.Roll + 7; //7 is the error in degrees of the Roll calculation from the Razor
             else
-                newBodyRotX = -Math.Round(e.Pitch.Map(0, 25, 0, 8), 1);
+                e.Roll = e.Roll - 7;
 
-            if (newBodyRotX < -5)
-                newBodyRotX = 5;
+            if (e.Roll < 0)
+                newBodyRotZ = Math.Round(e.Roll.Map(0, 25, 0, 10), 2);
+            else
+                newBodyRotZ = -Math.Round(e.Roll.Map(0, 25, 0, 10), 2);
 
-            if (newBodyRotX > 5)
-                newBodyRotX = 5;
+            if (newBodyRotZ < -10)
+                newBodyRotZ = -10;
+
+            if (newBodyRotZ > 10)
+                newBodyRotZ = 10;
+
+            if (e.Pitch < 0)
+                e.Pitch = e.Pitch + 3; //3 is the error in degrees of the Pitch calculation from the Razor
+            else
+                e.Pitch = e.Pitch - 3;
+
+            if (e.Pitch < 0)
+                newBodyRotX = Math.Round(e.Pitch.Map(0, 25, 0, 10), 2);
+            else
+                newBodyRotX = -Math.Round(e.Pitch.Map(0, 25, 0, 10), 2);
+
+            if (newBodyRotX < -10)
+                newBodyRotX = -10;
+
+            if (newBodyRotX > 10)
+                newBodyRotX = 10;
 
             _bodyRotZ = newBodyRotZ;
             _bodyRotX = newBodyRotX;
+            //*********************
 
-            if ((e.AccelY < _restAccelY - 10 || e.AccelY > _restAccelY + 10) && !_stabilizing)
+            //oscillation correction
+            if (_travelRequest)
+                _oscillations = 0;
+
+            if (e.AccelY < _restAccelY - 13 || e.AccelY > _restAccelY + 13)
                 _oscillations++;
 
-            if (_oscillateStopwatch.ElapsedMilliseconds > 2500 && _oscillations > 9)
+            if (_oscillateStopwatch.ElapsedMilliseconds > 10000)
             {
-                _stabilizing = true;
                 _oscillations = 0;
-                _travelLengthZ = -1;
-
-                await Task.Delay(600).ContinueWith(t =>
-                {
-                    _travelLengthZ = 0;
-                    _stabilizing = false;
-                    _oscillateStopwatch.Restart();
-                }).ConfigureAwait(false);
+                _oscillateStopwatch.Restart();
             }
+
+            if (_oscillateStopwatch.ElapsedMilliseconds <= 2000 || !(_oscillations > 9))
+                return;
+
+            _travelLengthZ = -1;
+
+            await Task.Delay(700).ContinueWith(t =>
+            {
+                _travelLengthZ = 0;
+                _oscillations = 0;
+                _oscillateStopwatch.Restart();
+            }).ConfigureAwait(false);
+            //*********************
         }
 
         private async void ConfigureFootSwitches()

@@ -278,10 +278,10 @@ namespace HexapiBackground
                             _gaitType--;
 
                             if (_gaitType < 0)
-                                _gaitType = 0;
+                                _gaitType = (GaitType)4;
 
+                            await _display.Write(Enum.GetName(typeof(GaitType), _gaitType), 2);
                             SetGaitOptions();
-                            await _display.Write(Enum.GetName(typeof (GaitType), _gaitType), 2);
                             break;
                         case SelectedIkFunction.GaitSpeed:
                             _gaitSpeed = _gaitSpeed - 2;
@@ -313,16 +313,10 @@ namespace HexapiBackground
                             _gaitType++;
 
                             if ((int)_gaitType > 4)
-                                _gaitType = (GaitType)4;
+                                _gaitType = 0;
 
                             await _display.Write(Enum.GetName(typeof (GaitType), _gaitType), 2);
-                            if (_gaitType == GaitType.Tripod8)
-                            {
-                                _legLiftHeight = 35;
-                                _gaitSpeed = 55;
-                                _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
-                            }
-                            _ik.RequestSetGaitType(_gaitType);
+                            SetGaitOptions();
                             break;
                         case SelectedIkFunction.GaitSpeed:
                             _gaitSpeed = _gaitSpeed + 2;

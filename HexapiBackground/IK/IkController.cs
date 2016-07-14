@@ -35,8 +35,8 @@ namespace HexapiBackground.IK
         private double _centerInches;
         private double _rightInches;
 
-        internal static event EventHandler<RangeDataEventArgs> CollisionEvent;
-        internal static event EventHandler<ImuDataEventArgs> YprEvent;
+        internal static event EventHandler<RangeDataEventArgs> RangingEvent;
+        internal static event EventHandler<ImuDataEventArgs> ImuEvent;
 
         private bool _isCollisionEvent;
 
@@ -118,9 +118,9 @@ namespace HexapiBackground.IK
 
                     Parse(pingData);
 
-                    if (stopwatch.ElapsedMilliseconds >= 60)
+                    if (stopwatch.ElapsedMilliseconds >= 40)
                     {
-                        var e = YprEvent;
+                        var e = ImuEvent;
                         e?.Invoke(null, new ImuDataEventArgs {Yaw = _yaw, Pitch = _pitch, Roll = _roll, AccelX = _accelX, AccelY = _accelY, AccelZ = _accelZ});
 
                         stopwatch.Restart();
@@ -152,7 +152,7 @@ namespace HexapiBackground.IK
 
                         _rangeDataEventArgs = new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches);
 
-                        var e = CollisionEvent;
+                        var e = RangingEvent;
                         e?.Invoke(null, _rangeDataEventArgs);
                     }
                     else
@@ -164,7 +164,7 @@ namespace HexapiBackground.IK
 
                         _rangeDataEventArgs = new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches);
 
-                        var e = CollisionEvent;
+                        var e = RangingEvent;
                         e?.Invoke(null, _rangeDataEventArgs);
                     }
                 }
