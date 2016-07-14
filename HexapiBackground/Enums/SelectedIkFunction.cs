@@ -16,6 +16,7 @@
         DisplayYPR,
         DisplayPing,
         DisplayCoordinate,
+        DisplayAccel
 
 
     }

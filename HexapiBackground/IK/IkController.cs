@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -16,7 +17,7 @@ namespace HexapiBackground.IK
     {
         private Behavior _behavior;
         private bool _behaviorRunning;
-        private PingDataEventArgs _pingDataEventArgs = new PingDataEventArgs(15, 20, 20, 20);
+        private RangeDataEventArgs _rangeDataEventArgs = new RangeDataEventArgs(15, 20, 20, 20);
 
         private readonly ManualResetEventSlim _manualResetEventSlim = new ManualResetEventSlim(false);
 
@@ -34,14 +35,18 @@ namespace HexapiBackground.IK
         private double _centerInches;
         private double _rightInches;
 
-        internal static event EventHandler<PingDataEventArgs> CollisionEvent;
-        internal static event EventHandler<YprDataEventArgs> YprEvent;
+        internal static event EventHandler<RangeDataEventArgs> CollisionEvent;
+        internal static event EventHandler<ImuDataEventArgs> YprEvent;
 
         private bool _isCollisionEvent;
 
         private double _yaw;
         private double _pitch;
         private double _roll;
+
+        private double _accelX;
+        private double _accelY;
+        private double _accelZ;
 
         private SelectedIkFunction _selectedIkFunction;
 
@@ -76,7 +81,9 @@ namespace HexapiBackground.IK
         internal async Task Start()
         {
             var stopwatch = new Stopwatch();
+            var displayStopwatch = new Stopwatch();
             stopwatch.Start();
+            displayStopwatch.Start();
 
             while (true)
             {
@@ -85,50 +92,68 @@ namespace HexapiBackground.IK
                     continue;
                 }
 
-                var bytesRead = await _arduinoDataReader.LoadAsync(30).AsTask();
+                byte startChar = 0x00;
+                while (startChar != 0x0a)
+                {
+                    await _arduinoDataReader.LoadAsync(1).AsTask();
+                    startChar = _arduinoDataReader.ReadByte();
+                }
 
-                if (bytesRead == 0)
-                    continue;
+                var bytesRead = new List<byte> {0x00};
+
+                while (bytesRead.Last() != 0x0d)
+                {
+                    await _arduinoDataReader.LoadAsync(1).AsTask();
+                    bytesRead.Add(_arduinoDataReader.ReadByte());
+                }
 
                 try
                 {
-                    var inbytes = new byte[bytesRead];
-                    _arduinoDataReader.ReadBytes(inbytes);
+                    var pingData = Encoding.ASCII.GetString(bytesRead.ToArray());
 
-                    var pingData = Encoding.ASCII.GetString(inbytes);
+                    pingData = pingData.Replace("\0", "").Replace("\r", "");
 
-                    if (string.IsNullOrEmpty(pingData))
+                    if (string.IsNullOrEmpty(pingData)) //#L3198
                         continue;
 
-                    if (Parse(pingData.Split('!')) <= 0)
-                        continue;
+                    Parse(pingData);
 
                     if (stopwatch.ElapsedMilliseconds >= 60)
                     {
                         var e = YprEvent;
-                        e?.Invoke(null, new YprDataEventArgs {Yaw = _yaw, Pitch = _pitch, Roll = _roll});
+                        e?.Invoke(null, new ImuDataEventArgs {Yaw = _yaw, Pitch = _pitch, Roll = _roll, AccelX = _accelX, AccelY = _accelY, AccelZ = _accelZ});
 
                         stopwatch.Restart();
                     }
 
-                    if (_selectedIkFunction == SelectedIkFunction.DisplayPing)
+                    if (_selectedIkFunction == SelectedIkFunction.DisplayPing && displayStopwatch.ElapsedMilliseconds >= 50)
+                    {
                         await _display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
+                        displayStopwatch.Restart();
+                    }
 
-                    if (_selectedIkFunction == SelectedIkFunction.DisplayYPR)
+                    if (_selectedIkFunction == SelectedIkFunction.DisplayYPR && displayStopwatch.ElapsedMilliseconds >= 50)
+                    {
                         await _display.Write($"{_yaw} {_pitch} {_roll}", 2);
+                        displayStopwatch.Restart();
+                    }
+
+                    if (_selectedIkFunction == SelectedIkFunction.DisplayAccel && displayStopwatch.ElapsedMilliseconds >= 50)
+                    {
+                        await _display.Write($"{_accelY}", 2);
+                        displayStopwatch.Restart();
+                    }
 
                     if (_leftInches <= _perimeterInInches || 
-                        _centerInches <= _perimeterInInches || 
-                        _rightInches <= _perimeterInInches)
+                    _centerInches <= _perimeterInInches || 
+                    _rightInches <= _perimeterInInches)
                     {
-                        //await _display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
-
                         _isCollisionEvent = true;
 
-                        _pingDataEventArgs = new PingDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches);
+                        _rangeDataEventArgs = new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches);
 
                         var e = CollisionEvent;
-                        e?.Invoke(null, _pingDataEventArgs);
+                        e?.Invoke(null, _rangeDataEventArgs);
                     }
                     else
                     {
@@ -137,10 +162,10 @@ namespace HexapiBackground.IK
 
                         _isCollisionEvent = false;
 
-                        _pingDataEventArgs = new PingDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches);
+                        _rangeDataEventArgs = new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches);
 
                         var e = CollisionEvent;
-                        e?.Invoke(null, _pingDataEventArgs);
+                        e?.Invoke(null, _rangeDataEventArgs);
                     }
                 }
                 catch
@@ -371,77 +396,99 @@ namespace HexapiBackground.IK
             await _display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
         }
 
-        internal int Parse(string[] ranges)
+        internal void Parse(string data)
         {
-            var success = ranges.Length;
-
-            foreach (var d in ranges)
+            try
             {
-                if (string.IsNullOrEmpty(d) || !d.Contains('?'))
-                    continue;
+                double ping;
 
-                var data = d.Replace('?', ' ').Replace('\r', ' ').Replace('\n', ' ').Trim();
-
-                try
+                if (data.Contains("#YPR"))
                 {
-                    double ping;
+                    data = data.Replace("#YPR=", "");
 
-                    if (data.Contains("YPR")) //"#YPR=58.29,1.00,-7.29"
+                    var yprArray = data.Split(',');
+
+                    if (yprArray.Length >= 1)
                     {
-                        data = data.Replace("#YPR=", "");
-
-                        var yprArray = data.Split(',');
-
-                        if (yprArray.Length >= 1)
-                            double.TryParse(yprArray[0], out _yaw);
-
-                        if (yprArray.Length >= 2)
-                            double.TryParse(yprArray[1], out _pitch);
-
-                        if (yprArray.Length >= 3)
-                            double.TryParse(yprArray[2], out _roll);
-
-                        continue;
+                        double.TryParse(yprArray[0], out _yaw);
+                        _yaw = Math.Round(_yaw, 1);
                     }
 
-                    if (data.Contains('L'))
+                    if (yprArray.Length >= 2)
                     {
-                        data = data.Replace("L", "");
-
-                        if (double.TryParse(data, out ping))
-                            _leftInches = GetInchesFromPingDuration(ping);
-
-                        continue;
+                        double.TryParse(yprArray[1], out _pitch);
+                        _pitch = Math.Round(_pitch, 1);
                     }
-                    if (data.Contains('C'))
+
+                    if (yprArray.Length >= 3)
                     {
-                        data = data.Replace("C", "");
-
-                        if (double.TryParse(data, out ping))
-                            _centerInches = GetInchesFromPingDuration(ping);
-
-                        continue;
+                        double.TryParse(yprArray[2], out _roll);
+                        _roll = Math.Round(_roll, 1);
                     }
-                    if (data.Contains('R'))
-                    {
-                        data = data.Replace("R", "");
 
-                        if (double.TryParse(data, out ping))
-                            _rightInches = GetInchesFromPingDuration(ping);
-                    }
+                    return;
                 }
-                catch
+                    
+                if (data.Contains("#A-C="))
                 {
-                    success--;
+                    var accelData = data.Replace("#A-C=", "").Split(',');
+
+                    if (accelData.Length >= 1)
+                    {
+                        double.TryParse(accelData[0], out _accelX);
+                        _accelX = Math.Round(_accelX, 1);
+                    }
+
+                    if (accelData.Length >= 2)
+                    {
+                        double.TryParse(accelData[1], out _accelY);
+                        _accelY = Math.Round(_accelY, 1);
+                    }
+
+                    if (accelData.Length >= 3)
+                    {
+                        double.TryParse(accelData[2], out _accelZ);
+                        _accelZ = Math.Round(_accelZ, 1);
+                    }
+
+                    return;
+                }
+
+                if (data.Contains("#L"))
+                {
+                    data = data.Replace("#L", "");
+
+                    if (double.TryParse(data, out ping))
+                        _leftInches = GetInchesFromPingDuration(ping);
+
+                    return;
+                }
+                if (data.Contains("#C"))
+                {
+                    data = data.Replace("#C", "");
+
+                    if (double.TryParse(data, out ping))
+                        _centerInches = GetInchesFromPingDuration(ping);
+
+                    return;
+                }
+                if (data.Contains("#R"))
+                {
+                    data = data.Replace("#R", "");
+
+                    if (double.TryParse(data, out ping))
+                        _rightInches = GetInchesFromPingDuration(ping);
                 }
             }
-
-            return success;
+            catch
+            {
+                //
+            }
         }
 
-        private static int GetInchesFromPingDuration(double duration) //73.746 microseconds per inch
+        private static double GetInchesFromPingDuration(double duration) //73.746 microseconds per inch
         {
-            return Convert.ToInt32(Math.Round(duration / 73.746 / 2, 1));
+            return Math.Round(duration / 73.746 / 2, 1);
         }
 
     }

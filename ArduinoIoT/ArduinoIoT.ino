@@ -36,35 +36,52 @@ String left = "";
 String right = "";
 
 String inYpr = "";
+String inSensorData = "";
 
 void loop()
 {
-	center = String("!C" + Ping(2) + "?");
+	center = String("#C" + Ping(2));
 	Serial.println(center);
 	Serial1.println(center);
 
 	GetYpr();
+	GetSensorData();
 
-	left = String("!L" + Ping(1) + "?");
+	left = String("#L" + Ping(1));
 	Serial.println(left);
 	Serial1.println(left);
 
 	GetYpr();
+	GetSensorData();
 
-	right = String("!R" + Ping(3) + "?");
+	right = String("#R" + Ping(3));
 	Serial.println(right);
 	Serial1.println(right);
 
 	GetYpr();
+	GetSensorData();
 }
 
 void GetYpr()
 {
+	Serial2.println("#ot"); //Request YPR
 	Serial2.println("#f"); //Request frame 
 	inYpr = Serial2.readStringUntil('\n');
-	Serial.println(String("!" + inYpr + "?"));
-	Serial1.println(String("!" + inYpr + "?"));
-	delay(20);
+	Serial.println(String(inYpr));
+	Serial1.println(String(inYpr));
+	delay(2);
+}
+
+void GetSensorData()
+{
+	Serial2.println("#osct"); //Sensor data
+	Serial2.println("#f"); //Request frame 
+	inSensorData = Serial2.readStringUntil('\n');
+	inSensorData += Serial2.readStringUntil('\n');
+	inSensorData += Serial2.readStringUntil('\n');
+	Serial.println(String(inSensorData));
+	Serial1.println(String(inSensorData));
+	delay(23);
 }
 
 String Ping(int sensor)

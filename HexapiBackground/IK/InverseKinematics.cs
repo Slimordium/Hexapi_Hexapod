@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Devices.Gpio;
@@ -25,9 +26,15 @@ namespace HexapiBackground.IK
         private DataReader _inputStream;
         private DataWriter _outputStream;
 
-        private PingDataEventArgs _pingDataEventArgs = new PingDataEventArgs(15, 20, 20, 20);
+        private RangeDataEventArgs _rangeDataEventArgs = new RangeDataEventArgs(15, 20, 20, 20);
 
         private readonly SparkFunSerial16X2Lcd _display;
+
+        private bool _stabilizing;
+        private double _oscillations;
+
+        private readonly Stopwatch _oscillateStopwatch = new Stopwatch();
+        private double _restAccelY = -29;
 
         private readonly StringBuilder _pinChangedStringBuilder = new StringBuilder();
         private readonly byte[] _querySsc = {0x51, 0x0d}; //0x51 = Q, 0x0d = carriage return
@@ -39,7 +46,6 @@ namespace HexapiBackground.IK
         private SelectedIkFunction _selectedFunction = SelectedIkFunction.Translate3D;
         private int _selectedFunctionLeg = -1;
         private static SerialDevice _serialDevice;
-
 
         #region Inverse Kinematics setup
 
@@ -90,7 +96,7 @@ namespace HexapiBackground.IK
         private const double LmOffsetZ = 0;
         private const double LmOffsetX = 135;
 
-        private const double TravelDeadZone = 1;
+        private const double TravelDeadZone = 2;
 
         private const double TenThousand = 10000;
         private const double OneMillion = 1000000;
@@ -188,7 +194,7 @@ namespace HexapiBackground.IK
         {
             IkController.CollisionEvent += IkController_CollisionEvent;
 
-            IkController.YprEvent += IkController_YprEvent;
+            IkController.YprEvent += IkController_ImuEvent;
 
             _display = display;
 
@@ -207,21 +213,23 @@ namespace HexapiBackground.IK
 
                 LegYHeightCorrector[legIndex] = 0;
             }
+
+            _oscillateStopwatch.Start();
         }
 
-        private void IkController_CollisionEvent(object sender, PingDataEventArgs e)
+        private void IkController_CollisionEvent(object sender, RangeDataEventArgs e)
         {
-            _pingDataEventArgs = e;
+            _rangeDataEventArgs = e;
         }
 
-        private void IkController_YprEvent(object sender, YprDataEventArgs e)
+        private async void IkController_ImuEvent(object sender, ImuDataEventArgs e)
         {
             var newBodyRotZ = 0d;
 
             if (e.Roll < 0)
-                newBodyRotZ = Math.Round(e.Roll.Map(0, 20, 0, 8), 1);
+                newBodyRotZ = Math.Round(e.Roll.Map(0, 25, 0, 8), 1);
             else
-                newBodyRotZ = -Math.Round(e.Roll.Map(0, 20, 0, 8), 1);
+                newBodyRotZ = -Math.Round(e.Roll.Map(0, 25, 0, 8), 1);
 
             if (newBodyRotZ < -5)
                 newBodyRotZ = 5;
@@ -229,15 +237,12 @@ namespace HexapiBackground.IK
             if (newBodyRotZ > 5)
                 newBodyRotZ = 5;
 
-            if (e.Roll < 0)
-                newBodyRotZ = Math.Abs(newBodyRotZ);
-
             var newBodyRotX = 0d;
 
             if (e.Pitch < 0)
-                newBodyRotX = Math.Round(e.Pitch.Map(0, 20, 0, 8), 1);
+                newBodyRotX = Math.Round(e.Pitch.Map(0, 25, 0, 8), 1);
             else
-                newBodyRotX = -Math.Round(e.Pitch.Map(0, 20, 0, 8), 1);
+                newBodyRotX = -Math.Round(e.Pitch.Map(0, 25, 0, 8), 1);
 
             if (newBodyRotX < -5)
                 newBodyRotX = 5;
@@ -245,11 +250,25 @@ namespace HexapiBackground.IK
             if (newBodyRotX > 5)
                 newBodyRotX = 5;
 
-            if (e.Roll < 0)
-                newBodyRotX = Math.Abs(newBodyRotX);
-
             _bodyRotZ = newBodyRotZ;
             _bodyRotX = newBodyRotX;
+
+            if ((e.AccelY < _restAccelY - 10 || e.AccelY > _restAccelY + 10) && !_stabilizing)
+                _oscillations++;
+
+            if (_oscillateStopwatch.ElapsedMilliseconds > 2500 && _oscillations > 9)
+            {
+                _stabilizing = true;
+                _oscillations = 0;
+                _travelLengthZ = -1;
+
+                await Task.Delay(600).ContinueWith(t =>
+                {
+                    _travelLengthZ = 0;
+                    _stabilizing = false;
+                    _oscillateStopwatch.Restart();
+                }).ConfigureAwait(false);
+            }
         }
 
         private async void ConfigureFootSwitches()
@@ -370,6 +389,8 @@ namespace HexapiBackground.IK
             _travelLengthX = travelLengthX;
             _travelLengthZ = travelLengthZ;
             _travelRotationY = travelRotationY;
+
+            _oscillateStopwatch.Restart();
         }
 
         internal void RequestBodyPosition(double bodyRotX1, double bodyRotZ1, double bodyPosX, double bodyPosZ, double bodyPosY, double bodyRotY1)
@@ -481,13 +502,13 @@ namespace HexapiBackground.IK
 
                 if (_movementStarted)
                 {
-                    if (_pingDataEventArgs.LeftBlocked && _travelRotationY > 0)
+                    if (_rangeDataEventArgs.LeftBlocked && _travelRotationY > 0)
                         _travelRotationY = 0;
 
-                    if (_pingDataEventArgs.CenterBlocked && _travelLengthZ < 0)
+                    if (_rangeDataEventArgs.CenterBlocked && _travelLengthZ < 0)
                         _travelLengthZ = 0;
 
-                    if (_pingDataEventArgs.RightBlocked && _travelRotationY < 0)
+                    if (_rangeDataEventArgs.RightBlocked && _travelRotationY < 0)
                         _travelRotationY = 0;
 
                     _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) || (Math.Abs(_travelLengthZ) > TravelDeadZone) || (Math.Abs(_travelRotationY) > TravelDeadZone);

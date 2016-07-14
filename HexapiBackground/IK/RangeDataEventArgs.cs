@@ -3,9 +3,9 @@
 // ReSharper disable once CheckNamespace
 namespace HexapiBackground
 {
-    internal class PingDataEventArgs : EventArgs
+    internal class RangeDataEventArgs : EventArgs
     {
-        internal PingDataEventArgs(int perimeterInInches, double left, double center, double right)
+        internal RangeDataEventArgs(int perimeterInInches, double left, double center, double right)
         {
             LeftWarning = left <= perimeterInInches + 5;
             CenterWarning = center <= perimeterInInches + 5;
