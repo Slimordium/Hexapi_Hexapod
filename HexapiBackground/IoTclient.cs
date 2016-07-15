@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Amazon.IotData;
+using Amazon.IotData.Model;
 using Amazon.IoT;
 using Amazon.IoT.Model;
 using Amazon.Runtime;
@@ -11,89 +14,46 @@ namespace HexapiBackground
 {
     internal sealed class IoTClient
     {
-        //private DeviceClient _deviceClient;
+
+        private AmazonIotDataClient _client;
+
+        internal async Task Initialize()
+        {
+            await Task.Run(() =>
+            {
+                _client = new AmazonIotDataClient(@"https://av37z0myd83yw.iot.us-west-2.amazonaws.com/things/Hexapod/shadow");
+            });
+        }
 
         internal async Task<bool> Start()
         {
-            var credentials = new BasicAWSCredentials("AKIAJ65L4IEEOERWDLIA", "uGmcAXcDYMIN96OfW32XZMx4BgMMbYLbzfs7coLV");
-
-            var config = new AmazonIoTConfig();
-            config.ServiceURL = @"https://av37z0myd83yw.iot.us-west-2.amazonaws.com/things/Hexapod/shadow";
 
 
+            var bytes = Encoding.ASCII.GetBytes("Online");
 
-            var client = new AmazonIoTClient(credentials, config);
-            
-                        
-
-
-            var payload = new AttributePayload();
-            payload.Attributes.Add("YPR", "1,2,3");
-            
-
-            var request = new UpdateThingRequest();
-            request.ThingName = "Hexapod";
-            request.AttributePayload = payload;
-
-            var r = await client.UpdateThingAsync(request);
-
-
-            try
+            await _client.UpdateThingShadowAsync(new UpdateThingShadowRequest
             {
-                //_deviceClient = DeviceClient.CreateFromConnectionString(DeviceConnectionString, TransportType.Http1);
+                ThingName = "Autonoceptor",
+                Payload = new MemoryStream(bytes)
+            });
 
-                //await _deviceClient.OpenAsync();
-
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
+            return true;
         }
 
-        internal async Task SendEvent(string message)
+        internal async Task Publish(string message)
         {
-            //if (_deviceClient == null)
-            //    return;
+            var bytes = Encoding.ASCII.GetBytes(message);
 
-            try
+            var resp = await _client.PublishAsync(new PublishRequest
             {
-                //var eventMssage = new Message(Encoding.UTF8.GetBytes(message));
+                Topic = "Autonoceptor",
+                Qos = 1,
+                Payload = new MemoryStream(bytes)
+            });
 
-                //await _deviceClient.SendEventAsync(eventMssage);
-            }
-            catch (Exception)
-            {
-                //   
-            }
-        }
+            Debug.WriteLine(resp.HttpStatusCode);
 
-        internal async Task ReceiveCommands()
-        {
-            //if (_deviceClient == null)
-            //    return;
 
-            //while (true)
-            //{
-            //    var receivedMessage = await _deviceClient.ReceiveAsync();
-
-            //    if (receivedMessage != null)
-            //    {
-            //        var messageData = Encoding.ASCII.GetString(receivedMessage.GetBytes());
-            //        Debug.WriteLine("\t{0}> Received message: {1}", DateTime.Now.ToLocalTime(), messageData);
-
-            //        await _deviceClient.CompleteAsync(receivedMessage);
-            //    }
-
-            //    //  Note: In this sample, the polling interval is set to 
-            //    //  10 seconds to enable you to see messages as they are sent.
-            //    //  To enable an IoT solution to scale, you should extend this //  interval. For example, to scale to 1 million devices, set 
-            //    //  the polling interval to 25 minutes.
-            //    //  For further information, see
-            //    //  https://azure.microsoft.com/documentation/articles/iot-hub-devguide/#messaging
-            //    await Task.Delay(TimeSpan.FromSeconds(10));
-            //}
         }
     }
 }

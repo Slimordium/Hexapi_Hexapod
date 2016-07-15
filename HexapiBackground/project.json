@@ -4,7 +4,7 @@
     "AWSSDK.IotData": "3.1.0.6",
     "Microsoft.AspNet.SignalR.Client": "2.2.0",
     "Microsoft.NETCore.Targets.UniversalWindowsPlatform": "5.0.0",
-    "Microsoft.NETCore.UniversalWindowsPlatform": "5.2.1"
+    "Microsoft.NETCore.UniversalWindowsPlatform": "5.2.2"
   },
   "frameworks": {
     "uap10.0": {}
