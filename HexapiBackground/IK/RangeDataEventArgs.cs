@@ -5,7 +5,7 @@ namespace HexapiBackground
 {
     internal class RangeDataEventArgs : EventArgs
     {
-        internal RangeDataEventArgs(int perimeterInInches, double left, double center, double right)
+        internal RangeDataEventArgs(int perimeterInInches, double left, double center, double right, double farLeft, double farRight)
         {
             LeftWarning = left <= perimeterInInches + 5;
             CenterWarning = center <= perimeterInInches + 5;
@@ -16,8 +16,10 @@ namespace HexapiBackground
             RightBlocked = right <= perimeterInInches;
 
             LeftInches = left;
+            FarLeftInches = farLeft;
             CenterInches = center;
             RightInches = right;
+            FarRightInches = farRight;
         }
 
         public bool LeftWarning { get; private set; }
@@ -29,7 +31,9 @@ namespace HexapiBackground
         public bool RightBlocked { get; private set; }
 
         public double LeftInches { get; private set; }
+        public double FarLeftInches { get; private set; }
         public double CenterInches { get; private set; }
         public double RightInches { get; private set; }
+        public double FarRightInches { get; private set; }
     }
 }

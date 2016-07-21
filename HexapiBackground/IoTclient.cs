@@ -33,7 +33,7 @@ namespace HexapiBackground
 
             await _client.UpdateThingShadowAsync(new UpdateThingShadowRequest
             {
-                ThingName = "Autonoceptor",
+                ThingName = "Hexapi",
                 Payload = new MemoryStream(bytes)
             });
 
@@ -46,7 +46,7 @@ namespace HexapiBackground
 
             var resp = await _client.PublishAsync(new PublishRequest
             {
-                Topic = "Autonoceptor",
+                Topic = "Hexapi",
                 Qos = 1,
                 Payload = new MemoryStream(bytes)
             });

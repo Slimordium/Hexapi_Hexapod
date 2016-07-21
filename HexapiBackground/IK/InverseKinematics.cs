@@ -26,7 +26,7 @@ namespace HexapiBackground.IK
         private DataReader _inputStream;
         private DataWriter _outputStream;
 
-        private RangeDataEventArgs _rangeDataEventArgs = new RangeDataEventArgs(15, 20, 20, 20);
+        private RangeDataEventArgs _rangeDataEventArgs = new RangeDataEventArgs(15, 20, 20, 20, 20, 20);
 
         private readonly SparkFunSerial16X2Lcd _display;
 

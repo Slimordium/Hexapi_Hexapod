@@ -17,7 +17,7 @@ namespace HexapiBackground.IK
     {
         private Behavior _behavior;
         private bool _behaviorRunning;
-        private RangeDataEventArgs _rangeDataEventArgs = new RangeDataEventArgs(15, 20, 20, 20);
+        private RangeDataEventArgs _rangeDataEventArgs = new RangeDataEventArgs(15, 20, 20, 20, 20, 20);
 
         private readonly ManualResetEventSlim _manualResetEventSlim = new ManualResetEventSlim(false);
 
@@ -32,8 +32,10 @@ namespace HexapiBackground.IK
         private int _perimeterInInches;
 
         private double _leftInches;
+        private double _farLeftInches;
         private double _centerInches;
         private double _rightInches;
+        private double _farRightInches;
 
         internal static event EventHandler<RangeDataEventArgs> RangingEvent;
         internal static event EventHandler<ImuDataEventArgs> ImuEvent;
@@ -80,10 +82,11 @@ namespace HexapiBackground.IK
 
         internal async Task Start()
         {
-            var stopwatch = new Stopwatch();
             var displayStopwatch = new Stopwatch();
-            stopwatch.Start();
             displayStopwatch.Start();
+
+            var imuEventTimer = new Timer(ImuEventTimerCallback, null, 0, 20);
+            var displayTimer = new Timer(DisplayTimerCallback, null, 0, 50);
 
             while (true)
             {
@@ -99,50 +102,26 @@ namespace HexapiBackground.IK
                     startChar = _arduinoDataReader.ReadByte();
                 }
 
-                var bytesRead = new List<byte> {0x00};
+                var bytesIn = new List<byte> {0x00};
 
-                while (bytesRead.Last() != 0x0d)
+                while (bytesIn.Last() != 0x0d)
                 {
                     await _arduinoDataReader.LoadAsync(1).AsTask();
-                    bytesRead.Add(_arduinoDataReader.ReadByte());
+                    bytesIn.Add(_arduinoDataReader.ReadByte());
                 }
 
                 try
                 {
-                    var pingData = Encoding.ASCII.GetString(bytesRead.ToArray());
+                    var rawData = Encoding.ASCII.GetString(bytesIn.ToArray());
 
-                    pingData = pingData.Replace("\0", "").Replace("\r", "");
+                    rawData = rawData.Replace("\0", "").Replace("\r", "");
 
-                    if (string.IsNullOrEmpty(pingData)) //#L3198
+                    if (string.IsNullOrEmpty(rawData)) 
                         continue;
 
-                    Parse(pingData);
+                    Parse(rawData);
 
-                    if (stopwatch.ElapsedMilliseconds >= 40)
-                    {
-                        var e = ImuEvent;
-                        e?.Invoke(null, new ImuDataEventArgs {Yaw = _yaw, Pitch = _pitch, Roll = _roll, AccelX = _accelX, AccelY = _accelY, AccelZ = _accelZ});
-
-                        stopwatch.Restart();
-                    }
-
-                    if (_selectedIkFunction == SelectedIkFunction.DisplayPing && displayStopwatch.ElapsedMilliseconds >= 50)
-                    {
-                        await _display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
-                        displayStopwatch.Restart();
-                    }
-
-                    if (_selectedIkFunction == SelectedIkFunction.DisplayYPR && displayStopwatch.ElapsedMilliseconds >= 50)
-                    {
-                        await _display.Write($"{_yaw} {_pitch} {_roll}", 2);
-                        displayStopwatch.Restart();
-                    }
-
-                    if (_selectedIkFunction == SelectedIkFunction.DisplayAccel && displayStopwatch.ElapsedMilliseconds >= 50)
-                    {
-                        await _display.Write($"{_accelY}", 2);
-                        displayStopwatch.Restart();
-                    }
+              
 
                     if (_leftInches <= _perimeterInInches || 
                     _centerInches <= _perimeterInInches || 
@@ -150,7 +129,7 @@ namespace HexapiBackground.IK
                     {
                         _isCollisionEvent = true;
 
-                        _rangeDataEventArgs = new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches);
+                        _rangeDataEventArgs = new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches, _farLeftInches, _farRightInches);
 
                         var e = RangingEvent;
                         e?.Invoke(null, _rangeDataEventArgs);
@@ -162,7 +141,7 @@ namespace HexapiBackground.IK
 
                         _isCollisionEvent = false;
 
-                        _rangeDataEventArgs = new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches);
+                        _rangeDataEventArgs = new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches, _farLeftInches, _farRightInches);
 
                         var e = RangingEvent;
                         e?.Invoke(null, _rangeDataEventArgs);
@@ -172,6 +151,30 @@ namespace HexapiBackground.IK
                 {
                     //
                 }
+            }
+        }
+
+        private void ImuEventTimerCallback(object state)
+        {
+            var e = ImuEvent;
+            e?.Invoke(null, new ImuDataEventArgs { Yaw = _yaw, Pitch = _pitch, Roll = _roll, AccelX = _accelX, AccelY = _accelY, AccelZ = _accelZ });
+        }
+
+        private async void DisplayTimerCallback(object state)
+        {
+            if (_selectedIkFunction == SelectedIkFunction.DisplayPing)
+            {
+                await _display.Write($"{_leftInches} {_centerInches} {_rightInches}", 2);
+            }
+
+            if (_selectedIkFunction == SelectedIkFunction.DisplayYPR)
+            {
+                await _display.Write($"{_yaw} {_pitch} {_roll}", 2);
+            }
+
+            if (_selectedIkFunction == SelectedIkFunction.DisplayAccel)
+            {
+                await _display.Write($"{_accelY}", 2);
             }
         }
 
@@ -495,6 +498,15 @@ namespace HexapiBackground.IK
 
                     return;
                 }
+                if (data.Contains("#FL"))
+                {
+                    data = data.Replace("#FL", "");
+
+                    if (double.TryParse(data, out ping))
+                        _farLeftInches = GetInchesFromPingDuration(ping);
+
+                    return;
+                }
                 if (data.Contains("#C"))
                 {
                     data = data.Replace("#C", "");
@@ -510,6 +522,15 @@ namespace HexapiBackground.IK
 
                     if (double.TryParse(data, out ping))
                         _rightInches = GetInchesFromPingDuration(ping);
+
+                    return;
+                }
+                if (data.Contains("#FR"))
+                {
+                    data = data.Replace("#FR", "");
+
+                    if (double.TryParse(data, out ping))
+                        _farRightInches = GetInchesFromPingDuration(ping);
                 }
             }
             catch

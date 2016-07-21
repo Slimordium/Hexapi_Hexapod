@@ -2,17 +2,34 @@
 #define leftTrigPin 9
 #define leftEchoPin 8
 
-#define centerTrigPin 11
-#define centerEchoPin 10
+#define farLeftTrigPin 4
+#define farLeftEchoPin 5
+
+#define centerTrigPin 10
+#define centerEchoPin 11
 
 #define rightTrigPin 12
 #define rightEchoPin 13
 
+#define farRightTrigPin 7
+#define farRightEchoPin 6
+
+String center = "";
+String left = "";
+String farLeft = "";
+String right = "";
+String farRight = "";
+
+String inYpr = "";
+String inSensorData = "";
 
 void setup()
 {
 	pinMode(leftTrigPin, OUTPUT); //trig
 	pinMode(leftEchoPin, INPUT); //echo
+
+	pinMode(farLeftTrigPin, OUTPUT); //trig
+	pinMode(farLeftEchoPin, INPUT); //echo
 
 	pinMode(centerTrigPin, OUTPUT); //trig
 	pinMode(centerEchoPin, INPUT); //echo
@@ -20,68 +37,82 @@ void setup()
 	pinMode(rightTrigPin, OUTPUT); //trig
 	pinMode(rightEchoPin, INPUT); //echo
 
-	Serial.begin(57600);
+	pinMode(farRightTrigPin, OUTPUT); //trig
+	pinMode(farRightEchoPin, INPUT); //echo
 
-	Serial1.begin(57600);
+	Serial.begin(57600); //TX debug
 
-	Serial2.begin(57600);
+	Serial1.begin(57600); //TX - Raspberry PI 3 - Stream all data here, PI will parse and act
+
+	Serial2.begin(57600); //RX/TX - SparkFun Razor IMU
 
 	delay(100);
 
-	Serial2.println("#o0"); //Disable streaming
+	//Serial2.println("#o0"); //Disable streaming from Razor IMU, send frames only as they are requested.
+
+	//delay(100);
 }
-
-String center = "";
-String left = "";
-String right = "";
-
-String inYpr = "";
-String inSensorData = "";
 
 void loop()
 {
+	Serial2.println("#o0"); //Disable streaming from Razor IMU, send frames only as they are requested.
+
 	center = String("#C" + Ping(2));
 	Serial.println(center);
 	Serial1.println(center);
 
 	GetYpr();
-	GetSensorData();
+	GetRawData();
 
-	left = String("#L" + Ping(1));
+	left = String("#FL" + Ping(5));
 	Serial.println(left);
 	Serial1.println(left);
 
 	GetYpr();
-	GetSensorData();
+	GetRawData();
 
 	right = String("#R" + Ping(3));
 	Serial.println(right);
 	Serial1.println(right);
 
 	GetYpr();
-	GetSensorData();
+	GetRawData();
+
+	left = String("#L" + Ping(1));
+	Serial.println(left);
+	Serial1.println(left);
+
+	GetYpr();
+	GetRawData();
+
+	right = String("#FR" + Ping(4));
+	Serial.println(right);
+	Serial1.println(right);
+
+	GetYpr();
+	GetRawData();
 }
 
 void GetYpr()
 {
-	Serial2.println("#ot"); //Request YPR
-	Serial2.println("#f"); //Request frame 
+	Serial2.println("#ot"); //Ask for YPR
+	Serial2.println("#f"); //Request frame from Razor
 	inYpr = Serial2.readStringUntil('\n');
 	Serial.println(String(inYpr));
 	Serial1.println(String(inYpr));
-	delay(2);
+	delay(12);
 }
 
-void GetSensorData()
+void GetRawData()
 {
-	Serial2.println("#osct"); //Sensor data
-	Serial2.println("#f"); //Request frame 
+	Serial2.println("#osct"); //Ask for data from accelerometer, gyroscope, magnometer
+	Serial2.println("#f"); //Request frame from Razor
 	inSensorData = Serial2.readStringUntil('\n');
 	inSensorData += Serial2.readStringUntil('\n');
 	inSensorData += Serial2.readStringUntil('\n');
 	Serial.println(String(inSensorData));
 	Serial1.println(String(inSensorData));
-	delay(23);
+	delay(12);
 }
 
 String Ping(int sensor)
@@ -103,6 +134,16 @@ String Ping(int sensor)
 	{
 		trigPin = rightTrigPin;
 		echoPin = rightEchoPin;
+	}
+	else if (sensor == 4)
+	{
+		trigPin = farRightTrigPin;
+		echoPin = farRightEchoPin;
+	}
+	else if (sensor == 5)
+	{
+		trigPin = farLeftTrigPin;
+		echoPin = farLeftEchoPin;
 	}
 
 	digitalWrite(trigPin, LOW);
