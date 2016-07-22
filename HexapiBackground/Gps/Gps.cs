@@ -34,9 +34,9 @@ namespace HexapiBackground.Gps
             CurrentLatLon = new LatLon();
         }
 
-        internal async Task<bool> Initialize()
+        internal async Task<bool> InitializeAsync()
         {
-            _gpsSerialDevice = await StartupTask.SerialDeviceHelper.GetSerialDevice("AH03F3RY", 57600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+            _gpsSerialDevice = await StartupTask.SerialDeviceHelper.GetSerialDeviceAsync("AH03F3RY", 57600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
 
             if (_gpsSerialDevice == null)
                 return false;
@@ -48,13 +48,13 @@ namespace HexapiBackground.Gps
 
         internal async Task DisplayCoordinates()
         {
-            await _display.Write(CurrentLatLon.Lat.ToString(CultureInfo.InvariantCulture), 1);
-            await _display.Write(CurrentLatLon.Lon.ToString(CultureInfo.InvariantCulture), 2);
+            await _display.WriteAsync(CurrentLatLon.Lat.ToString(CultureInfo.InvariantCulture), 1);
+            await _display.WriteAsync(CurrentLatLon.Lon.ToString(CultureInfo.InvariantCulture), 2);
         }
 
         #region Serial Communication
 
-        internal async Task Start()
+        internal async Task StartAsync()
         {
             while (true)
             {
@@ -85,7 +85,7 @@ namespace HexapiBackground.Gps
                     continue;
 
                 if (CurrentLatLon.Quality != latLon.Quality)
-                    await _display.Write(latLon.Quality.ToString(), 2);
+                    await _display.WriteAsync(latLon.Quality.ToString(), 2);
 
                 CurrentLatLon = latLon;
             }
@@ -103,7 +103,7 @@ namespace HexapiBackground.Gps
             }
             catch
             {
-                await _display.Write("NTRIP update failed");
+                await _display.WriteAsync("NTRIP update failed");
             }
         }
 

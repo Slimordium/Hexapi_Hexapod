@@ -54,17 +54,17 @@ namespace HexapiBackground
             _navigator = new Navigator(_ikController, _display, _gps);
             _hexapi = new Hexapi(_ikController, _xboxController, _navigator, _display, _gps, _ioTClient);
 
-            _initializeTasks.Add(_display.Initialize());
-            _initializeTasks.Add(_xboxController.Initialize());
-            _initializeTasks.Add(_ikController.Initialize());
-            _initializeTasks.Add(_ntripClient.Initialize());
-            _initializeTasks.Add(_gps.Initialize());
-            _initializeTasks.Add(_inverseKinematics.Initialize());
+            _initializeTasks.Add(_display.InitializeAsync());
+            _initializeTasks.Add(_xboxController.InitializeAsync());
+            _initializeTasks.Add(_ikController.InitializeAsync());
+            _initializeTasks.Add(_ntripClient.InitializeAsync());
+            _initializeTasks.Add(_gps.InitializeAsync());
+            _initializeTasks.Add(_inverseKinematics.InitializeAsync());
 
-            _startTasks.Add(_ikController.Start());
-            _startTasks.Add(_gps.Start());
-            _startTasks.Add(_inverseKinematics.Start());
-            _startTasks.Add(_hexapi.Start());
+            _startTasks.Add(_ikController.StartAsync());
+            _startTasks.Add(_gps.StartAsync());
+            _startTasks.Add(_inverseKinematics.StartAsync());
+            _startTasks.Add(_hexapi.StartAsync());
 
             await Task.WhenAll(_initializeTasks.ToArray());
 

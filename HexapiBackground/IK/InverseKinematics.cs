@@ -299,7 +299,7 @@ namespace HexapiBackground.IK
             }
             catch (Exception e)
             {
-                await _display.Write(e.Message);
+                await _display.WriteAsync(e.Message);
                 return;
             }
 
@@ -320,7 +320,7 @@ namespace HexapiBackground.IK
             }
             else
             {
-                await _display.Write("No Gpio?");
+                await _display.WriteAsync("No Gpio?");
             }
         }
 
@@ -490,15 +490,15 @@ namespace HexapiBackground.IK
 
         #endregion
 
-        internal async Task<bool> Initialize()
+        internal async Task<bool> InitializeAsync()
         {
-            if (!await LoadLegDefaults())
+            if (!await LoadLegDefaultsAsync())
             {
-                await _display.Write("Setup of IK failed!");
+                await _display.WriteAsync("Setup of IK failed!");
                 return false;
             }
 
-            _serialDevice = await StartupTask.SerialDeviceHelper.GetSerialDevice("BCM2836", 115200, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+            _serialDevice = await StartupTask.SerialDeviceHelper.GetSerialDeviceAsync("BCM2836", 115200, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1)); //The PI 3 on-board UART
 
             if (_serialDevice == null)
                 return false;
@@ -511,7 +511,7 @@ namespace HexapiBackground.IK
 
         #region Main loop  
 
-        internal async Task Start()
+        internal async Task StartAsync()
         {
             while (true)
             {
@@ -826,13 +826,13 @@ namespace HexapiBackground.IK
             return StringBuilder.ToString();
         }
 
-        internal async Task<bool> LoadLegDefaults()
+        internal async Task<bool> LoadLegDefaultsAsync()
         {
             var config = await "hexapod.config".ReadStringFromFile();
 
             if (string.IsNullOrEmpty(config))
             {
-                await _display.Write("Empty hexapod.config");
+                await _display.WriteAsync("Empty hexapod.config");
                 return false;
             }
 
@@ -853,7 +853,7 @@ namespace HexapiBackground.IK
             }
             catch (Exception e)
             {
-                await _display.Write(e.Message, 1);
+                await _display.WriteAsync(e.Message, 1);
                 return false;
             }
 

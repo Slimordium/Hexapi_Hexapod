@@ -35,7 +35,7 @@ namespace HexapiBackground.Hardware
             _display = display;
         }
 
-        internal async Task<bool> Initialize()
+        internal async Task<bool> InitializeAsync()
         {
             //USB\VID_045E&PID_0719\E02F1950 - receiver
             //USB\VID_045E & PID_02A1 & IG_00\6 & F079888 & 0 & 00  - XboxController
@@ -45,7 +45,7 @@ namespace HexapiBackground.Hardware
 
             if (deviceInformationCollection.Count == 0)
             {
-                await _display.Write("No Xbox controller");
+                await _display.WriteAsync("No Xbox controller");
                 return false;
             }
 
@@ -55,7 +55,7 @@ namespace HexapiBackground.Hardware
 
                 if (_deviceHandle == null)
                 {
-                    await _display.Write("No Xbox controller");
+                    await _display.WriteAsync("No Xbox controller");
                     continue;
                 }
 

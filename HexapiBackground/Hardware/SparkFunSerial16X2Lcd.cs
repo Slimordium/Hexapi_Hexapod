@@ -22,9 +22,9 @@ namespace HexapiBackground.Hardware{
         {
         }
 
-        internal async Task<bool> Initialize()
+        internal async Task<bool> InitializeAsync()
         {
-            _lcdSerialDevice = await StartupTask.SerialDeviceHelper.GetSerialDevice("DN01E099", 9600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+            _lcdSerialDevice = await StartupTask.SerialDeviceHelper.GetSerialDeviceAsync("DN01E099", 9600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
          
             if (_lcdSerialDevice == null)
                 return false;
@@ -34,7 +34,7 @@ namespace HexapiBackground.Hardware{
             return true;
         }
 
-        private async Task Write(string text, byte[] line, bool clear)
+        private async Task WriteAsync(string text, byte[] line, bool clear)
         {
             if (text == null)
                 return;
@@ -75,37 +75,48 @@ namespace HexapiBackground.Hardware{
             }
         }
 
-        private async Task WriteToFirstLine(string text)
+        private async Task WriteToFirstLineAsync(string text)
         {
             if (text == null)
                 return;
 
-            await Write(text, _startOfFirstLine, false);
+            await WriteAsync(text, _startOfFirstLine, false);
         }
 
-        private async Task WriteToSecondLine(string text)
+        private async Task WriteToSecondLineAsync(string text)
         {
             if (text == null)
                 return;
 
-            await Write(text, _startOfSecondLine, false);
+            await WriteAsync(text, _startOfSecondLine, false);
         }
 
-        internal async Task Write(string text)
+        /// <summary>
+        /// Overwrites all text on display
+        /// </summary>
+        /// <param name="text"></param>
+        /// <returns></returns>
+        internal async Task WriteAsync(string text)
         {
             if (text == null)
                 return;
 
-            await Write(text, _startOfFirstLine, true);
+            await WriteAsync(text, _startOfFirstLine, true);
         }
 
-        internal async Task Write(string text, int line)
+        /// <summary>
+        /// Only overwrite the specified line on the LCD. Either line 1 or 2
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="line"></param>
+        /// <returns></returns>
+        internal async Task WriteAsync(string text, int line)
         {
             if (line == 1)
-                await WriteToFirstLine(text);
+                await WriteToFirstLineAsync(text);
 
             if (line == 2)
-                await WriteToSecondLine(text);
+                await WriteToSecondLineAsync(text);
         }
         
     }

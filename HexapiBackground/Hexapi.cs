@@ -69,7 +69,7 @@ namespace HexapiBackground
         internal static double TravelLengthXlimit { get; set; }
         internal static double TravelRotationYlimit { get; set; }
 
-        public async Task Start()
+        public async Task StartAsync()
         {
             SetGaitOptions();
 
@@ -102,30 +102,30 @@ namespace HexapiBackground
                     if (_selectedIkFunction < 0)
                         _selectedIkFunction = 0;
 
-                    await _display.Write($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
+                    await _display.WriteAsync($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
 
-                    await _ik.RequestSetFunction(_selectedIkFunction);
+                    await _ik.RequestSetFunctionAsync(_selectedIkFunction);
                     break;
                 case 1: //B
                     _selectedIkFunction++;
                     if ((int) _selectedIkFunction > 14)
                         _selectedIkFunction = (SelectedIkFunction) 14;
 
-                    await _display.Write($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
+                    await _display.WriteAsync($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
 
-                    await _ik.RequestSetFunction(_selectedIkFunction);
+                    await _ik.RequestSetFunctionAsync(_selectedIkFunction);
                     break;
                 case 2: //X
 
                     if (_selectedGpsFunction == SelectedGpsFunction.GpsDisabled)
                     {
                         await _navigator.Start();
-                        await _display.Write("GPS Nav Enabled", 1);
+                        await _display.WriteAsync("GPS Nav Enabled", 1);
                         _selectedGpsFunction = SelectedGpsFunction.GpsEnabled;
                     }
                     else
                     {
-                        await _display.Write("GPS Nav Disabled", 1);
+                        await _display.WriteAsync("GPS Nav Disabled", 1);
                         _navigator.Stop();
                         _selectedGpsFunction = SelectedGpsFunction.GpsDisabled;
                     }
@@ -140,7 +140,7 @@ namespace HexapiBackground
 
                     if (_isMovementStarted)
                     {
-                        await _ik.RequestSetFunction(SelectedIkFunction.GaitSpeed);
+                        await _ik.RequestSetFunctionAsync(SelectedIkFunction.GaitSpeed);
                         _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                         _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
                         _ik.RequestSetGaitType(GaitType.TripleTripod16);
@@ -157,7 +157,7 @@ namespace HexapiBackground
 
                     break;
                 default:
-                    await _display.Write($"Unknown button {button}", 1);
+                    await _display.WriteAsync($"Unknown button {button}", 1);
                     break;
             }
         }
@@ -170,7 +170,7 @@ namespace HexapiBackground
             if (_posture < 0)
                 _posture = 0;
 
-            await _display.Write($"Posture {_posture}", 2);
+            await _display.WriteAsync($"Posture {_posture}", 2);
 
             switch (_posture)
             {
@@ -297,7 +297,7 @@ namespace HexapiBackground
                             if ((int)_selectedBehavior <= 0)
                                 _selectedBehavior = (Behavior)0;
 
-                            await _display.Write($"{Enum.GetName(typeof(Behavior), _selectedBehavior)}", 2);
+                            await _display.WriteAsync($"{Enum.GetName(typeof(Behavior), _selectedBehavior)}", 2);
                             break;
                         case SelectedIkFunction.GaitType:
                             _gaitType--;
@@ -305,7 +305,7 @@ namespace HexapiBackground
                             if (_gaitType < 0)
                                 _gaitType = (GaitType)4;
 
-                            await _display.Write(Enum.GetName(typeof(GaitType), _gaitType), 2);
+                            await _display.WriteAsync(Enum.GetName(typeof(GaitType), _gaitType), 2);
                             SetGaitOptions();
                             break;
                         case SelectedIkFunction.GaitSpeed:
@@ -313,13 +313,13 @@ namespace HexapiBackground
                             if (_gaitSpeed < GaitSpeedMin)
                                 _gaitSpeed = GaitSpeedMin;
                             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
-                            await _display.Write($"_gaitSpeed = {_gaitSpeed}", 2);
+                            await _display.WriteAsync($"_gaitSpeed = {_gaitSpeed}", 2);
                             break;
                         case SelectedIkFunction.SetFootHeightOffset:
                             _selectedLeg--;
                             if (_selectedLeg < 0)
                                 _selectedLeg = 0;
-                            await _display.Write($"_selectedLeg = {_selectedLeg}", 2);
+                            await _display.WriteAsync($"_selectedLeg = {_selectedLeg}", 2);
                             break;
                     }
                     break;
@@ -332,7 +332,7 @@ namespace HexapiBackground
                             if ((int)_selectedBehavior > 4)
                                 _selectedBehavior = (Behavior)4;
 
-                            await _display.Write($"{Enum.GetName(typeof(Behavior), _selectedBehavior)}", 2);
+                            await _display.WriteAsync($"{Enum.GetName(typeof(Behavior), _selectedBehavior)}", 2);
                             break;
                         case SelectedIkFunction.GaitType:
                             _gaitType++;
@@ -340,7 +340,7 @@ namespace HexapiBackground
                             if ((int)_gaitType > 4)
                                 _gaitType = 0;
 
-                            await _display.Write(Enum.GetName(typeof (GaitType), _gaitType), 2);
+                            await _display.WriteAsync(Enum.GetName(typeof (GaitType), _gaitType), 2);
                             SetGaitOptions();
                             break;
                         case SelectedIkFunction.GaitSpeed:
@@ -348,14 +348,14 @@ namespace HexapiBackground
                             if (_gaitSpeed > GaitSpeedMax)
                                 _gaitSpeed = GaitSpeedMax;
                             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
-                            await _display.Write($"_gaitSpeed = {_gaitSpeed}", 2);
+                            await _display.WriteAsync($"_gaitSpeed = {_gaitSpeed}", 2);
                             break;
                         case SelectedIkFunction.SetFootHeightOffset:
                             _selectedLeg++;
                             if (_selectedLeg == 5)
                                 _selectedLeg = 5;
 
-                            await _display.Write($"_selectedLeg = {_selectedLeg}", 2);
+                            await _display.WriteAsync($"_selectedLeg = {_selectedLeg}", 2);
                             break;
                     }
                     break;
@@ -368,7 +368,7 @@ namespace HexapiBackground
                             if (_legLiftHeight > LegLiftHeightUpperLimit)
                                 _legLiftHeight = LegLiftHeightUpperLimit;
 
-                            await _display.Write($"Height = {_legLiftHeight}", 2);
+                            await _display.WriteAsync($"Height = {_legLiftHeight}", 2);
 
                             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
                             break;
@@ -384,7 +384,7 @@ namespace HexapiBackground
                             if (_bodyPosY > 100)
                                 _bodyPosY = 100;
                             _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
-                            await _display.Write($"_bodyPosY = {_bodyPosY}", 2);
+                            await _display.WriteAsync($"_bodyPosY = {_bodyPosY}", 2);
                             break;
                         case SelectedIkFunction.Posture:
                             _posture++;
@@ -392,7 +392,7 @@ namespace HexapiBackground
                             break;
                         case SelectedIkFunction.Behavior:
                             _ik.RequestBehavior(_selectedBehavior, true);
-                            await _display.Write($"{Enum.GetName(typeof(Behavior), _selectedBehavior)} start");
+                            await _display.WriteAsync($"{Enum.GetName(typeof(Behavior), _selectedBehavior)} start");
                             break;
                     }
                     break;
@@ -405,7 +405,7 @@ namespace HexapiBackground
                             if (_legLiftHeight < LegLiftHeightLowerLimit)
                                 _legLiftHeight = LegLiftHeightLowerLimit;
 
-                            await _display.Write($"Height = {_legLiftHeight}", 2);
+                            await _display.WriteAsync($"Height = {_legLiftHeight}", 2);
 
                             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
                             break;
@@ -421,7 +421,7 @@ namespace HexapiBackground
                             if (_bodyPosY < 10)
                                 _bodyPosY = 10;
                             _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
-                            await _display.Write($"_bodyPosY = {_bodyPosY}", 2);
+                            await _display.WriteAsync($"_bodyPosY = {_bodyPosY}", 2);
                             break;
                         case SelectedIkFunction.Posture:
                             _posture--;
@@ -429,7 +429,7 @@ namespace HexapiBackground
                             break;
                         case SelectedIkFunction.Behavior:
                             _ik.RequestBehavior(_selectedBehavior, false);
-                            await _display.Write($"{Enum.GetName(typeof(Behavior), _selectedBehavior)} stop");
+                            await _display.WriteAsync($"{Enum.GetName(typeof(Behavior), _selectedBehavior)} stop");
                             break;
                     }
                     break;

@@ -35,7 +35,7 @@ namespace HexapiBackground.Navigation
 
             _gpsNavigationEnabled = true;
 
-            await _display.Write($"{_waypoints.Count} waypoints");
+            await _display.WriteAsync($"{_waypoints.Count} waypoints");
 
             foreach (var wp in _waypoints)
             {
@@ -71,8 +71,8 @@ namespace HexapiBackground.Navigation
 
             while (distanceToWaypoint > 10) //Inches
             {
-                await _display.Write($"WP D/H {distanceToWaypoint}, {headingToWaypoint}", 1);
-                await _display.Write($"{turnDirection} {_gps.CurrentLatLon.Heading}", 2);
+                await _display.WriteAsync($"WP D/H {distanceToWaypoint}, {headingToWaypoint}", 1);
+                await _display.WriteAsync($"{turnDirection} {_gps.CurrentLatLon.Heading}", 2);
 
                 if (headingToWaypoint + 5 > 359 && Math.Abs(headingToWaypoint - _gps.CurrentLatLon.Heading) > 1)
                 {
@@ -176,8 +176,8 @@ namespace HexapiBackground.Navigation
                     return false;
             }
 
-            await _display.Write($"WP D/H {distanceToWaypoint}, {headingToWaypoint}", 1);
-            await _display.Write($"Heading {_gps.CurrentLatLon.Heading}", 2);
+            await _display.WriteAsync($"WP D/H {distanceToWaypoint}, {headingToWaypoint}", 1);
+            await _display.WriteAsync($"Heading {_gps.CurrentLatLon.Heading}", 2);
 
             return true;
         }

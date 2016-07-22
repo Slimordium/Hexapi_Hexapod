@@ -11,7 +11,7 @@ namespace HexapiBackground.Hardware
 {
     internal class SerialDeviceHelper
     {
-        internal async Task<SerialDevice> GetSerialDevice(string identifier, int baudRate, TimeSpan readTimeout, TimeSpan writeTimeout)
+        internal async Task<SerialDevice> GetSerialDeviceAsync(string identifier, int baudRate, TimeSpan readTimeout, TimeSpan writeTimeout)
         {
             var deviceInformationCollection = await DeviceInformation.FindAllAsync(SerialDevice.GetDeviceSelector());
             var selectedPort = deviceInformationCollection.FirstOrDefault(d => d.Id.Contains(identifier) || d.Name.Equals(identifier));

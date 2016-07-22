@@ -57,7 +57,7 @@ namespace HexapiBackground.Gps.Ntrip
             }
         }
 
-        internal async Task Initialize()
+        internal async Task InitializeAsync()
         {
             if (_endPoint == null)
                 return;
@@ -74,7 +74,7 @@ namespace HexapiBackground.Gps.Ntrip
                 {
                     if (((Socket) sender).Connected)
                     {
-                        await _display.Write("NTRIP Connected");
+                        await _display.WriteAsync("NTRIP Connected");
 
                         await Task.Delay(500);
 
@@ -82,7 +82,7 @@ namespace HexapiBackground.Gps.Ntrip
                     }
                     else
                     {
-                        await _display.Write("NTRIP Connection failed");
+                        await _display.WriteAsync("NTRIP Connection failed");
                     }
                 };
 
@@ -116,7 +116,7 @@ namespace HexapiBackground.Gps.Ntrip
 
             args.Completed += async (sender, eventArgs) =>
             {
-                await _display.Write($"NTRIP {eventArgs.SocketError}");
+                await _display.WriteAsync($"NTRIP {eventArgs.SocketError}");
 
                 await Task.Delay(1500);
 
