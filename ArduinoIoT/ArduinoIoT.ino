@@ -1,6 +1,6 @@
 
-#define leftTrigPin 9
-#define leftEchoPin 8
+#define leftTrigPin 12
+#define leftEchoPin 13
 
 #define farLeftTrigPin 4
 #define farLeftEchoPin 5
@@ -8,8 +8,8 @@
 #define centerTrigPin 10
 #define centerEchoPin 11
 
-#define rightTrigPin 12
-#define rightEchoPin 13
+#define rightTrigPin 9
+#define rightEchoPin 8
 
 #define farRightTrigPin 7
 #define farRightEchoPin 6
@@ -48,27 +48,23 @@ void setup()
 
 	delay(100);
 
-	//Serial2.println("#o0"); //Disable streaming from Razor IMU, send frames only as they are requested.
+	Serial2.println("#o0"); //Disable streaming from Razor IMU, send frames only as they are requested.
 
-	//delay(100);
+	delay(100);
 }
 
 void loop()
 {
-	Serial2.println("#o0"); //Disable streaming from Razor IMU, send frames only as they are requested.
-
 	center = String("#C" + Ping(2));
 	Serial.println(center);
 	Serial1.println(center);
 
 	GetYpr();
-	GetRawData();
 
 	left = String("#FL" + Ping(5));
 	Serial.println(left);
 	Serial1.println(left);
 
-	GetYpr();
 	GetRawData();
 
 	right = String("#R" + Ping(3));
@@ -76,21 +72,16 @@ void loop()
 	Serial1.println(right);
 
 	GetYpr();
-	GetRawData();
 
 	left = String("#L" + Ping(1));
 	Serial.println(left);
 	Serial1.println(left);
 
-	GetYpr();
 	GetRawData();
 
 	right = String("#FR" + Ping(4));
 	Serial.println(right);
 	Serial1.println(right);
-
-	GetYpr();
-	GetRawData();
 }
 
 void GetYpr()
@@ -100,7 +91,7 @@ void GetYpr()
 	inYpr = Serial2.readStringUntil('\n');
 	Serial.println(String(inYpr));
 	Serial1.println(String(inYpr));
-	delay(12);
+	delay(30);
 }
 
 void GetRawData()
@@ -112,7 +103,7 @@ void GetRawData()
 	inSensorData += Serial2.readStringUntil('\n');
 	Serial.println(String(inSensorData));
 	Serial1.println(String(inSensorData));
-	delay(12);
+	delay(30);
 }
 
 String Ping(int sensor)

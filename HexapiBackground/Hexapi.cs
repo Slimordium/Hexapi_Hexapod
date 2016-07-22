@@ -214,14 +214,38 @@ namespace HexapiBackground
             switch (_gaitType)
             {
                 case GaitType.Tripod8:
-                    _bodyPosY = 90;
-                    _legLiftHeight = 35;
-                    _gaitSpeed = 38;
+                    _bodyPosY = 80;
+                    _legLiftHeight = 40;
+                    _gaitSpeed = 45;
                     GaitSpeedMax = 500;
                     GaitSpeedMin = 40;
                     LegLiftHeightUpperLimit = 45;
                     LegLiftHeightLowerLimit = 30;
                     TravelLengthZupperLimit = 100;
+                    TravelLengthZlowerLimit = 80;
+                    TravelLengthXlimit = 25;
+                    TravelRotationYlimit = 25;
+                    break;
+                case GaitType.TripleTripod12:
+                    _bodyPosY = 75;
+                    _legLiftHeight = 60;
+                    _gaitSpeed = 25;
+                    GaitSpeedMax = 500;
+                    GaitSpeedMin = 25;
+                    TravelLengthZupperLimit = 140;
+                    TravelLengthZlowerLimit = 80;
+                    TravelLengthXlimit = 25;
+                    LegLiftHeightUpperLimit = 110;
+                    LegLiftHeightLowerLimit = 30;
+                    TravelRotationYlimit = 30;
+                    break;
+                case GaitType.TripleTripod16:
+                    _bodyPosY = 75;
+                    _legLiftHeight = 80;
+                    _gaitSpeed = 25;
+                    GaitSpeedMax = 500;
+                    GaitSpeedMin = 20;
+                    TravelLengthZupperLimit = 140;
                     TravelLengthZlowerLimit = 80;
                     TravelLengthXlimit = 25;
                     LegLiftHeightUpperLimit = 110;
@@ -234,7 +258,7 @@ namespace HexapiBackground
                     _legLiftHeight = 35;
                     GaitSpeedMax = 500;
                     GaitSpeedMin = 25;
-                    TravelLengthZupperLimit = 160;
+                    TravelLengthZupperLimit = 140;
                     TravelLengthZlowerLimit = 80;
                     TravelLengthXlimit = 35;
                     TravelRotationYlimit = 30;

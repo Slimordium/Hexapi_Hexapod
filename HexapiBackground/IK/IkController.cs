@@ -17,7 +17,6 @@ namespace HexapiBackground.IK
     {
         private Behavior _behavior;
         private bool _behaviorRunning;
-        private RangeDataEventArgs _rangeDataEventArgs = new RangeDataEventArgs(15, 20, 20, 20, 20, 20);
 
         private readonly ManualResetEventSlim _manualResetEventSlim = new ManualResetEventSlim(false);
 
@@ -39,8 +38,6 @@ namespace HexapiBackground.IK
 
         internal static event EventHandler<RangeDataEventArgs> RangingEvent;
         internal static event EventHandler<ImuDataEventArgs> ImuEvent;
-
-        private bool _isCollisionEvent;
 
         private double _yaw;
         private double _pitch;
@@ -82,11 +79,9 @@ namespace HexapiBackground.IK
 
         internal async Task Start()
         {
-            var displayStopwatch = new Stopwatch();
-            displayStopwatch.Start();
-
             var imuEventTimer = new Timer(ImuEventTimerCallback, null, 0, 20);
             var displayTimer = new Timer(DisplayTimerCallback, null, 0, 50);
+            var rangeTimer = new Timer(RangeTimerCallback, null, 0, 20);
 
             while (true)
             {
@@ -120,32 +115,6 @@ namespace HexapiBackground.IK
                         continue;
 
                     Parse(rawData);
-
-              
-
-                    if (_leftInches <= _perimeterInInches || 
-                    _centerInches <= _perimeterInInches || 
-                    _rightInches <= _perimeterInInches)
-                    {
-                        _isCollisionEvent = true;
-
-                        _rangeDataEventArgs = new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches, _farLeftInches, _farRightInches);
-
-                        var e = RangingEvent;
-                        e?.Invoke(null, _rangeDataEventArgs);
-                    }
-                    else
-                    {
-                        if (!_isCollisionEvent)
-                            continue;
-
-                        _isCollisionEvent = false;
-
-                        _rangeDataEventArgs = new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches, _farLeftInches, _farRightInches);
-
-                        var e = RangingEvent;
-                        e?.Invoke(null, _rangeDataEventArgs);
-                    }
                 }
                 catch
                 {
@@ -176,6 +145,12 @@ namespace HexapiBackground.IK
             {
                 await _display.Write($"{_accelY}", 2);
             }
+        }
+
+        private void RangeTimerCallback(object state)
+        {
+            var e = RangingEvent;
+            e?.Invoke(null, new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches, _farLeftInches, _farRightInches));
         }
 
         internal async void RequestBehavior(Behavior behavior, bool start)
