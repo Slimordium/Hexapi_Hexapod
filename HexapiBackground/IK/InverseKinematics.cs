@@ -474,7 +474,7 @@ namespace HexapiBackground.IK
         {
             _selectedFunctionLeg = leg;
 
-            LegYHeightCorrector[leg] = _bodyPosY + yPos;
+            LegYHeightCorrector[leg] = yPos;
         }
 
         //The idea here, is that if a foot hits an object, the corrector is set to the negative value of the current foot height,

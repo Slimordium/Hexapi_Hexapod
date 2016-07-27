@@ -381,8 +381,8 @@ namespace HexapiBackground
                             break;
                         case SelectedIkFunction.BodyHeight:
                             _bodyPosY = _bodyPosY + 5;
-                            if (_bodyPosY > 100)
-                                _bodyPosY = 100;
+                            if (_bodyPosY > 110)
+                                _bodyPosY = 110;
                             _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
                             await _display.WriteAsync($"_bodyPosY = {_bodyPosY}", 2);
                             break;

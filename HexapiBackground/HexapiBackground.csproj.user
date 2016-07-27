@@ -17,7 +17,7 @@
     <RemoteDebugMachine>hexapi</RemoteDebugMachine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <RemoteDebugEnabled>true</RemoteDebugEnabled>
+    <RemoteDebugEnabled>false</RemoteDebugEnabled>
     <RemoteDebugMachine>hexapi</RemoteDebugMachine>
     <AuthenticationMode>Universal</AuthenticationMode>
   </PropertyGroup>

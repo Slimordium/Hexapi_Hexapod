@@ -47,7 +47,7 @@ namespace HexapiBackground
 
             _display = new SparkFunSerial16X2Lcd();
             _xboxController = new XboxController(_display);
-            _ntripClient = new NtripClient("172.16.0.226", 8000, "", "", "", _display);
+            _ntripClient = new NtripClient("172.16.0.227", 8000, "", "", "", _display); //172.16.0.227
             _gps = new Gps.Gps( _display, _ntripClient);
             _inverseKinematics = new InverseKinematics(_display);
             _ikController = new IkController(_inverseKinematics, _display, _ioTClient, _gps); //Range and yaw/pitch/roll data from Arduino and SparkFun Razor IMU
@@ -61,6 +61,7 @@ namespace HexapiBackground
             _initializeTasks.Add(_gps.InitializeAsync());
             _initializeTasks.Add(_inverseKinematics.InitializeAsync());
 
+            _startTasks.Add(_ntripClient.StartAsync());
             _startTasks.Add(_ikController.StartAsync());
             _startTasks.Add(_gps.StartAsync());
             _startTasks.Add(_inverseKinematics.StartAsync());

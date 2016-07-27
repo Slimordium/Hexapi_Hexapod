@@ -11,13 +11,16 @@ namespace HexapiBackground.Gps.Ntrip
     internal class NtripClient
     {
         private static readonly Encoding Encoding = new ASCIIEncoding();
-        private readonly IPEndPoint _endPoint;
+        private IPEndPoint _endPoint;
         private readonly string _ntripMountPoint; //P041_RTCM3
         private readonly string _password;
         private readonly Socket _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         private readonly string _username;
         private readonly SparkFunSerial16X2Lcd _display;
         internal event EventHandler<NtripEventArgs> NtripDataArrivedEvent;
+        private bool _isConnected;
+        private readonly IPAddress _ip;
+        private readonly int _ntripPort;
 
         //rtgpsout.unavco.org:2101
         //69.44.86.36 
@@ -35,21 +38,20 @@ namespace HexapiBackground.Gps.Ntrip
             _username = userName;
             _password = password;
 
+            _ntripPort = ntripPort;
+
             _ntripMountPoint = ntripMountPoint;
 
             _display = display;
 
             try
             {
-                IPAddress ip;
-                IPAddress.TryParse(ntripIpAddress, out ip);
+                IPAddress.TryParse(ntripIpAddress, out _ip);
 
-                if (ip == null)
-                {
+                if (_ip == null)
                     return;
-                }
 
-                _endPoint = new IPEndPoint(ip, ntripPort);
+                _endPoint = new IPEndPoint(_ip, _ntripPort);
             }
             catch (Exception)
             {
@@ -59,11 +61,11 @@ namespace HexapiBackground.Gps.Ntrip
 
         internal async Task InitializeAsync()
         {
-            if (_endPoint == null)
-                return;
 
             await Task.Run(() =>
             {
+
+
                 var args = new SocketAsyncEventArgs
                 {
                     UserToken = _socket,
@@ -74,14 +76,16 @@ namespace HexapiBackground.Gps.Ntrip
                 {
                     if (((Socket) sender).Connected)
                     {
+                        _isConnected = true;
+
                         await _display.WriteAsync("NTRIP Connected");
 
                         await Task.Delay(500);
-
-                        Authenticate();
                     }
                     else
                     {
+                        _isConnected = false;
+
                         await _display.WriteAsync("NTRIP Connection failed");
                     }
                 };
@@ -103,27 +107,46 @@ namespace HexapiBackground.Gps.Ntrip
             return Encoding.ASCII.GetBytes(msg);
         }
 
-        private void Authenticate()
+        /// <summary>
+        /// Authenticates and starts the transfer
+        /// </summary>
+        internal async Task StartAsync()
         {
-            var buffer = new ArraySegment<byte>(CreateAuthRequest());
-
-            var args = new SocketAsyncEventArgs
+            await Task.Run(async () =>
             {
-                UserToken = _socket,
-                RemoteEndPoint = _endPoint,
-                BufferList = new List<ArraySegment<byte>> {buffer}
-            };
+                while (!_isConnected)
+                {
+                    await Task.Delay(5000);
 
-            args.Completed += async (sender, eventArgs) =>
-            {
-                await _display.WriteAsync($"NTRIP {eventArgs.SocketError}");
+                    if (_isConnected)
+                        break;
 
-                await Task.Delay(1500);
+                    await InitializeAsync();
 
-                ReadData();
-            };
+                    if (!_isConnected)
+                        _endPoint = new IPEndPoint(_ip, _ntripPort);
+                }
 
-            _socket.SendAsync(args);
+                var buffer = new ArraySegment<byte>(CreateAuthRequest());
+
+                var args = new SocketAsyncEventArgs
+                {
+                    UserToken = _socket,
+                    RemoteEndPoint = _endPoint,
+                    BufferList = new List<ArraySegment<byte>> {buffer}
+                };
+
+                args.Completed += async (sender, eventArgs) =>
+                {
+                    await _display.WriteAsync($"NTRIP {eventArgs.SocketError}");
+
+                    await Task.Delay(1500);
+
+                    ReadData();
+                };
+
+                _socket.SendAsync(args);
+            });
         }
 
         private void ReadData()
@@ -137,35 +160,31 @@ namespace HexapiBackground.Gps.Ntrip
                 BufferList = new List<ArraySegment<byte>> {buffer}
             };
 
-            args.Completed += Args_Completed;
+            args.Completed += ReadCompletedHandler;
 
             _socket.ReceiveAsync(args);
         }
 
-        private async void Args_Completed(object sender, SocketAsyncEventArgs e)
+        private void ReadCompletedHandler(object sender, SocketAsyncEventArgs e)
         {
+            if (!((Socket)sender).Connected)
+            {
+                _isConnected = false;
+
+                StartAsync();
+                return;
+            }
+
             if (e.BytesTransferred > 0)
             {
                 var data = new byte[e.BytesTransferred];
 
                 Array.Copy(e.BufferList[0].Array, data, e.BytesTransferred);
-                await SendToGps(data);
+
+                NtripDataArrivedEvent?.Invoke(this, new NtripEventArgs(data));
             }
 
             ReadData();
-        }
-
-        private async Task SendToGps(byte[] data)
-        {
-            await Task.Run(() =>
-            {
-                var handler = NtripDataArrivedEvent;
-
-                if (handler != null && data.Length > 1)
-                {
-                    handler.Invoke(this, new NtripEventArgs(data));
-                }
-            });
         }
 
         internal static string ToBase64(string str)

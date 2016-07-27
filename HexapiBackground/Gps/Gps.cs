@@ -22,14 +22,12 @@ namespace HexapiBackground.Gps
         private readonly NtripClient _ntripClientTcp;
 
         private DataReader _inputStream;
+        private DataWriter _outputStream;
 
         internal Gps(SparkFunSerial16X2Lcd display, NtripClient ntripClientTcp = null)
         {
             _display = display;
             _ntripClientTcp = ntripClientTcp;
-
-            if (_ntripClientTcp != null)
-                _ntripClientTcp.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
 
             CurrentLatLon = new LatLon();
         }
@@ -41,6 +39,7 @@ namespace HexapiBackground.Gps
             if (_gpsSerialDevice == null)
                 return false;
 
+            _outputStream = new DataWriter(_gpsSerialDevice.OutputStream);
             _inputStream = new DataReader(_gpsSerialDevice.InputStream);
 
             return true;
@@ -56,6 +55,9 @@ namespace HexapiBackground.Gps
 
         internal async Task StartAsync()
         {
+            if (_ntripClientTcp != null)
+                _ntripClientTcp.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
+
             while (true)
             {
                 if (_inputStream == null)
@@ -65,16 +67,31 @@ namespace HexapiBackground.Gps
 
                 while (true)
                 {
-                    await _inputStream.LoadAsync(1).AsTask();
-                    if (_inputStream.ReadString(1) == "$")
-                        break;
+                    try
+                    {
+                        await _inputStream.LoadAsync(1).AsTask();
+                        if (_inputStream.ReadString(1) == "$")
+                            break;
+                    }
+                    catch
+                    {
+                        //It happens
+                    }
+
                 }
 
                 var byteList = new List<byte> {0x00};
                 while (byteList.Last() != 0x0d)
                 {
-                    await _inputStream.LoadAsync(1).AsTask();
-                    byteList.Add(_inputStream.ReadByte());
+                    try
+                    {
+                        await _inputStream.LoadAsync(1).AsTask();
+                        byteList.Add(_inputStream.ReadByte());
+                    }
+                    catch
+                    {
+                        //
+                    }
                 }
 
                 var sentence = Encoding.ASCII.GetString(byteList.ToArray()).Replace("\0","").Replace("\r","");
@@ -93,13 +110,13 @@ namespace HexapiBackground.Gps
 
         private async void NtripClient_NtripDataArrivedEvent(object sender, NtripEventArgs e)
         {
+            if (_gpsSerialDevice == null)
+                return;
+
             try
             {
-                using (var outputStream = new DataWriter(_gpsSerialDevice.OutputStream))
-                {
-                    outputStream.WriteBytes(e.NtripBytes);
-                    await outputStream.StoreAsync().AsTask();
-                }
+                _outputStream.WriteBytes(e.NtripBytes);
+                await _outputStream.StoreAsync().AsTask();
             }
             catch
             {

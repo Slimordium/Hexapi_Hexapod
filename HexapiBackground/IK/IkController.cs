@@ -125,8 +125,7 @@ namespace HexapiBackground.IK
 
         private void ImuEventTimerCallback(object state)
         {
-            var e = ImuEvent;
-            e?.Invoke(null, new ImuDataEventArgs { Yaw = _yaw, Pitch = _pitch, Roll = _roll, AccelX = _accelX, AccelY = _accelY, AccelZ = _accelZ });
+            ImuEvent?.Invoke(null, new ImuDataEventArgs { Yaw = _yaw, Pitch = _pitch, Roll = _roll, AccelX = _accelX, AccelY = _accelY, AccelZ = _accelZ });
         }
 
         private async void DisplayTimerCallback(object state)
@@ -149,8 +148,7 @@ namespace HexapiBackground.IK
 
         private void RangeTimerCallback(object state)
         {
-            var e = RangingEvent;
-            e?.Invoke(null, new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches, _farLeftInches, _farRightInches));
+            RangingEvent?.Invoke(null, new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches, _farLeftInches, _farRightInches));
         }
 
         internal async void RequestBehavior(Behavior behavior, bool start)
