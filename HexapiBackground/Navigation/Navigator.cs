@@ -5,6 +5,7 @@ using HexapiBackground.Gps;
 using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
 using HexapiBackground.IK;
+using System.Threading;
 
 namespace HexapiBackground.Navigation
 {
@@ -12,9 +13,12 @@ namespace HexapiBackground.Navigation
     {
         private readonly IkController _ikController;
         private readonly Gps.Gps _gps;
-        private bool _gpsNavigationEnabled;
         private List<LatLon> _waypoints;
         private readonly SparkFunSerial16X2Lcd _display;
+
+        private bool _navRunning;
+
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         internal Navigator(IkController ikController,  SparkFunSerial16X2Lcd display, Gps.Gps gps)
         {
@@ -23,38 +27,42 @@ namespace HexapiBackground.Navigation
             _display = display;
         }
             
-        internal async Task Start()
+        internal async Task InitializeAsync()
         {
             if (_gps == null)
                 return;
 
-            if (_gpsNavigationEnabled)
-                return;
-
             _waypoints = await GpsExtensions.LoadWaypoints();
 
-            _gpsNavigationEnabled = true;
-
             await _display.WriteAsync($"{_waypoints.Count} waypoints");
+        }
+
+        internal async Task StartAsync()
+        {
+            if (_gps == null || _navRunning)
+                return;
+
+            _navRunning = true;
 
             foreach (var wp in _waypoints)
             {
                 if (wp.Lat == 0 || wp.Lon == 0)
                     continue;
 
-                await NavigateToWaypoint(wp);
+                await NavigateToWaypoint(wp, _cancellationTokenSource.Token);
 
-                if (!_gpsNavigationEnabled)
+                if (_cancellationTokenSource.IsCancellationRequested || !_navRunning)
                     break;
             }
         }
 
         internal void Stop()
         {
-            _gpsNavigationEnabled = false;
+            _cancellationTokenSource.Cancel();
+            _navRunning = false;
         }
         
-        internal async Task<bool> NavigateToWaypoint(LatLon currentWaypoint)
+        internal async Task<bool> NavigateToWaypoint(LatLon currentWaypoint, CancellationToken cancelationToken)
         {
             var distanceHeading = GpsExtensions.GetDistanceAndHeadingToDestination(_gps.CurrentLatLon.Lat, _gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
             var distanceToWaypoint = distanceHeading[0];
@@ -71,6 +79,9 @@ namespace HexapiBackground.Navigation
 
             while (distanceToWaypoint > 10) //Inches
             {
+                if (cancelationToken.IsCancellationRequested)
+                    return false;
+
                 await _display.WriteAsync($"WP D/H {distanceToWaypoint}, {headingToWaypoint}", 1);
                 await _display.WriteAsync($"{turnDirection} {_gps.CurrentLatLon.Heading}", 2);
 
@@ -166,13 +177,13 @@ namespace HexapiBackground.Navigation
 
                 _ikController.RequestMovement(nomGaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
 
-                await Task.Delay(50);
+                await Task.Delay(50, cancelationToken);
 
                 distanceHeading = GpsExtensions.GetDistanceAndHeadingToDestination(_gps.CurrentLatLon.Lat, _gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
                 distanceToWaypoint = distanceHeading[0];
                 headingToWaypoint = distanceHeading[1];
 
-                if (!_gpsNavigationEnabled)
+                if (cancelationToken.IsCancellationRequested)
                     return false;
             }
 

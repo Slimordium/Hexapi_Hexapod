@@ -79,7 +79,7 @@ namespace HexapiBackground.Hardware
             var lt = (int) Math.Max(0, args.Report.GetNumericControl(0x01, 0x32).Value - 32768);
             var rt = (int) Math.Max(0, -1*(args.Report.GetNumericControl(0x01, 0x32).Value - 32768));
 
-            foreach (var btn in args.Report.ActivatedBooleanControls) //Start = 7, Back = 6
+            foreach (var btn in args.Report.ActivatedBooleanControls) //StartAsync = 7, Back = 6
             {
                 var id = (int) (btn.Id - 5);
 

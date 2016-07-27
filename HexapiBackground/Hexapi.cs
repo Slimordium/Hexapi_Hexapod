@@ -119,7 +119,7 @@ namespace HexapiBackground
 
                     if (_selectedGpsFunction == SelectedGpsFunction.GpsDisabled)
                     {
-                        await _navigator.Start();
+                        await _navigator.StartAsync();
                         await _display.WriteAsync("GPS Nav Enabled", 1);
                         _selectedGpsFunction = SelectedGpsFunction.GpsEnabled;
                     }
@@ -135,7 +135,7 @@ namespace HexapiBackground
 
 
                     break;
-                case 7: //Start button
+                case 7: //StartAsync button
                     _isMovementStarted = !_isMovementStarted;
 
                     if (_isMovementStarted)

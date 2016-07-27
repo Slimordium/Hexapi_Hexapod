@@ -279,7 +279,7 @@ namespace HexapiBackground.Hardware
                 //var sw = new Stopwatch();
                 //var mRes = 10* 1229/ 4096;
                 //long lastUpdateMs = 0;
-                //sw.Start();
+                //sw.StartAsync();
 
                 while (true)
                 {

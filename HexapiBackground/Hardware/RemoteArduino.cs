@@ -29,7 +29,7 @@
 
 //        }
 
-//        internal async Task Start()
+//        internal async Task StartAsync()
 //        {
 //            if (_connection != null)
 //                return;

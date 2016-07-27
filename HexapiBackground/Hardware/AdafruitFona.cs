@@ -13,7 +13,7 @@
 //            _serialPort = new SerialPort(); //FTDIBUS\VID_0403+PID_6001+AH03F3RYA\0000
 //        }
 
-//        internal async Task Start()
+//        internal async Task StartAsync()
 //        {
 //            await _serialPort.Open("AH03F3RYA", 115200, 1000, 1000);
 

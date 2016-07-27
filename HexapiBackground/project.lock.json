@@ -3,60 +3,56 @@
   "version": 2,
   "targets": {
     "UAP,Version=v10.0": {
-      "AWSSDK.Core/3.1.8": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Net.Http": "2.2.29",
-          "PCLCrypto": "1.0.2.15130",
-          "PCLStorage": "1.0.2"
-        },
-        "compile": {
-          "lib/windows8/AWSSDK.Core.dll": {}
-        },
-        "runtime": {
-          "lib/windows8/AWSSDK.Core.dll": {}
-        }
-      },
-      "AWSSDK.IoT/3.1.6": {
-        "type": "package",
-        "dependencies": {
-          "AWSSDK.Core": "[3.1.8, 3.2.0)"
-        },
-        "compile": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.dll": {}
-        },
-        "runtime": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.dll": {}
-        }
-      },
-      "AWSSDK.IotData/3.1.0.6": {
-        "type": "package",
-        "dependencies": {
-          "AWSSDK.Core": "[3.1.8, 3.2.0)"
-        },
-        "compile": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.dll": {}
-        },
-        "runtime": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.dll": {}
-        }
-      },
-      "Microsoft.AspNet.SignalR.Client/2.2.0": {
+      "Microsoft.AspNet.SignalR.Client/2.2.1": {
         "type": "package",
         "dependencies": {
           "Microsoft.Net.Http": "2.2.28",
           "Newtonsoft.Json": "6.0.4"
         },
         "compile": {
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.dll": {},
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll": {}
+          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
         },
         "runtime": {
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.dll": {},
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll": {}
+          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
         }
       },
-      "Microsoft.Bcl/1.1.10": {
+      "Microsoft.AspNet.WebApi.Client/5.2.3": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Net.Http": "2.2.22",
+          "Newtonsoft.Json": "6.0.4"
+        },
+        "compile": {
+          "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.dll": {}
+        },
+        "runtime": {
+          "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.dll": {}
+        }
+      },
+      "Microsoft.Azure.Amqp/1.1.5": {
+        "type": "package",
+        "compile": {
+          "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
+        },
+        "runtime": {
+          "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
+        }
+      },
+      "Microsoft.Azure.Devices.Client/1.0.13": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.AspNet.WebApi.Client": "5.2.3",
+          "Microsoft.Azure.Amqp": "1.1.5",
+          "PCLCrypto": "1.0.86"
+        },
+        "compile": {
+          "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd": {}
+        },
+        "runtime": {
+          "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd": {}
+        }
+      },
+      "Microsoft.Bcl/1.1.9": {
         "type": "package",
         "dependencies": {
           "Microsoft.Bcl.Build": "1.0.14"
@@ -98,10 +94,10 @@
           "lib/netcore50/Microsoft.CSharp.dll": {}
         }
       },
-      "Microsoft.Net.Http/2.2.29": {
+      "Microsoft.Net.Http/2.2.28": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Bcl": "1.1.10",
+          "Microsoft.Bcl": "1.1.9",
           "Microsoft.Bcl.Build": "1.0.14"
         },
         "compile": {
@@ -380,7 +376,7 @@
           "lib/netcore45/Newtonsoft.Json.dll": {}
         }
       },
-      "PCLCrypto/1.0.2.15130": {
+      "PCLCrypto/1.0.86": {
         "type": "package",
         "dependencies": {
           "Validation": "[2.0.6, 3.0.0)"
@@ -390,17 +386,6 @@
         },
         "runtime": {
           "lib/win81/PCLCrypto.dll": {}
-        }
-      },
-      "PCLStorage/1.0.2": {
-        "type": "package",
-        "compile": {
-          "lib/portable-win8+wpa81/PCLStorage.Abstractions.dll": {},
-          "lib/portable-win8+wpa81/PCLStorage.dll": {}
-        },
-        "runtime": {
-          "lib/portable-win8+wpa81/PCLStorage.Abstractions.dll": {},
-          "lib/portable-win8+wpa81/PCLStorage.dll": {}
         }
       },
       "runtime.native.System.IO.Compression/4.1.0": {
@@ -2270,60 +2255,56 @@
       }
     },
     "UAP,Version=v10.0/win10-arm": {
-      "AWSSDK.Core/3.1.8": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Net.Http": "2.2.29",
-          "PCLCrypto": "1.0.2.15130",
-          "PCLStorage": "1.0.2"
-        },
-        "compile": {
-          "lib/windows8/AWSSDK.Core.dll": {}
-        },
-        "runtime": {
-          "lib/windows8/AWSSDK.Core.dll": {}
-        }
-      },
-      "AWSSDK.IoT/3.1.6": {
-        "type": "package",
-        "dependencies": {
-          "AWSSDK.Core": "[3.1.8, 3.2.0)"
-        },
-        "compile": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.dll": {}
-        },
-        "runtime": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.dll": {}
-        }
-      },
-      "AWSSDK.IotData/3.1.0.6": {
-        "type": "package",
-        "dependencies": {
-          "AWSSDK.Core": "[3.1.8, 3.2.0)"
-        },
-        "compile": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.dll": {}
-        },
-        "runtime": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.dll": {}
-        }
-      },
-      "Microsoft.AspNet.SignalR.Client/2.2.0": {
+      "Microsoft.AspNet.SignalR.Client/2.2.1": {
         "type": "package",
         "dependencies": {
           "Microsoft.Net.Http": "2.2.28",
           "Newtonsoft.Json": "6.0.4"
         },
         "compile": {
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.dll": {},
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll": {}
+          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
         },
         "runtime": {
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.dll": {},
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll": {}
+          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
         }
       },
-      "Microsoft.Bcl/1.1.10": {
+      "Microsoft.AspNet.WebApi.Client/5.2.3": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Net.Http": "2.2.22",
+          "Newtonsoft.Json": "6.0.4"
+        },
+        "compile": {
+          "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.dll": {}
+        },
+        "runtime": {
+          "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.dll": {}
+        }
+      },
+      "Microsoft.Azure.Amqp/1.1.5": {
+        "type": "package",
+        "compile": {
+          "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
+        },
+        "runtime": {
+          "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
+        }
+      },
+      "Microsoft.Azure.Devices.Client/1.0.13": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.AspNet.WebApi.Client": "5.2.3",
+          "Microsoft.Azure.Amqp": "1.1.5",
+          "PCLCrypto": "1.0.86"
+        },
+        "compile": {
+          "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd": {}
+        },
+        "runtime": {
+          "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd": {}
+        }
+      },
+      "Microsoft.Bcl/1.1.9": {
         "type": "package",
         "dependencies": {
           "Microsoft.Bcl.Build": "1.0.14"
@@ -2365,10 +2346,10 @@
           "lib/netcore50/Microsoft.CSharp.dll": {}
         }
       },
-      "Microsoft.Net.Http/2.2.29": {
+      "Microsoft.Net.Http/2.2.28": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Bcl": "1.1.10",
+          "Microsoft.Bcl": "1.1.9",
           "Microsoft.Bcl.Build": "1.0.14"
         },
         "compile": {
@@ -2595,7 +2576,7 @@
           "lib/netcore45/Newtonsoft.Json.dll": {}
         }
       },
-      "PCLCrypto/1.0.2.15130": {
+      "PCLCrypto/1.0.86": {
         "type": "package",
         "dependencies": {
           "Validation": "[2.0.6, 3.0.0)"
@@ -2605,17 +2586,6 @@
         },
         "runtime": {
           "lib/win81/PCLCrypto.dll": {}
-        }
-      },
-      "PCLStorage/1.0.2": {
-        "type": "package",
-        "compile": {
-          "lib/portable-win8+wpa81/PCLStorage.Abstractions.dll": {},
-          "lib/portable-win8+wpa81/PCLStorage.dll": {}
-        },
-        "runtime": {
-          "lib/portable-win8+wpa81/PCLStorage.Abstractions.dll": {},
-          "lib/portable-win8+wpa81/PCLStorage.dll": {}
         }
       },
       "runtime.any.System.Collections/4.0.11": {
@@ -4645,60 +4615,56 @@
       }
     },
     "UAP,Version=v10.0/win10-arm-aot": {
-      "AWSSDK.Core/3.1.8": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Net.Http": "2.2.29",
-          "PCLCrypto": "1.0.2.15130",
-          "PCLStorage": "1.0.2"
-        },
-        "compile": {
-          "lib/windows8/AWSSDK.Core.dll": {}
-        },
-        "runtime": {
-          "lib/windows8/AWSSDK.Core.dll": {}
-        }
-      },
-      "AWSSDK.IoT/3.1.6": {
-        "type": "package",
-        "dependencies": {
-          "AWSSDK.Core": "[3.1.8, 3.2.0)"
-        },
-        "compile": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.dll": {}
-        },
-        "runtime": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.dll": {}
-        }
-      },
-      "AWSSDK.IotData/3.1.0.6": {
-        "type": "package",
-        "dependencies": {
-          "AWSSDK.Core": "[3.1.8, 3.2.0)"
-        },
-        "compile": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.dll": {}
-        },
-        "runtime": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.dll": {}
-        }
-      },
-      "Microsoft.AspNet.SignalR.Client/2.2.0": {
+      "Microsoft.AspNet.SignalR.Client/2.2.1": {
         "type": "package",
         "dependencies": {
           "Microsoft.Net.Http": "2.2.28",
           "Newtonsoft.Json": "6.0.4"
         },
         "compile": {
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.dll": {},
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll": {}
+          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
         },
         "runtime": {
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.dll": {},
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll": {}
+          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
         }
       },
-      "Microsoft.Bcl/1.1.10": {
+      "Microsoft.AspNet.WebApi.Client/5.2.3": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Net.Http": "2.2.22",
+          "Newtonsoft.Json": "6.0.4"
+        },
+        "compile": {
+          "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.dll": {}
+        },
+        "runtime": {
+          "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.dll": {}
+        }
+      },
+      "Microsoft.Azure.Amqp/1.1.5": {
+        "type": "package",
+        "compile": {
+          "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
+        },
+        "runtime": {
+          "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
+        }
+      },
+      "Microsoft.Azure.Devices.Client/1.0.13": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.AspNet.WebApi.Client": "5.2.3",
+          "Microsoft.Azure.Amqp": "1.1.5",
+          "PCLCrypto": "1.0.86"
+        },
+        "compile": {
+          "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd": {}
+        },
+        "runtime": {
+          "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd": {}
+        }
+      },
+      "Microsoft.Bcl/1.1.9": {
         "type": "package",
         "dependencies": {
           "Microsoft.Bcl.Build": "1.0.14"
@@ -4740,10 +4706,10 @@
           "lib/netcore50/Microsoft.CSharp.dll": {}
         }
       },
-      "Microsoft.Net.Http/2.2.29": {
+      "Microsoft.Net.Http/2.2.28": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Bcl": "1.1.10",
+          "Microsoft.Bcl": "1.1.9",
           "Microsoft.Bcl.Build": "1.0.14"
         },
         "compile": {
@@ -4971,7 +4937,7 @@
           "lib/netcore45/Newtonsoft.Json.dll": {}
         }
       },
-      "PCLCrypto/1.0.2.15130": {
+      "PCLCrypto/1.0.86": {
         "type": "package",
         "dependencies": {
           "Validation": "[2.0.6, 3.0.0)"
@@ -4981,17 +4947,6 @@
         },
         "runtime": {
           "lib/win81/PCLCrypto.dll": {}
-        }
-      },
-      "PCLStorage/1.0.2": {
-        "type": "package",
-        "compile": {
-          "lib/portable-win8+wpa81/PCLStorage.Abstractions.dll": {},
-          "lib/portable-win8+wpa81/PCLStorage.dll": {}
-        },
-        "runtime": {
-          "lib/portable-win8+wpa81/PCLStorage.Abstractions.dll": {},
-          "lib/portable-win8+wpa81/PCLStorage.dll": {}
         }
       },
       "runtime.aot.System.Collections/4.0.10": {
@@ -7059,60 +7014,56 @@
       }
     },
     "UAP,Version=v10.0/win10-x64": {
-      "AWSSDK.Core/3.1.8": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Net.Http": "2.2.29",
-          "PCLCrypto": "1.0.2.15130",
-          "PCLStorage": "1.0.2"
-        },
-        "compile": {
-          "lib/windows8/AWSSDK.Core.dll": {}
-        },
-        "runtime": {
-          "lib/windows8/AWSSDK.Core.dll": {}
-        }
-      },
-      "AWSSDK.IoT/3.1.6": {
-        "type": "package",
-        "dependencies": {
-          "AWSSDK.Core": "[3.1.8, 3.2.0)"
-        },
-        "compile": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.dll": {}
-        },
-        "runtime": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.dll": {}
-        }
-      },
-      "AWSSDK.IotData/3.1.0.6": {
-        "type": "package",
-        "dependencies": {
-          "AWSSDK.Core": "[3.1.8, 3.2.0)"
-        },
-        "compile": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.dll": {}
-        },
-        "runtime": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.dll": {}
-        }
-      },
-      "Microsoft.AspNet.SignalR.Client/2.2.0": {
+      "Microsoft.AspNet.SignalR.Client/2.2.1": {
         "type": "package",
         "dependencies": {
           "Microsoft.Net.Http": "2.2.28",
           "Newtonsoft.Json": "6.0.4"
         },
         "compile": {
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.dll": {},
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll": {}
+          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
         },
         "runtime": {
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.dll": {},
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll": {}
+          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
         }
       },
-      "Microsoft.Bcl/1.1.10": {
+      "Microsoft.AspNet.WebApi.Client/5.2.3": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Net.Http": "2.2.22",
+          "Newtonsoft.Json": "6.0.4"
+        },
+        "compile": {
+          "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.dll": {}
+        },
+        "runtime": {
+          "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.dll": {}
+        }
+      },
+      "Microsoft.Azure.Amqp/1.1.5": {
+        "type": "package",
+        "compile": {
+          "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
+        },
+        "runtime": {
+          "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
+        }
+      },
+      "Microsoft.Azure.Devices.Client/1.0.13": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.AspNet.WebApi.Client": "5.2.3",
+          "Microsoft.Azure.Amqp": "1.1.5",
+          "PCLCrypto": "1.0.86"
+        },
+        "compile": {
+          "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd": {}
+        },
+        "runtime": {
+          "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd": {}
+        }
+      },
+      "Microsoft.Bcl/1.1.9": {
         "type": "package",
         "dependencies": {
           "Microsoft.Bcl.Build": "1.0.14"
@@ -7154,10 +7105,10 @@
           "lib/netcore50/Microsoft.CSharp.dll": {}
         }
       },
-      "Microsoft.Net.Http/2.2.29": {
+      "Microsoft.Net.Http/2.2.28": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Bcl": "1.1.10",
+          "Microsoft.Bcl": "1.1.9",
           "Microsoft.Bcl.Build": "1.0.14"
         },
         "compile": {
@@ -7387,7 +7338,7 @@
           "lib/netcore45/Newtonsoft.Json.dll": {}
         }
       },
-      "PCLCrypto/1.0.2.15130": {
+      "PCLCrypto/1.0.86": {
         "type": "package",
         "dependencies": {
           "Validation": "[2.0.6, 3.0.0)"
@@ -7397,17 +7348,6 @@
         },
         "runtime": {
           "lib/win81/PCLCrypto.dll": {}
-        }
-      },
-      "PCLStorage/1.0.2": {
-        "type": "package",
-        "compile": {
-          "lib/portable-win8+wpa81/PCLStorage.Abstractions.dll": {},
-          "lib/portable-win8+wpa81/PCLStorage.dll": {}
-        },
-        "runtime": {
-          "lib/portable-win8+wpa81/PCLStorage.Abstractions.dll": {},
-          "lib/portable-win8+wpa81/PCLStorage.dll": {}
         }
       },
       "runtime.any.System.Collections/4.0.11": {
@@ -9443,60 +9383,56 @@
       }
     },
     "UAP,Version=v10.0/win10-x64-aot": {
-      "AWSSDK.Core/3.1.8": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Net.Http": "2.2.29",
-          "PCLCrypto": "1.0.2.15130",
-          "PCLStorage": "1.0.2"
-        },
-        "compile": {
-          "lib/windows8/AWSSDK.Core.dll": {}
-        },
-        "runtime": {
-          "lib/windows8/AWSSDK.Core.dll": {}
-        }
-      },
-      "AWSSDK.IoT/3.1.6": {
-        "type": "package",
-        "dependencies": {
-          "AWSSDK.Core": "[3.1.8, 3.2.0)"
-        },
-        "compile": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.dll": {}
-        },
-        "runtime": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.dll": {}
-        }
-      },
-      "AWSSDK.IotData/3.1.0.6": {
-        "type": "package",
-        "dependencies": {
-          "AWSSDK.Core": "[3.1.8, 3.2.0)"
-        },
-        "compile": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.dll": {}
-        },
-        "runtime": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.dll": {}
-        }
-      },
-      "Microsoft.AspNet.SignalR.Client/2.2.0": {
+      "Microsoft.AspNet.SignalR.Client/2.2.1": {
         "type": "package",
         "dependencies": {
           "Microsoft.Net.Http": "2.2.28",
           "Newtonsoft.Json": "6.0.4"
         },
         "compile": {
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.dll": {},
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll": {}
+          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
         },
         "runtime": {
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.dll": {},
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll": {}
+          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
         }
       },
-      "Microsoft.Bcl/1.1.10": {
+      "Microsoft.AspNet.WebApi.Client/5.2.3": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Net.Http": "2.2.22",
+          "Newtonsoft.Json": "6.0.4"
+        },
+        "compile": {
+          "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.dll": {}
+        },
+        "runtime": {
+          "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.dll": {}
+        }
+      },
+      "Microsoft.Azure.Amqp/1.1.5": {
+        "type": "package",
+        "compile": {
+          "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
+        },
+        "runtime": {
+          "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
+        }
+      },
+      "Microsoft.Azure.Devices.Client/1.0.13": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.AspNet.WebApi.Client": "5.2.3",
+          "Microsoft.Azure.Amqp": "1.1.5",
+          "PCLCrypto": "1.0.86"
+        },
+        "compile": {
+          "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd": {}
+        },
+        "runtime": {
+          "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd": {}
+        }
+      },
+      "Microsoft.Bcl/1.1.9": {
         "type": "package",
         "dependencies": {
           "Microsoft.Bcl.Build": "1.0.14"
@@ -9538,10 +9474,10 @@
           "lib/netcore50/Microsoft.CSharp.dll": {}
         }
       },
-      "Microsoft.Net.Http/2.2.29": {
+      "Microsoft.Net.Http/2.2.28": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Bcl": "1.1.10",
+          "Microsoft.Bcl": "1.1.9",
           "Microsoft.Bcl.Build": "1.0.14"
         },
         "compile": {
@@ -9772,7 +9708,7 @@
           "lib/netcore45/Newtonsoft.Json.dll": {}
         }
       },
-      "PCLCrypto/1.0.2.15130": {
+      "PCLCrypto/1.0.86": {
         "type": "package",
         "dependencies": {
           "Validation": "[2.0.6, 3.0.0)"
@@ -9782,17 +9718,6 @@
         },
         "runtime": {
           "lib/win81/PCLCrypto.dll": {}
-        }
-      },
-      "PCLStorage/1.0.2": {
-        "type": "package",
-        "compile": {
-          "lib/portable-win8+wpa81/PCLStorage.Abstractions.dll": {},
-          "lib/portable-win8+wpa81/PCLStorage.dll": {}
-        },
-        "runtime": {
-          "lib/portable-win8+wpa81/PCLStorage.Abstractions.dll": {},
-          "lib/portable-win8+wpa81/PCLStorage.dll": {}
         }
       },
       "runtime.aot.System.Collections/4.0.10": {
@@ -11866,60 +11791,56 @@
       }
     },
     "UAP,Version=v10.0/win10-x86": {
-      "AWSSDK.Core/3.1.8": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Net.Http": "2.2.29",
-          "PCLCrypto": "1.0.2.15130",
-          "PCLStorage": "1.0.2"
-        },
-        "compile": {
-          "lib/windows8/AWSSDK.Core.dll": {}
-        },
-        "runtime": {
-          "lib/windows8/AWSSDK.Core.dll": {}
-        }
-      },
-      "AWSSDK.IoT/3.1.6": {
-        "type": "package",
-        "dependencies": {
-          "AWSSDK.Core": "[3.1.8, 3.2.0)"
-        },
-        "compile": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.dll": {}
-        },
-        "runtime": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.dll": {}
-        }
-      },
-      "AWSSDK.IotData/3.1.0.6": {
-        "type": "package",
-        "dependencies": {
-          "AWSSDK.Core": "[3.1.8, 3.2.0)"
-        },
-        "compile": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.dll": {}
-        },
-        "runtime": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.dll": {}
-        }
-      },
-      "Microsoft.AspNet.SignalR.Client/2.2.0": {
+      "Microsoft.AspNet.SignalR.Client/2.2.1": {
         "type": "package",
         "dependencies": {
           "Microsoft.Net.Http": "2.2.28",
           "Newtonsoft.Json": "6.0.4"
         },
         "compile": {
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.dll": {},
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll": {}
+          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
         },
         "runtime": {
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.dll": {},
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll": {}
+          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
         }
       },
-      "Microsoft.Bcl/1.1.10": {
+      "Microsoft.AspNet.WebApi.Client/5.2.3": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Net.Http": "2.2.22",
+          "Newtonsoft.Json": "6.0.4"
+        },
+        "compile": {
+          "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.dll": {}
+        },
+        "runtime": {
+          "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.dll": {}
+        }
+      },
+      "Microsoft.Azure.Amqp/1.1.5": {
+        "type": "package",
+        "compile": {
+          "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
+        },
+        "runtime": {
+          "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
+        }
+      },
+      "Microsoft.Azure.Devices.Client/1.0.13": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.AspNet.WebApi.Client": "5.2.3",
+          "Microsoft.Azure.Amqp": "1.1.5",
+          "PCLCrypto": "1.0.86"
+        },
+        "compile": {
+          "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd": {}
+        },
+        "runtime": {
+          "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd": {}
+        }
+      },
+      "Microsoft.Bcl/1.1.9": {
         "type": "package",
         "dependencies": {
           "Microsoft.Bcl.Build": "1.0.14"
@@ -11961,10 +11882,10 @@
           "lib/netcore50/Microsoft.CSharp.dll": {}
         }
       },
-      "Microsoft.Net.Http/2.2.29": {
+      "Microsoft.Net.Http/2.2.28": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Bcl": "1.1.10",
+          "Microsoft.Bcl": "1.1.9",
           "Microsoft.Bcl.Build": "1.0.14"
         },
         "compile": {
@@ -12194,7 +12115,7 @@
           "lib/netcore45/Newtonsoft.Json.dll": {}
         }
       },
-      "PCLCrypto/1.0.2.15130": {
+      "PCLCrypto/1.0.86": {
         "type": "package",
         "dependencies": {
           "Validation": "[2.0.6, 3.0.0)"
@@ -12204,17 +12125,6 @@
         },
         "runtime": {
           "lib/win81/PCLCrypto.dll": {}
-        }
-      },
-      "PCLStorage/1.0.2": {
-        "type": "package",
-        "compile": {
-          "lib/portable-win8+wpa81/PCLStorage.Abstractions.dll": {},
-          "lib/portable-win8+wpa81/PCLStorage.dll": {}
-        },
-        "runtime": {
-          "lib/portable-win8+wpa81/PCLStorage.Abstractions.dll": {},
-          "lib/portable-win8+wpa81/PCLStorage.dll": {}
         }
       },
       "runtime.any.System.Collections/4.0.11": {
@@ -14250,60 +14160,56 @@
       }
     },
     "UAP,Version=v10.0/win10-x86-aot": {
-      "AWSSDK.Core/3.1.8": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Net.Http": "2.2.29",
-          "PCLCrypto": "1.0.2.15130",
-          "PCLStorage": "1.0.2"
-        },
-        "compile": {
-          "lib/windows8/AWSSDK.Core.dll": {}
-        },
-        "runtime": {
-          "lib/windows8/AWSSDK.Core.dll": {}
-        }
-      },
-      "AWSSDK.IoT/3.1.6": {
-        "type": "package",
-        "dependencies": {
-          "AWSSDK.Core": "[3.1.8, 3.2.0)"
-        },
-        "compile": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.dll": {}
-        },
-        "runtime": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.dll": {}
-        }
-      },
-      "AWSSDK.IotData/3.1.0.6": {
-        "type": "package",
-        "dependencies": {
-          "AWSSDK.Core": "[3.1.8, 3.2.0)"
-        },
-        "compile": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.dll": {}
-        },
-        "runtime": {
-          "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.dll": {}
-        }
-      },
-      "Microsoft.AspNet.SignalR.Client/2.2.0": {
+      "Microsoft.AspNet.SignalR.Client/2.2.1": {
         "type": "package",
         "dependencies": {
           "Microsoft.Net.Http": "2.2.28",
           "Newtonsoft.Json": "6.0.4"
         },
         "compile": {
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.dll": {},
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll": {}
+          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
         },
         "runtime": {
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.dll": {},
-          "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll": {}
+          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
         }
       },
-      "Microsoft.Bcl/1.1.10": {
+      "Microsoft.AspNet.WebApi.Client/5.2.3": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Net.Http": "2.2.22",
+          "Newtonsoft.Json": "6.0.4"
+        },
+        "compile": {
+          "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.dll": {}
+        },
+        "runtime": {
+          "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.dll": {}
+        }
+      },
+      "Microsoft.Azure.Amqp/1.1.5": {
+        "type": "package",
+        "compile": {
+          "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
+        },
+        "runtime": {
+          "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
+        }
+      },
+      "Microsoft.Azure.Devices.Client/1.0.13": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.AspNet.WebApi.Client": "5.2.3",
+          "Microsoft.Azure.Amqp": "1.1.5",
+          "PCLCrypto": "1.0.86"
+        },
+        "compile": {
+          "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd": {}
+        },
+        "runtime": {
+          "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd": {}
+        }
+      },
+      "Microsoft.Bcl/1.1.9": {
         "type": "package",
         "dependencies": {
           "Microsoft.Bcl.Build": "1.0.14"
@@ -14345,10 +14251,10 @@
           "lib/netcore50/Microsoft.CSharp.dll": {}
         }
       },
-      "Microsoft.Net.Http/2.2.29": {
+      "Microsoft.Net.Http/2.2.28": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Bcl": "1.1.10",
+          "Microsoft.Bcl": "1.1.9",
           "Microsoft.Bcl.Build": "1.0.14"
         },
         "compile": {
@@ -14579,7 +14485,7 @@
           "lib/netcore45/Newtonsoft.Json.dll": {}
         }
       },
-      "PCLCrypto/1.0.2.15130": {
+      "PCLCrypto/1.0.86": {
         "type": "package",
         "dependencies": {
           "Validation": "[2.0.6, 3.0.0)"
@@ -14589,17 +14495,6 @@
         },
         "runtime": {
           "lib/win81/PCLCrypto.dll": {}
-        }
-      },
-      "PCLStorage/1.0.2": {
-        "type": "package",
-        "compile": {
-          "lib/portable-win8+wpa81/PCLStorage.Abstractions.dll": {},
-          "lib/portable-win8+wpa81/PCLStorage.dll": {}
-        },
-        "runtime": {
-          "lib/portable-win8+wpa81/PCLStorage.Abstractions.dll": {},
-          "lib/portable-win8+wpa81/PCLStorage.dll": {}
         }
       },
       "runtime.aot.System.Collections/4.0.10": {
@@ -16674,109 +16569,85 @@
     }
   },
   "libraries": {
-    "AWSSDK.Core/3.1.8": {
-      "sha512": "q3dCDwO3bOyywRBzBRGDyLvPkeKnZV+N/iGk4ZNK/bHewwgQmdMTm5OzCOfi4BaaRILHCtSbVzjcMmz5sx0Wbg==",
+    "Microsoft.AspNet.SignalR.Client/2.2.1": {
+      "sha512": "ecup1Ztcr9DnLOZo7VQb5ViM8tfip35Bi/IzIOc62KHLdWM5xr1tefOIeQ8sV8h4jF30PIOomFsTr/mSpuw+4Q==",
       "type": "package",
-      "path": "AWSSDK.Core/3.1.8",
+      "path": "Microsoft.AspNet.SignalR.Client/2.2.1",
       "files": [
-        "AWSSDK.Core.3.1.8.nupkg.sha512",
-        "AWSSDK.Core.nuspec",
-        "lib/Xamarin.Mac20/AWSSDK.Core.XML",
-        "lib/Xamarin.Mac20/AWSSDK.Core.dll",
-        "lib/Xamarin.iOS10/AWSSDK.Core.XML",
-        "lib/Xamarin.iOS10/AWSSDK.Core.dll",
-        "lib/monoandroid/AWSSDK.Core.XML",
-        "lib/monoandroid/AWSSDK.Core.dll",
-        "lib/monoandroid/AWSSDK.Core.pdb",
-        "lib/net35/AWSSDK.Core.XML",
-        "lib/net35/AWSSDK.Core.dll",
-        "lib/net35/AWSSDK.Core.pdb",
-        "lib/net45/AWSSDK.Core.XML",
-        "lib/net45/AWSSDK.Core.dll",
-        "lib/net45/AWSSDK.Core.pdb",
-        "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.Core.XML",
-        "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.Core.dll",
-        "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.Core.pdb",
-        "lib/windows8/AWSSDK.Core.XML",
-        "lib/windows8/AWSSDK.Core.dll",
-        "lib/windows8/AWSSDK.Core.pdb",
-        "lib/wp8/AWSSDK.Core.XML",
-        "lib/wp8/AWSSDK.Core.dll",
-        "lib/wp8/AWSSDK.Core.pdb",
-        "lib/wpa81/AWSSDK.Core.XML",
-        "lib/wpa81/AWSSDK.Core.dll",
-        "lib/wpa81/AWSSDK.Core.pdb",
-        "tools/account-management.ps1"
-      ]
-    },
-    "AWSSDK.IoT/3.1.6": {
-      "sha512": "9tZGkDzrok+kUlhO7xgDQyQLH3jcrW3cnG9GNh5c+e4OrCC1ncc98cED45Y6NzK5EgKm1nG7K9bUnIkFe1qgVQ==",
-      "type": "package",
-      "path": "AWSSDK.IoT/3.1.6",
-      "files": [
-        "AWSSDK.IoT.3.1.6.nupkg.sha512",
-        "AWSSDK.IoT.nuspec",
-        "analyzers/dotnet/cs/AWSSDK.IoT.CodeAnalysis.dll",
-        "lib/net35/AWSSDK.IoT.XML",
-        "lib/net35/AWSSDK.IoT.dll",
-        "lib/net35/AWSSDK.IoT.pdb",
-        "lib/net45/AWSSDK.IoT.XML",
-        "lib/net45/AWSSDK.IoT.dll",
-        "lib/net45/AWSSDK.IoT.pdb",
-        "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.XML",
-        "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.dll",
-        "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IoT.pdb",
-        "tools/install.ps1",
-        "tools/uninstall.ps1"
-      ]
-    },
-    "AWSSDK.IotData/3.1.0.6": {
-      "sha512": "zt1y7XcYdLajXN4MPkl8kcZO0dwoTCMZlPBNIF+++uqSwnCrt4EDag/iDrkPtaZoI4oZAI5qOX2Vg3UiDrti/A==",
-      "type": "package",
-      "files": [
-        "AWSSDK.IotData.3.1.0.6.nupkg.sha512",
-        "AWSSDK.IotData.nuspec",
-        "analyzers/dotnet/cs/AWSSDK.IotData.CodeAnalysis.dll",
-        "lib/net35/AWSSDK.IotData.XML",
-        "lib/net35/AWSSDK.IotData.dll",
-        "lib/net35/AWSSDK.IotData.pdb",
-        "lib/net45/AWSSDK.IotData.XML",
-        "lib/net45/AWSSDK.IotData.dll",
-        "lib/net45/AWSSDK.IotData.pdb",
-        "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.XML",
-        "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.dll",
-        "lib/portable-net45+netcore45+wpa81+wp8+MonoAndroid10+xamarinios10+MonoTouch10/AWSSDK.IotData.pdb",
-        "tools/install.ps1",
-        "tools/uninstall.ps1"
-      ]
-    },
-    "Microsoft.AspNet.SignalR.Client/2.2.0": {
-      "sha512": "BfYVXRqwJCg7UNAIz6wd+wlGmQlmmPFt42v1icF52b1xuqQeGEXSNFtl5xqJdwyd45xnc64pM3MzCV5WQ8mIKg==",
-      "type": "package",
-      "files": [
-        "Microsoft.AspNet.SignalR.Client.2.2.0.nupkg.sha512",
+        "Microsoft.AspNet.SignalR.Client.2.2.1.nupkg.sha512",
         "Microsoft.AspNet.SignalR.Client.nuspec",
         "lib/net40/Microsoft.AspNet.SignalR.Client.XML",
         "lib/net40/Microsoft.AspNet.SignalR.Client.dll",
         "lib/net45/Microsoft.AspNet.SignalR.Client.XML",
         "lib/net45/Microsoft.AspNet.SignalR.Client.dll",
-        "lib/portable-net45+sl5+netcore45+wp8+wp81/Microsoft.AspNet.SignalR.Client.XML",
-        "lib/portable-net45+sl5+netcore45+wp8+wp81/Microsoft.AspNet.SignalR.Client.dll",
-        "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.Xml",
-        "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.Store.dll",
+        "lib/netcore50/Microsoft.AspNet.SignalR.Client.XML",
+        "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll",
+        "lib/portable-net45+sl50+win+wpa81+wp80/Microsoft.AspNet.SignalR.Client.XML",
+        "lib/portable-net45+sl50+win+wpa81+wp80/Microsoft.AspNet.SignalR.Client.dll",
         "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.XML",
         "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll"
       ]
     },
-    "Microsoft.Bcl/1.1.10": {
-      "sha512": "+tTqoh/M1pyL8El3qLy30EcwnAtyvFoDZJtdG9Cbg/WdFbh4N8kyrq198XHuEL7lnJbeD0DRO8jcX5IIOh05cQ==",
+    "Microsoft.AspNet.WebApi.Client/5.2.3": {
+      "sha512": "3kiI8peSXbXHDDrRuo+QaX0iCEVRe0nvn2dBDRw656uPX32UalbBlSIDUDlJxu05eau4tnuhsikiUuugvvoUoQ==",
       "type": "package",
-      "path": "Microsoft.Bcl/1.1.10",
+      "path": "Microsoft.AspNet.WebApi.Client/5.2.3",
+      "files": [
+        "Microsoft.AspNet.WebApi.Client.5.2.3.nupkg.sha512",
+        "Microsoft.AspNet.WebApi.Client.nuspec",
+        "lib/net45/System.Net.Http.Formatting.dll",
+        "lib/net45/System.Net.Http.Formatting.xml",
+        "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.dll",
+        "lib/portable-wp8+netcore45+net45+wp81+wpa81/System.Net.Http.Formatting.xml"
+      ]
+    },
+    "Microsoft.Azure.Amqp/1.1.5": {
+      "sha512": "6+3lPVW46h3H2NvjGtrHv+C0P3PVH11pZyCePm+w8AuhmX59OY+fvbA9/wll0MRAj81LPpz1i55oIQm41wOv7g==",
+      "type": "package",
+      "path": "Microsoft.Azure.Amqp/1.1.5",
+      "files": [
+        "Microsoft.Azure.Amqp.1.1.5.nupkg.sha512",
+        "Microsoft.Azure.Amqp.nuspec",
+        "lib/net451/Microsoft.Azure.Amqp.XML",
+        "lib/net451/Microsoft.Azure.Amqp.dll",
+        "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll"
+      ]
+    },
+    "Microsoft.Azure.Devices.Client/1.0.13": {
+      "sha512": "jlI5C5UTr5Yo4ggVwQi1FE76hFIDWhVAysfQaTzOX9nwOM+b9kevWvMtAuiIfxOxmEMLbRQvz4yUWEEGI9IiYg==",
+      "type": "package",
+      "path": "Microsoft.Azure.Devices.Client/1.0.13",
+      "files": [
+        "Microsoft.Azure.Devices.Client.1.0.13.nupkg.sha512",
+        "Microsoft.Azure.Devices.Client.nuspec",
+        "build/native/Microsoft.Azure.Devices.Client.targets",
+        "lib/native/Microsoft.Azure.Devices.Client.winmd",
+        "lib/net45/Microsoft.Azure.Devices.Client.dll",
+        "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd",
+        "thirdpartynotice.txt"
+      ]
+    },
+    "Microsoft.Bcl/1.1.9": {
+      "sha512": "USQ55innJy8K+tAXvVa1O8dUTp2s7pmJ5cJj6Tl02HtGc2xBDj0P2QH5620HbGXIWKWYhydoeQF8Rm/JRDBGhw==",
+      "type": "package",
+      "path": "Microsoft.Bcl/1.1.9",
       "files": [
         "License-Stable.rtf",
-        "Microsoft.Bcl.1.1.10.nupkg.sha512",
+        "Microsoft.Bcl.1.1.9.nupkg.sha512",
         "Microsoft.Bcl.nuspec",
-        "lib/Xamarin.iOS10/_._",
+        "content/monoandroid/_._",
+        "content/monotouch/_._",
+        "content/net45/_._",
+        "content/portable-net45+win8+wp8+wpa81/_._",
+        "content/portable-net45+win8+wpa81/_._",
+        "content/portable-net451+win81+wpa81/_._",
+        "content/portable-net451+win81/_._",
+        "content/portable-win81+wp81+wpa81/_._",
+        "content/sl4/_._",
+        "content/sl5/_._",
+        "content/win8/_._",
+        "content/wp8/_._",
+        "content/wpa81/_._",
         "lib/monoandroid/_._",
         "lib/monotouch/_._",
         "lib/net40/System.IO.dll",
@@ -16933,18 +16804,14 @@
         "ref/xamarinwatchos10/_._"
       ]
     },
-    "Microsoft.Net.Http/2.2.29": {
-      "sha512": "fc4CPEewJ30Xgal+fSq1lYIBt582A7eKlAL7O4HXiYAiTp2VTnA4osSvk7T2n8aS4xTCPVJusQk3yKLT0XSpkg==",
+    "Microsoft.Net.Http/2.2.28": {
+      "sha512": "hPL9k+rPIpAj84RZSq3WtJkOD9uMStBovAIAz/0OQ+9hQIwQ2XqQlAhMqI4kw0XDxweJySIqNTMlkhRRuthcPQ==",
       "type": "package",
-      "path": "Microsoft.Net.Http/2.2.29",
+      "path": "Microsoft.Net.Http/2.2.28",
       "files": [
         "License-Stable.rtf",
-        "Microsoft.Net.Http.2.2.29.nupkg.sha512",
+        "Microsoft.Net.Http.2.2.28.nupkg.sha512",
         "Microsoft.Net.Http.nuspec",
-        "lib/Xamarin.iOS10/System.Net.Http.Extensions.XML",
-        "lib/Xamarin.iOS10/System.Net.Http.Extensions.dll",
-        "lib/Xamarin.iOS10/System.Net.Http.Primitives.dll",
-        "lib/Xamarin.iOS10/System.Net.Http.Primitives.xml",
         "lib/monoandroid/System.Net.Http.Extensions.XML",
         "lib/monoandroid/System.Net.Http.Extensions.dll",
         "lib/monoandroid/System.Net.Http.Primitives.dll",
@@ -17278,12 +17145,12 @@
         "tools/install.ps1"
       ]
     },
-    "PCLCrypto/1.0.2.15130": {
-      "sha512": "FbqU/mbtemApQTSLHTlLHmzR55oB9O8FJ6cEiQdJr2PMpzGM6k4yroHpJKBcl+bZ6SplTClK3SS6xxlskyLgHg==",
+    "PCLCrypto/1.0.86": {
+      "sha512": "rcmxw9Bb5GuEW1ubVBegCCbR7YU8Ptr8tGfmyVHBnK+UQlk29TuBryHXmsTglt64ZNDXpi8rWl8x5l55JylpOw==",
       "type": "package",
-      "path": "PCLCrypto/1.0.2.15130",
+      "path": "PCLCrypto/1.0.86",
       "files": [
-        "PCLCrypto.1.0.2.15130.nupkg.sha512",
+        "PCLCrypto.1.0.86.nupkg.sha512",
         "PCLCrypto.nuspec",
         "lib/Xamarin.iOS/PCLCrypto.dll",
         "lib/Xamarin.iOS/PCLCrypto.xml",
@@ -17305,51 +17172,6 @@
         "lib/wpa81/PCLCrypto.dll",
         "lib/wpa81/PCLCrypto.pri",
         "lib/wpa81/PCLCrypto.xml"
-      ]
-    },
-    "PCLStorage/1.0.2": {
-      "sha512": "9If+1ZFCk3QaT/asfiL+J9FMnx2CTMrLCU8tDMUOI/aCGWGWl9vJ1/KcMkjf92op23ZknenvYJZBLDAqE3sFlg==",
-      "type": "package",
-      "path": "PCLStorage/1.0.2",
-      "files": [
-        "PCLStorage.1.0.2.nupkg.sha512",
-        "PCLStorage.nuspec",
-        "lib/monoandroid/PCLStorage.Abstractions.dll",
-        "lib/monoandroid/PCLStorage.Abstractions.xml",
-        "lib/monoandroid/PCLStorage.dll",
-        "lib/monoandroid/PCLStorage.xml",
-        "lib/monotouch/PCLStorage.Abstractions.dll",
-        "lib/monotouch/PCLStorage.Abstractions.xml",
-        "lib/monotouch/PCLStorage.dll",
-        "lib/monotouch/PCLStorage.xml",
-        "lib/net45/PCLStorage.Abstractions.dll",
-        "lib/net45/PCLStorage.Abstractions.xml",
-        "lib/net45/PCLStorage.dll",
-        "lib/net45/PCLStorage.xml",
-        "lib/portable-Xamarin.iOS+Xamarin.Mac/PCLStorage.Abstractions.dll",
-        "lib/portable-Xamarin.iOS+Xamarin.Mac/PCLStorage.Abstractions.xml",
-        "lib/portable-Xamarin.iOS+Xamarin.Mac/PCLStorage.dll",
-        "lib/portable-Xamarin.iOS+Xamarin.Mac/PCLStorage.xml",
-        "lib/portable-net45+sl5+wp8+wpa81+win8+monoandroid+monotouch+Xamarin.iOS+Xamarin.Mac/PCLStorage.Abstractions.dll",
-        "lib/portable-net45+sl5+wp8+wpa81+win8+monoandroid+monotouch+Xamarin.iOS+Xamarin.Mac/PCLStorage.Abstractions.xml",
-        "lib/portable-net45+sl5+wp8+wpa81+win8+monoandroid+monotouch+Xamarin.iOS+Xamarin.Mac/PCLStorage.dll",
-        "lib/portable-net45+sl5+wp8+wpa81+win8+monoandroid+monotouch+Xamarin.iOS+Xamarin.Mac/PCLStorage.xml",
-        "lib/portable-net45+wp8+wpa81+win8+monoandroid+monotouch+Xamarin.iOS+Xamarin.Mac/PCLStorage.Abstractions.dll",
-        "lib/portable-net45+wp8+wpa81+win8+monoandroid+monotouch+Xamarin.iOS+Xamarin.Mac/PCLStorage.Abstractions.xml",
-        "lib/portable-net45+wp8+wpa81+win8+monoandroid+monotouch+Xamarin.iOS+Xamarin.Mac/PCLStorage.dll",
-        "lib/portable-net45+wp8+wpa81+win8+monoandroid+monotouch+Xamarin.iOS+Xamarin.Mac/PCLStorage.xml",
-        "lib/portable-win8+wpa81/PCLStorage.Abstractions.dll",
-        "lib/portable-win8+wpa81/PCLStorage.Abstractions.xml",
-        "lib/portable-win8+wpa81/PCLStorage.dll",
-        "lib/portable-win8+wpa81/PCLStorage.xml",
-        "lib/sl5/PCLStorage.Abstractions.dll",
-        "lib/sl5/PCLStorage.Abstractions.xml",
-        "lib/sl5/PCLStorage.dll",
-        "lib/sl5/PCLStorage.xml",
-        "lib/wp8/PCLStorage.Abstractions.dll",
-        "lib/wp8/PCLStorage.Abstractions.xml",
-        "lib/wp8/PCLStorage.dll",
-        "lib/wp8/PCLStorage.xml"
       ]
     },
     "runtime.any.System.Collections/4.0.11": {
@@ -23230,9 +23052,8 @@
   },
   "projectFileDependencyGroups": {
     "": [
-      "AWSSDK.IoT >= 3.1.6",
-      "AWSSDK.IotData >= 3.1.0.6",
-      "Microsoft.AspNet.SignalR.Client >= 2.2.0",
+      "Microsoft.AspNet.SignalR.Client >= 2.2.1",
+      "Microsoft.Azure.Devices.Client >= 1.0.13",
       "Microsoft.NETCore.Targets.UniversalWindowsPlatform >= 5.0.0",
       "Microsoft.NETCore.UniversalWindowsPlatform >= 5.2.2"
     ],

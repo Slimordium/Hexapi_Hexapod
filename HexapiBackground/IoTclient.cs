@@ -1,59 +1,79 @@
 ﻿using System;
-using System.Diagnostics;
-using System.IO;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using Amazon.IotData;
-using Amazon.IotData.Model;
-using Amazon.IoT;
-using Amazon.IoT.Model;
-using Amazon.Runtime;
-
+using HexapiBackground.Hardware;
+using Microsoft.Azure.Devices.Client;
 
 namespace HexapiBackground
 {
+    /// <summary>
+    /// Azure IoT Hub MQTT client
+    /// </summary>
     internal sealed class IoTClient
     {
+        private DeviceClient _deviceClient;
+        private readonly SparkFunSerial16X2Lcd _display;
 
-        private AmazonIotDataClient _client;
+        internal static event EventHandler<IotEventArgs> IotEvent;
 
-        internal async Task Initialize()
+        internal IoTClient(SparkFunSerial16X2Lcd display)
         {
-            await Task.Run(() =>
-            {
-                _client = new AmazonIotDataClient(@"https://av37z0myd83yw.iot.us-west-2.amazonaws.com/things/Hexapod/shadow");
-            });
+            _display = display;
         }
 
-        internal async Task<bool> Start()
+        internal async Task InitializeAsync()
         {
+            _deviceClient = DeviceClient.CreateFromConnectionString("", TransportType.Mqtt); //add connection string
 
-
-            var bytes = Encoding.ASCII.GetBytes("Online");
-
-            await _client.UpdateThingShadowAsync(new UpdateThingShadowRequest
-            {
-                ThingName = "Hexapi",
-                Payload = new MemoryStream(bytes)
-            });
-
-            return true;
+            await _deviceClient.OpenAsync();
         }
 
-        internal async Task Publish(string message)
+        internal async Task SendEventAsync(string eventData)
         {
-            var bytes = Encoding.ASCII.GetBytes(message);
+            var eventMessage = new Message(Encoding.UTF8.GetBytes(eventData));
 
-            var resp = await _client.PublishAsync(new PublishRequest
-            {
-                Topic = "Hexapi",
-                Qos = 1,
-                Payload = new MemoryStream(bytes)
-            });
-
-            Debug.WriteLine(resp.HttpStatusCode);
-
-
+            await _deviceClient.SendEventAsync(eventMessage);
         }
+
+        /// <summary>
+        /// This starts waiting for messages from the IoT Hub. 
+        /// </summary>
+        /// <returns></returns>
+        internal async Task StartAsync()
+        {
+            while (true)
+            {
+                try
+                {
+                    var receivedMessage = await _deviceClient.ReceiveAsync(new TimeSpan(int.MaxValue));
+
+                    if (receivedMessage == null)
+                        continue;
+
+                    foreach (var prop in receivedMessage.Properties)
+                    {
+                        await _display.WriteAsync($"{prop.Key} {prop.Value}");
+                    }
+
+                    await _deviceClient.CompleteAsync(receivedMessage);
+
+                    var messageData = Encoding.ASCII.GetString(receivedMessage.GetBytes());
+
+                    IotEvent?.Invoke(null, new IotEventArgs { EventData = receivedMessage.Properties, MessageData = messageData});
+                }
+                catch
+                {
+                    //Write out to the display perhaps
+                }
+            }
+        }
+    }
+
+    internal class IotEventArgs : EventArgs
+    {
+        internal IDictionary<string, string> EventData { get; set; }
+
+        internal string MessageData { get; set; }
     }
 }

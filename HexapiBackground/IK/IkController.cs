@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -18,7 +17,7 @@ namespace HexapiBackground.IK
         private Behavior _behavior;
         private bool _behaviorRunning;
 
-        private readonly ManualResetEventSlim _manualResetEventSlim = new ManualResetEventSlim(false);
+        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         private readonly InverseKinematics _inverseKinematics;
         private readonly SparkFunSerial16X2Lcd _display;
@@ -154,11 +153,15 @@ namespace HexapiBackground.IK
         internal async void RequestBehavior(Behavior behavior, bool start)
         {
             _behavior = behavior;
-            
+
             if (start)
-                _manualResetEventSlim.Reset();
+            {
+                _cancellationTokenSource = new CancellationTokenSource();
+            }
             else
-                _manualResetEventSlim.Set();
+            {
+                _cancellationTokenSource.Cancel();
+            }
 
             if (!start)
                 return;
@@ -170,14 +173,14 @@ namespace HexapiBackground.IK
                 case Behavior.Defensive:
                     break;
                 case Behavior.Bounce:
-                    await BehaviorBounceAsync();
+                    await BehaviorBounceAsync(_cancellationTokenSource.Token);
                     break;
                 case Behavior.Balance:
                     break;
             }
         }
 
-        private async Task BehaviorBounceAsync()
+        private async Task BehaviorBounceAsync(CancellationToken cancellationToken)
         {
             if (_behaviorRunning)
                 return;
@@ -196,9 +199,9 @@ namespace HexapiBackground.IK
             double travelRotationY = 0;
             double gaitSpeed = 50;
 
-            while (!_manualResetEventSlim.IsSet)
+            while (!cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(100);
+                await Task.Delay(100, cancellationToken);
 
                 if (_leftInches > _perimeterInInches && _centerInches > _perimeterInInches && _rightInches > _perimeterInInches)
                 {
@@ -240,7 +243,7 @@ namespace HexapiBackground.IK
                     travelLengthX = 0;
                     travelRotationY = 0;
 
-                    if (_manualResetEventSlim.IsSet)
+                    if (cancellationToken.IsCancellationRequested)
                     {
                         RequestMovement(50, 0, 0, 0);
                         _behaviorRunning = false;
@@ -249,7 +252,7 @@ namespace HexapiBackground.IK
 
                     if (_centerInches < _perimeterInInches)
                     {
-                        if (_manualResetEventSlim.IsSet)
+                        if (cancellationToken.IsCancellationRequested)
                         {
                             RequestMovement(50, 0, 0, 0);
                             _behaviorRunning = false;
@@ -261,9 +264,9 @@ namespace HexapiBackground.IK
                         travelLengthZ = 30; //Reverse
                         RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
 
-                        await Task.Delay(6000);
+                        await Task.Delay(6000, cancellationToken);
 
-                        if (_manualResetEventSlim.IsSet)
+                        if (cancellationToken.IsCancellationRequested)
                         {
                             RequestMovement(50, 0, 0, 0);
                             _behaviorRunning = false;
@@ -310,7 +313,7 @@ namespace HexapiBackground.IK
                         //RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
                         //await Task.Delay(2000);
 
-                        if (_manualResetEventSlim.IsSet)
+                        if (cancellationToken.IsCancellationRequested)
                         {
                             RequestMovement(50, 0, 0, 0);
                             _behaviorRunning = false;
@@ -328,7 +331,7 @@ namespace HexapiBackground.IK
                     }
                 }
 
-                if (_manualResetEventSlim.IsSet)
+                if (cancellationToken.IsCancellationRequested)
                 {
                     RequestMovement(50, 0, 0, 0);
                     _behaviorRunning = false;
