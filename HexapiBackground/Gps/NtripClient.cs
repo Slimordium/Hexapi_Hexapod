@@ -14,13 +14,11 @@ namespace HexapiBackground.Gps.Ntrip
         private IPEndPoint _endPoint;
         private readonly string _ntripMountPoint; //P041_RTCM3
         private readonly string _password;
-        private readonly Socket _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        private Socket _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         private readonly string _username;
         private readonly SparkFunSerial16X2Lcd _display;
         internal event EventHandler<NtripEventArgs> NtripDataArrivedEvent;
         private bool _isConnected;
-        private readonly IPAddress _ip;
-        private readonly int _ntripPort;
 
         //rtgpsout.unavco.org:2101
         //69.44.86.36 
@@ -38,20 +36,19 @@ namespace HexapiBackground.Gps.Ntrip
             _username = userName;
             _password = password;
 
-            _ntripPort = ntripPort;
-
             _ntripMountPoint = ntripMountPoint;
 
             _display = display;
 
             try
             {
-                IPAddress.TryParse(ntripIpAddress, out _ip);
+                IPAddress ip;
+                IPAddress.TryParse(ntripIpAddress, out ip);
 
-                if (_ip == null)
+                if (ip == null)
                     return;
 
-                _endPoint = new IPEndPoint(_ip, _ntripPort);
+                _endPoint = new IPEndPoint(ip, ntripPort);
             }
             catch (Exception)
             {
@@ -61,11 +58,8 @@ namespace HexapiBackground.Gps.Ntrip
 
         internal async Task InitializeAsync()
         {
-
             await Task.Run(() =>
             {
-
-
                 var args = new SocketAsyncEventArgs
                 {
                     UserToken = _socket,
@@ -112,41 +106,42 @@ namespace HexapiBackground.Gps.Ntrip
         /// </summary>
         internal async Task StartAsync()
         {
-            await Task.Run(async () =>
+            while (!_isConnected)
             {
-                while (!_isConnected)
-                {
-                    await Task.Delay(5000);
+                if (_isConnected)
+                    break;
 
-                    if (_isConnected)
-                        break;
+                await InitializeAsync();
 
-                    await InitializeAsync();
+                await Task.Delay(5000);
 
-                    if (!_isConnected)
-                        _endPoint = new IPEndPoint(_ip, _ntripPort);
-                }
+                if (!_isConnected)
+                    _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                else
+                    break;
 
-                var buffer = new ArraySegment<byte>(CreateAuthRequest());
+                await Task.Delay(5000);
+            }
 
-                var args = new SocketAsyncEventArgs
-                {
-                    UserToken = _socket,
-                    RemoteEndPoint = _endPoint,
-                    BufferList = new List<ArraySegment<byte>> {buffer}
-                };
+            var buffer = new ArraySegment<byte>(CreateAuthRequest());
 
-                args.Completed += async (sender, eventArgs) =>
-                {
-                    await _display.WriteAsync($"NTRIP {eventArgs.SocketError}");
+            var args = new SocketAsyncEventArgs
+            {
+                UserToken = _socket,
+                RemoteEndPoint = _endPoint,
+                BufferList = new List<ArraySegment<byte>> {buffer}
+            };
 
-                    await Task.Delay(1500);
+            args.Completed += async (sender, eventArgs) =>
+            {
+                await _display.WriteAsync($"NTRIP {eventArgs.SocketError}");
 
-                    ReadData();
-                };
+                await Task.Delay(1500);
 
-                _socket.SendAsync(args);
-            });
+                ReadData();
+            };
+
+            _socket.SendAsync(args);
         }
 
         private void ReadData()
@@ -165,13 +160,13 @@ namespace HexapiBackground.Gps.Ntrip
             _socket.ReceiveAsync(args);
         }
 
-        private void ReadCompletedHandler(object sender, SocketAsyncEventArgs e)
+        private async void ReadCompletedHandler(object sender, SocketAsyncEventArgs e)
         {
             if (!((Socket)sender).Connected)
             {
                 _isConnected = false;
 
-                StartAsync();
+                await StartAsync();
                 return;
             }
 

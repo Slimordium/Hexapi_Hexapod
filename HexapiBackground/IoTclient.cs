@@ -24,9 +24,16 @@ namespace HexapiBackground
 
         internal async Task InitializeAsync()
         {
-            _deviceClient = DeviceClient.CreateFromConnectionString("", TransportType.Mqtt); //add connection string
+            try
+            {
+                _deviceClient = DeviceClient.CreateFromConnectionString("", TransportType.Mqtt); //add connection string
 
-            await _deviceClient.OpenAsync();
+                await _deviceClient.OpenAsync();
+            }
+            catch
+            {
+                //   
+            }
         }
 
         internal async Task SendEventAsync(string eventData)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Autonoceptor;
 using HexapiBackground.Enums;
 using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
@@ -75,14 +76,21 @@ namespace HexapiBackground
 
             await Task.Run(() =>
             {
-                _xboxController.LeftDirectionChanged += XboxController_LeftDirectionChanged;
-                _xboxController.RightDirectionChanged += XboxController_RightDirectionChanged;
-                _xboxController.DpadDirectionChanged += XboxController_DpadDirectionChanged;
-                _xboxController.LeftTriggerChanged += XboxController_LeftTriggerChanged;
-                _xboxController.RightTriggerChanged += XboxController_RightTriggerChanged;
-                _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
-                _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
+                XboxController.LeftDirectionChanged += XboxController_LeftDirectionChanged;
+                XboxController.RightDirectionChanged += XboxController_RightDirectionChanged;
+                XboxController.DpadDirectionChanged += XboxController_DpadDirectionChanged;
+                XboxController.LeftTriggerChanged += XboxController_LeftTriggerChanged;
+                XboxController.RightTriggerChanged += XboxController_RightTriggerChanged;
+                XboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
+                XboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
+                XboxController.DisconnectedEvent += XboxController_DisconnectedEvent; ;
             });
+        }
+
+        private void XboxController_DisconnectedEvent(object sender, DisconnectedEventArgs e)
+        {
+            if (!e.IsConnected)
+                _ik.RequestSetMovement(false);
         }
 
         #region XBox 360 Controller related...
@@ -102,7 +110,7 @@ namespace HexapiBackground
                     if (_selectedIkFunction < 0)
                         _selectedIkFunction = 0;
 
-                    await _display.WriteAsync($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
+                    await _display.WriteAsync($"{nameof(_selectedIkFunction)}", 1);
 
                     await _ik.RequestSetFunctionAsync(_selectedIkFunction);
                     break;
@@ -111,7 +119,7 @@ namespace HexapiBackground
                     if ((int) _selectedIkFunction > 14)
                         _selectedIkFunction = (SelectedIkFunction) 14;
 
-                    await _display.WriteAsync($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
+                    await _display.WriteAsync($"{nameof(_selectedIkFunction)}", 1);
 
                     await _ik.RequestSetFunctionAsync(_selectedIkFunction);
                     break;
@@ -295,9 +303,9 @@ namespace HexapiBackground
                             _selectedBehavior--;
 
                             if ((int)_selectedBehavior <= 0)
-                                _selectedBehavior = (Behavior)0;
+                                _selectedBehavior = 0;
 
-                            await _display.WriteAsync($"{Enum.GetName(typeof(Behavior), _selectedBehavior)}", 2);
+                            await _display.WriteAsync($"{nameof(_selectedBehavior)}", 2);
                             break;
                         case SelectedIkFunction.GaitType:
                             _gaitType--;
@@ -305,7 +313,7 @@ namespace HexapiBackground
                             if (_gaitType < 0)
                                 _gaitType = (GaitType)4;
 
-                            await _display.WriteAsync(Enum.GetName(typeof(GaitType), _gaitType), 2);
+                            await _display.WriteAsync(nameof(_gaitType), 2);
                             SetGaitOptions();
                             break;
                         case SelectedIkFunction.GaitSpeed:
@@ -332,7 +340,7 @@ namespace HexapiBackground
                             if ((int)_selectedBehavior > 4)
                                 _selectedBehavior = (Behavior)4;
 
-                            await _display.WriteAsync($"{Enum.GetName(typeof(Behavior), _selectedBehavior)}", 2);
+                            await _display.WriteAsync($"{nameof(_selectedBehavior)}", 2);
                             break;
                         case SelectedIkFunction.GaitType:
                             _gaitType++;
@@ -340,7 +348,7 @@ namespace HexapiBackground
                             if ((int)_gaitType > 4)
                                 _gaitType = 0;
 
-                            await _display.WriteAsync(Enum.GetName(typeof (GaitType), _gaitType), 2);
+                            await _display.WriteAsync(nameof(_gaitType), 2);
                             SetGaitOptions();
                             break;
                         case SelectedIkFunction.GaitSpeed:
@@ -392,7 +400,7 @@ namespace HexapiBackground
                             break;
                         case SelectedIkFunction.Behavior:
                             _ik.RequestBehavior(_selectedBehavior, true);
-                            await _display.WriteAsync($"{Enum.GetName(typeof(Behavior), _selectedBehavior)} start");
+                            await _display.WriteAsync($"{nameof(_selectedBehavior)} start");
                             break;
                     }
                     break;
@@ -429,7 +437,7 @@ namespace HexapiBackground
                             break;
                         case SelectedIkFunction.Behavior:
                             _ik.RequestBehavior(_selectedBehavior, false);
-                            await _display.WriteAsync($"{Enum.GetName(typeof(Behavior), _selectedBehavior)} stop");
+                            await _display.WriteAsync($"{nameof(_selectedBehavior)} stop");
                             break;
                     }
                     break;
