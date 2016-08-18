@@ -9,7 +9,7 @@ using HexapiBackground.Hardware;
 
 // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
 
-namespace Autonoceptor
+namespace HexapiBackground.Hardware
 {
     internal sealed class XboxController
     {

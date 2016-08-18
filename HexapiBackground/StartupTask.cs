@@ -37,7 +37,7 @@ namespace HexapiBackground
 
             _display = new SparkFunSerial16X2Lcd();
             _xboxController = new XboxController(_display);
-            _ntripClient = new NtripClient("172.16.0.227", 8000, "", "", "", _display); //172.16.0.227
+            _ntripClient = new NtripClient("172.16.0.237", 8000, "", "", "", _display); //172.16.0.227
             _ioTClient = new IoTClient(_display);
             _gps = new Gps.Gps( _display, _ntripClient);
             _inverseKinematics = new InverseKinematics(_display);
@@ -57,7 +57,6 @@ namespace HexapiBackground
             _startTasks.Add(_ikController.StartAsync());
             _startTasks.Add(_gps.StartAsync());
             _startTasks.Add(_inverseKinematics.StartAsync());
-            _startTasks.Add(_hexapi.StartAsync());
             //_startTasks.Add(_ioTClient.StartAsync());//only needed if expecting messages from the server
 
             //foreach (var d in await SerialDeviceHelper.ListAvailablePorts())

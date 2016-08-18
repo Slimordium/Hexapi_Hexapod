@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
 using HexapiBackground.Gps.Ntrip;
 using HexapiBackground.Hardware;
-using HexapiBackground.Helpers;
 // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
 
 namespace HexapiBackground.Gps
@@ -16,7 +17,7 @@ namespace HexapiBackground.Gps
     internal sealed class Gps
     {
         private SerialDevice _gpsSerialDevice;
-        internal LatLon CurrentLatLon { get; private set; }
+        internal static LatLon CurrentLatLon { get; private set; } = new LatLon();
 
         private readonly SparkFunSerial16X2Lcd _display;
         private readonly NtripClient _ntripClientTcp;
@@ -24,12 +25,17 @@ namespace HexapiBackground.Gps
         private DataReader _inputStream;
         private DataWriter _outputStream;
 
+        private Timer _statusTimer = new Timer((o) =>
+        {
+            if (CurrentLatLon != null)
+                Debug.WriteLine(CurrentLatLon);   
+
+        }, null, 0, 1000);
+
         internal Gps(SparkFunSerial16X2Lcd display, NtripClient ntripClientTcp = null)
         {
             _display = display;
             _ntripClientTcp = ntripClientTcp;
-
-            CurrentLatLon = new LatLon();
         }
 
         internal async Task<bool> InitializeAsync()
@@ -102,7 +108,10 @@ namespace HexapiBackground.Gps
                     continue;
 
                 if (CurrentLatLon.Quality != latLon.Quality)
+                {
+                    Debug.WriteLine(CurrentLatLon);
                     await _display.WriteAsync(latLon.Quality.ToString(), 2);
+                }
 
                 CurrentLatLon = latLon;
             }

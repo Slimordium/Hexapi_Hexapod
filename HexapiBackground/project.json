@@ -1,7 +1,6 @@
 ﻿{
   "dependencies": {
-    "Microsoft.AspNet.SignalR.Client": "2.2.1",
-    "Microsoft.Azure.Devices.Client": "1.0.13",
+    "Microsoft.Azure.Devices.Client": "1.0.17",
     "Microsoft.NETCore.Targets.UniversalWindowsPlatform": "5.0.0",
     "Microsoft.NETCore.UniversalWindowsPlatform": "5.2.2"
   },

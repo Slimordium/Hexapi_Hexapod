@@ -64,7 +64,7 @@ namespace HexapiBackground.Navigation
         
         internal async Task<bool> NavigateToWaypoint(LatLon currentWaypoint, CancellationToken cancelationToken)
         {
-            var distanceHeading = GpsExtensions.GetDistanceAndHeadingToDestination(_gps.CurrentLatLon.Lat, _gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
+            var distanceHeading = GpsExtensions.GetDistanceAndHeadingToDestination(Gps.Gps.CurrentLatLon.Lat, Gps.Gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
             var distanceToWaypoint = distanceHeading[0];
             var headingToWaypoint = distanceHeading[1];
 
@@ -83,13 +83,13 @@ namespace HexapiBackground.Navigation
                     return false;
 
                 await _display.WriteAsync($"WP D/H {distanceToWaypoint}, {headingToWaypoint}", 1);
-                await _display.WriteAsync($"{turnDirection} {_gps.CurrentLatLon.Heading}", 2);
+                await _display.WriteAsync($"{turnDirection} {Gps.Gps.CurrentLatLon.Heading}", 2);
 
-                if (headingToWaypoint + 5 > 359 && Math.Abs(headingToWaypoint - _gps.CurrentLatLon.Heading) > 1)
+                if (headingToWaypoint + 5 > 359 && Math.Abs(headingToWaypoint - Gps.Gps.CurrentLatLon.Heading) > 1)
                 {
                     var tempHeading = (headingToWaypoint + 5) - 359;
 
-                    if (_gps.CurrentLatLon.Heading > tempHeading)
+                    if (Gps.Gps.CurrentLatLon.Heading > tempHeading)
                     {
                         turnDirection = "Right";
                         travelRotationY = -1;
@@ -100,13 +100,13 @@ namespace HexapiBackground.Navigation
                         travelRotationY = 1;
                     }
                 }
-                else if (headingToWaypoint - 5 < 1 && Math.Abs(headingToWaypoint - _gps.CurrentLatLon.Heading) > 1)
+                else if (headingToWaypoint - 5 < 1 && Math.Abs(headingToWaypoint - Gps.Gps.CurrentLatLon.Heading) > 1)
                 {
                     var tempHeading = (headingToWaypoint + 359) - 5;
 
                     
 
-                    if (_gps.CurrentLatLon.Heading < tempHeading)
+                    if (Gps.Gps.CurrentLatLon.Heading < tempHeading)
                     {
                         turnDirection = "Right";
                         travelRotationY = 1;
@@ -117,14 +117,14 @@ namespace HexapiBackground.Navigation
                         travelRotationY = -1;
                     }
                 }
-                else if (_gps.CurrentLatLon.Heading > headingToWaypoint - 5 && _gps.CurrentLatLon.Heading < headingToWaypoint + 5)
+                else if (Gps.Gps.CurrentLatLon.Heading > headingToWaypoint - 5 && Gps.Gps.CurrentLatLon.Heading < headingToWaypoint + 5)
                 {
                     travelRotationY = 0;
                     turnDirection = "None";
                 }
-                else if (headingToWaypoint > _gps.CurrentLatLon.Heading + 20)
+                else if (headingToWaypoint > Gps.Gps.CurrentLatLon.Heading + 20)
                 {
-                    if (_gps.CurrentLatLon.Heading - headingToWaypoint > 180)
+                    if (Gps.Gps.CurrentLatLon.Heading - headingToWaypoint > 180)
                     {
                         turnDirection = "Left+";
                         travelRotationY = -2;
@@ -135,9 +135,9 @@ namespace HexapiBackground.Navigation
                         travelRotationY = 2;
                     }
                 }
-                else if (headingToWaypoint > _gps.CurrentLatLon.Heading)
+                else if (headingToWaypoint > Gps.Gps.CurrentLatLon.Heading)
                 {
-                    if (_gps.CurrentLatLon.Heading - headingToWaypoint > 180)
+                    if (Gps.Gps.CurrentLatLon.Heading - headingToWaypoint > 180)
                     {
                         turnDirection = "Left";
                         travelRotationY = -1;
@@ -148,9 +148,9 @@ namespace HexapiBackground.Navigation
                         travelRotationY = 1;
                     }
                 }
-                else if (headingToWaypoint < _gps.CurrentLatLon.Heading - 20) //If it has a long ways to turn, go fast!
+                else if (headingToWaypoint < Gps.Gps.CurrentLatLon.Heading - 20) //If it has a long ways to turn, go fast!
                 {
-                    if (_gps.CurrentLatLon.Heading - headingToWaypoint < 180)
+                    if (Gps.Gps.CurrentLatLon.Heading - headingToWaypoint < 180)
                     {
                         turnDirection = "Left+";
                         travelRotationY = -2;
@@ -161,9 +161,9 @@ namespace HexapiBackground.Navigation
                         travelRotationY = 2; //Turn towards its right
                     }
                 }
-                else if (headingToWaypoint < _gps.CurrentLatLon.Heading)
+                else if (headingToWaypoint < Gps.Gps.CurrentLatLon.Heading)
                 {
-                    if (_gps.CurrentLatLon.Heading - headingToWaypoint < 180)
+                    if (Gps.Gps.CurrentLatLon.Heading - headingToWaypoint < 180)
                     {
                         turnDirection = "Left";
                         travelRotationY = -1;
@@ -179,7 +179,7 @@ namespace HexapiBackground.Navigation
 
                 await Task.Delay(50, cancelationToken);
 
-                distanceHeading = GpsExtensions.GetDistanceAndHeadingToDestination(_gps.CurrentLatLon.Lat, _gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
+                distanceHeading = GpsExtensions.GetDistanceAndHeadingToDestination(Gps.Gps.CurrentLatLon.Lat, Gps.Gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
                 distanceToWaypoint = distanceHeading[0];
                 headingToWaypoint = distanceHeading[1];
 
@@ -188,7 +188,7 @@ namespace HexapiBackground.Navigation
             }
 
             await _display.WriteAsync($"WP D/H {distanceToWaypoint}, {headingToWaypoint}", 1);
-            await _display.WriteAsync($"Heading {_gps.CurrentLatLon.Heading}", 2);
+            await _display.WriteAsync($"Heading {Gps.Gps.CurrentLatLon.Heading}", 2);
 
             return true;
         }

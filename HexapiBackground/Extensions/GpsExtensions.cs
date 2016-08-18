@@ -4,9 +4,12 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using HexapiBackground.Enums;
 using HexapiBackground.Gps;
+using HexapiBackground.Helpers;
 
-namespace HexapiBackground.Helpers{
-    internal static class GpsExtensions{
+namespace HexapiBackground
+{
+    internal static class GpsExtensions
+    {
         private static double _lat;
         private static double _lon;
         private static GpsFixQuality _quality;
@@ -16,23 +19,26 @@ namespace HexapiBackground.Helpers{
         private static DateTime _dateTime;
         private static int _satellitesInView;
         private static int _signalToNoiseRatio;
+        private static double _rtkAge;
+        private static double _rtkRatio;
+        private static double _hdop;
 
         internal static async Task SaveWaypoint(this LatLon latLon)
         {
-            //await Display.Write($"{latLon}");
+            Debug.WriteLine($"Saving to file : {latLon}");
 
-            await FileExtensions.SaveStringToFile("waypoints.config", latLon.ToString());
+            await FileExtensions.SaveStringToFile("waypoints.txt", latLon.ToString());
         }
 
         internal static async Task<List<LatLon>> LoadWaypoints()
         {
             var waypoints = new List<LatLon>();
 
-            var config = await "waypoints.config".ReadStringFromFile();
+            var config = await "waypoints.txt".ReadStringFromFile();
 
             if (string.IsNullOrEmpty(config))
             {
-                //await Display.Write("Empty waypoints");
+                Debug.WriteLine("Empty waypoints.txt file");//Write to display insetad
                 return waypoints;
             }
 
@@ -40,25 +46,24 @@ namespace HexapiBackground.Helpers{
 
             foreach (var wp in wps)
             {
-                if (string.IsNullOrEmpty(wp))
-                    continue;
-
                 try
                 {
-                    var latlon = new LatLon(wp);
-
-                    if (latlon.DateTime == DateTime.MinValue)
-                    {
-                        //await Display.Write("Invalid way point");
+                    if (string.IsNullOrEmpty(wp))
                         continue;
-                    }
 
-                    waypoints.Add(new LatLon(wp));
-                        
+                    var newWp = new LatLon(wp);
+                    if (newWp.DateTime > DateTime.MinValue)
+                    {
+                        waypoints.Add(new LatLon(wp));
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Invalid date/time, not loading waypoint");//Write to display insetad
+                    }
                 }
                 catch (Exception e)
                 {
-                    //await Display.Write(e.Message);
+                    Debug.WriteLine(e); //Write to display insetad
                 }
             }
 
@@ -86,36 +91,36 @@ namespace HexapiBackground.Helpers{
                 var diflon = (destinationLon - currentLon).ToRadians();
                 //subtract and convert longitude to radians
 
-                var distCalc = Math.Sin(diflat/2.0)*Math.Sin(diflat/2.0);
+                var distCalc = Math.Sin(diflat / 2.0) * Math.Sin(diflat / 2.0);
                 var distCalc2 = Math.Cos(currentLat);
 
-                distCalc2 = distCalc2*Math.Cos(destinationLat);
-                distCalc2 = distCalc2*Math.Sin(diflon/2.0);
-                distCalc2 = distCalc2*Math.Sin(diflon/2.0); //and again, why?
+                distCalc2 = distCalc2 * Math.Cos(destinationLat);
+                distCalc2 = distCalc2 * Math.Sin(diflon / 2.0);
+                distCalc2 = distCalc2 * Math.Sin(diflon / 2.0); //and again, why?
                 distCalc += distCalc2;
-                distCalc = 2*Math.Atan2(Math.Sqrt(distCalc), Math.Sqrt(1.0 - distCalc));
-                distCalc = distCalc*6371000.0;
+                distCalc = 2 * Math.Atan2(Math.Sqrt(distCalc), Math.Sqrt(1.0 - distCalc));
+                distCalc = distCalc * 6371000.0;
                 //Converting to meters. 6371000 is the magic number,  3959 is average Earth radius in miles
-                distCalc = Math.Round(distCalc*39.3701, 1); // and then to inches.
+                distCalc = Math.Round(distCalc * 39.3701, 1); // and then to inches.
 
                 currentLon = currentLon.ToRadians();
                 destinationLon = destinationLon.ToRadians();
 
-                var heading = Math.Atan2(Math.Sin(destinationLon - currentLon)*Math.Cos(destinationLat),
-                    Math.Cos(currentLat)*Math.Sin(destinationLat) -
-                    Math.Sin(currentLat)*Math.Cos(destinationLat)*Math.Cos(destinationLon - currentLon));
+                var heading = Math.Atan2(Math.Sin(destinationLon - currentLon) * Math.Cos(destinationLat),
+                    Math.Cos(currentLat) * Math.Sin(destinationLat) -
+                    Math.Sin(currentLat) * Math.Cos(destinationLat) * Math.Cos(destinationLon - currentLon));
 
                 heading = heading.ToDegrees();
 
                 if (heading < 0)
                     heading += 360;
 
-                return new[] {Math.Round(distCalc, 1), Math.Round(heading, 1)};
+                return new[] { Math.Round(distCalc, 1), Math.Round(heading, 1) };
             }
             catch (Exception e)
             {
-                //Display.Write(e.Message);
-                return new double[] {0, 0};
+                Debug.WriteLine(e);
+                return new double[] { 0, 0 };
             }
         }
 
@@ -129,7 +134,7 @@ namespace HexapiBackground.Helpers{
             if (!double.TryParse(lat.Substring(2), out med))
                 return 0d;
 
-            med = med/60.0d;
+            med = med / 60.0d;
 
             var temp = 0d;
 
@@ -156,7 +161,7 @@ namespace HexapiBackground.Helpers{
             if (!double.TryParse(lon.Substring(3), out med))
                 return 0;
 
-            med = med/60.0d;
+            med = med / 60.0d;
 
             var temp = 0d;
 
@@ -197,10 +202,12 @@ namespace HexapiBackground.Helpers{
 
                         int quality;
                         if (int.TryParse(tokens[6], out quality))
-                            _quality = (GpsFixQuality) quality;
+                            _quality = (GpsFixQuality)quality;
 
                         if (float.TryParse(tokens[9], out _altitude))
-                            _altitude = _altitude*3.28084f;
+                            _altitude = _altitude * 3.28084f;
+
+                        double.TryParse(tokens[8], out _hdop);
 
                         break;
                     case "GPGLL": //Global Positioning System Fix Data
@@ -221,7 +228,7 @@ namespace HexapiBackground.Helpers{
 
                         double fps = 0;
                         if (double.TryParse(tokens[7], out fps))
-                            _feetPerSecond = Math.Round(fps*1.68781, 2); //Convert knots to feet per second or "Speed over ground"
+                            _feetPerSecond = Math.Round(fps * 1.68781, 2); //Convert knots to feet per second or "Speed over ground"
 
                         double dir = 0;
                         if (double.TryParse(tokens[8], out dir))
@@ -245,7 +252,7 @@ namespace HexapiBackground.Helpers{
                     case "GPGSA": //dilution of precision and active satellites
 
                         var fix3d = tokens[2]; //1 no fix, 2 = 2d fix, 3 = 3d fix
-                        //var PRNs OfSatsUsedForFix = tokens 3 + 11 total 12
+                                               //var PRNs OfSatsUsedForFix = tokens 3 + 11 total 12
 
                         //                        GSA Satellite status
                         //A        Auto selection of 2D or 3D fix(M = manual)
@@ -256,6 +263,28 @@ namespace HexapiBackground.Helpers{
                         //                                2.5      PDOP(dilution of precision)
                         //     1.3      Horizontal dilution of precision (HDOP)
                         //     2.1      Vertical dilution of precision(VDOP)
+
+                        break;
+                    case "PSTI":
+                        if (!tokens[1].Equals("030") || tokens.Length < 15)
+                            break;
+
+                        //tokens[12] 
+                        //                        Mode indicator
+                        //‘N’ = Data not valid 
+                        //‘A’ = Autonomous mode
+                        //‘D’ = Differential mode
+                        //‘E’ = Estimated(dead reckoning) mode
+                        //‘M’ = Manual input mode 
+                        //‘S’ = Simulator mode
+                        //‘F’ = Float RTK.Satellite syst
+                        //em used in RTK mode, floating
+                        //integers
+                        //‘R’ = Real Time Kinematic. System used in RTK mode with fixed
+                        //integers
+
+                        double.TryParse(tokens[13], out _rtkAge);
+                        double.TryParse(tokens[14], out _rtkRatio);
 
                         break;
                     default:
@@ -277,7 +306,8 @@ namespace HexapiBackground.Helpers{
             {
                 if (_quality != GpsFixQuality.NoFix)
                 {
-                    //Display.Write($"GPS {e.Message}");
+                    Debug.WriteLine(e);
+                    Debug.WriteLine(data);
                 }
             }
 
@@ -289,15 +319,18 @@ namespace HexapiBackground.Helpers{
                 FeetPerSecond = _feetPerSecond,
                 Quality = _quality,
                 SatellitesInView = _satellitesInView,
+                SignalToNoiseRatio = _signalToNoiseRatio,
                 Heading = _heading,
-                DateTime = _dateTime
+                DateTime = _dateTime,
+                RtkAge = _rtkAge,
+                RtkRatio = _rtkRatio,
+                Hdop = _hdop
             };
 
             //if (_quality > GpsFixQuality.NoFix)
             //    Debug.WriteLine($"Lat, Lon : {_lat}, {_lon}, {_quality}, Heading {_heading}, Alt {_altitude}, Sats {_satellitesInView}, SignalToNoise {_signalToNoiseRatio}");
 
             return latLon;
-
         }
     }
 }

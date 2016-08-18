@@ -3,19 +3,6 @@
   "version": 2,
   "targets": {
     "UAP,Version=v10.0": {
-      "Microsoft.AspNet.SignalR.Client/2.2.1": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Net.Http": "2.2.28",
-          "Newtonsoft.Json": "6.0.4"
-        },
-        "compile": {
-          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
-        },
-        "runtime": {
-          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
-        }
-      },
       "Microsoft.AspNet.WebApi.Client/5.2.3": {
         "type": "package",
         "dependencies": {
@@ -38,7 +25,7 @@
           "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
         }
       },
-      "Microsoft.Azure.Devices.Client/1.0.13": {
+      "Microsoft.Azure.Devices.Client/1.0.17": {
         "type": "package",
         "dependencies": {
           "Microsoft.AspNet.WebApi.Client": "5.2.3",
@@ -94,7 +81,7 @@
           "lib/netcore50/Microsoft.CSharp.dll": {}
         }
       },
-      "Microsoft.Net.Http/2.2.28": {
+      "Microsoft.Net.Http/2.2.22": {
         "type": "package",
         "dependencies": {
           "Microsoft.Bcl": "1.1.9",
@@ -2255,19 +2242,6 @@
       }
     },
     "UAP,Version=v10.0/win10-arm": {
-      "Microsoft.AspNet.SignalR.Client/2.2.1": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Net.Http": "2.2.28",
-          "Newtonsoft.Json": "6.0.4"
-        },
-        "compile": {
-          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
-        },
-        "runtime": {
-          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
-        }
-      },
       "Microsoft.AspNet.WebApi.Client/5.2.3": {
         "type": "package",
         "dependencies": {
@@ -2290,7 +2264,7 @@
           "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
         }
       },
-      "Microsoft.Azure.Devices.Client/1.0.13": {
+      "Microsoft.Azure.Devices.Client/1.0.17": {
         "type": "package",
         "dependencies": {
           "Microsoft.AspNet.WebApi.Client": "5.2.3",
@@ -2346,7 +2320,7 @@
           "lib/netcore50/Microsoft.CSharp.dll": {}
         }
       },
-      "Microsoft.Net.Http/2.2.28": {
+      "Microsoft.Net.Http/2.2.22": {
         "type": "package",
         "dependencies": {
           "Microsoft.Bcl": "1.1.9",
@@ -4615,19 +4589,6 @@
       }
     },
     "UAP,Version=v10.0/win10-arm-aot": {
-      "Microsoft.AspNet.SignalR.Client/2.2.1": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Net.Http": "2.2.28",
-          "Newtonsoft.Json": "6.0.4"
-        },
-        "compile": {
-          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
-        },
-        "runtime": {
-          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
-        }
-      },
       "Microsoft.AspNet.WebApi.Client/5.2.3": {
         "type": "package",
         "dependencies": {
@@ -4650,7 +4611,7 @@
           "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
         }
       },
-      "Microsoft.Azure.Devices.Client/1.0.13": {
+      "Microsoft.Azure.Devices.Client/1.0.17": {
         "type": "package",
         "dependencies": {
           "Microsoft.AspNet.WebApi.Client": "5.2.3",
@@ -4706,7 +4667,7 @@
           "lib/netcore50/Microsoft.CSharp.dll": {}
         }
       },
-      "Microsoft.Net.Http/2.2.28": {
+      "Microsoft.Net.Http/2.2.22": {
         "type": "package",
         "dependencies": {
           "Microsoft.Bcl": "1.1.9",
@@ -7014,19 +6975,6 @@
       }
     },
     "UAP,Version=v10.0/win10-x64": {
-      "Microsoft.AspNet.SignalR.Client/2.2.1": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Net.Http": "2.2.28",
-          "Newtonsoft.Json": "6.0.4"
-        },
-        "compile": {
-          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
-        },
-        "runtime": {
-          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
-        }
-      },
       "Microsoft.AspNet.WebApi.Client/5.2.3": {
         "type": "package",
         "dependencies": {
@@ -7049,7 +6997,7 @@
           "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
         }
       },
-      "Microsoft.Azure.Devices.Client/1.0.13": {
+      "Microsoft.Azure.Devices.Client/1.0.17": {
         "type": "package",
         "dependencies": {
           "Microsoft.AspNet.WebApi.Client": "5.2.3",
@@ -7105,7 +7053,7 @@
           "lib/netcore50/Microsoft.CSharp.dll": {}
         }
       },
-      "Microsoft.Net.Http/2.2.28": {
+      "Microsoft.Net.Http/2.2.22": {
         "type": "package",
         "dependencies": {
           "Microsoft.Bcl": "1.1.9",
@@ -9383,19 +9331,6 @@
       }
     },
     "UAP,Version=v10.0/win10-x64-aot": {
-      "Microsoft.AspNet.SignalR.Client/2.2.1": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Net.Http": "2.2.28",
-          "Newtonsoft.Json": "6.0.4"
-        },
-        "compile": {
-          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
-        },
-        "runtime": {
-          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
-        }
-      },
       "Microsoft.AspNet.WebApi.Client/5.2.3": {
         "type": "package",
         "dependencies": {
@@ -9418,7 +9353,7 @@
           "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
         }
       },
-      "Microsoft.Azure.Devices.Client/1.0.13": {
+      "Microsoft.Azure.Devices.Client/1.0.17": {
         "type": "package",
         "dependencies": {
           "Microsoft.AspNet.WebApi.Client": "5.2.3",
@@ -9474,7 +9409,7 @@
           "lib/netcore50/Microsoft.CSharp.dll": {}
         }
       },
-      "Microsoft.Net.Http/2.2.28": {
+      "Microsoft.Net.Http/2.2.22": {
         "type": "package",
         "dependencies": {
           "Microsoft.Bcl": "1.1.9",
@@ -11791,19 +11726,6 @@
       }
     },
     "UAP,Version=v10.0/win10-x86": {
-      "Microsoft.AspNet.SignalR.Client/2.2.1": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Net.Http": "2.2.28",
-          "Newtonsoft.Json": "6.0.4"
-        },
-        "compile": {
-          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
-        },
-        "runtime": {
-          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
-        }
-      },
       "Microsoft.AspNet.WebApi.Client/5.2.3": {
         "type": "package",
         "dependencies": {
@@ -11826,7 +11748,7 @@
           "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
         }
       },
-      "Microsoft.Azure.Devices.Client/1.0.13": {
+      "Microsoft.Azure.Devices.Client/1.0.17": {
         "type": "package",
         "dependencies": {
           "Microsoft.AspNet.WebApi.Client": "5.2.3",
@@ -11882,7 +11804,7 @@
           "lib/netcore50/Microsoft.CSharp.dll": {}
         }
       },
-      "Microsoft.Net.Http/2.2.28": {
+      "Microsoft.Net.Http/2.2.22": {
         "type": "package",
         "dependencies": {
           "Microsoft.Bcl": "1.1.9",
@@ -14160,19 +14082,6 @@
       }
     },
     "UAP,Version=v10.0/win10-x86-aot": {
-      "Microsoft.AspNet.SignalR.Client/2.2.1": {
-        "type": "package",
-        "dependencies": {
-          "Microsoft.Net.Http": "2.2.28",
-          "Newtonsoft.Json": "6.0.4"
-        },
-        "compile": {
-          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
-        },
-        "runtime": {
-          "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll": {}
-        }
-      },
       "Microsoft.AspNet.WebApi.Client/5.2.3": {
         "type": "package",
         "dependencies": {
@@ -14195,7 +14104,7 @@
           "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll": {}
         }
       },
-      "Microsoft.Azure.Devices.Client/1.0.13": {
+      "Microsoft.Azure.Devices.Client/1.0.17": {
         "type": "package",
         "dependencies": {
           "Microsoft.AspNet.WebApi.Client": "5.2.3",
@@ -14251,7 +14160,7 @@
           "lib/netcore50/Microsoft.CSharp.dll": {}
         }
       },
-      "Microsoft.Net.Http/2.2.28": {
+      "Microsoft.Net.Http/2.2.22": {
         "type": "package",
         "dependencies": {
           "Microsoft.Bcl": "1.1.9",
@@ -16569,25 +16478,6 @@
     }
   },
   "libraries": {
-    "Microsoft.AspNet.SignalR.Client/2.2.1": {
-      "sha512": "ecup1Ztcr9DnLOZo7VQb5ViM8tfip35Bi/IzIOc62KHLdWM5xr1tefOIeQ8sV8h4jF30PIOomFsTr/mSpuw+4Q==",
-      "type": "package",
-      "path": "Microsoft.AspNet.SignalR.Client/2.2.1",
-      "files": [
-        "Microsoft.AspNet.SignalR.Client.2.2.1.nupkg.sha512",
-        "Microsoft.AspNet.SignalR.Client.nuspec",
-        "lib/net40/Microsoft.AspNet.SignalR.Client.XML",
-        "lib/net40/Microsoft.AspNet.SignalR.Client.dll",
-        "lib/net45/Microsoft.AspNet.SignalR.Client.XML",
-        "lib/net45/Microsoft.AspNet.SignalR.Client.dll",
-        "lib/netcore50/Microsoft.AspNet.SignalR.Client.XML",
-        "lib/netcore50/Microsoft.AspNet.SignalR.Client.dll",
-        "lib/portable-net45+sl50+win+wpa81+wp80/Microsoft.AspNet.SignalR.Client.XML",
-        "lib/portable-net45+sl50+win+wpa81+wp80/Microsoft.AspNet.SignalR.Client.dll",
-        "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.XML",
-        "lib/portable-win81+wpa81/Microsoft.AspNet.SignalR.Client.dll"
-      ]
-    },
     "Microsoft.AspNet.WebApi.Client/5.2.3": {
       "sha512": "3kiI8peSXbXHDDrRuo+QaX0iCEVRe0nvn2dBDRw656uPX32UalbBlSIDUDlJxu05eau4tnuhsikiUuugvvoUoQ==",
       "type": "package",
@@ -16613,16 +16503,17 @@
         "lib/uap10.0/Microsoft.Azure.Amqp.Uwp.dll"
       ]
     },
-    "Microsoft.Azure.Devices.Client/1.0.13": {
-      "sha512": "jlI5C5UTr5Yo4ggVwQi1FE76hFIDWhVAysfQaTzOX9nwOM+b9kevWvMtAuiIfxOxmEMLbRQvz4yUWEEGI9IiYg==",
+    "Microsoft.Azure.Devices.Client/1.0.17": {
+      "sha512": "LBog2ycUXP46Wj2LzoL914y/obqZsJwmgjiUetI4ZeURgmrS61ZW3ZXs1KLmTYiv5L7SAF02T2CNIcSB9JUStA==",
       "type": "package",
-      "path": "Microsoft.Azure.Devices.Client/1.0.13",
+      "path": "Microsoft.Azure.Devices.Client/1.0.17",
       "files": [
-        "Microsoft.Azure.Devices.Client.1.0.13.nupkg.sha512",
+        "Microsoft.Azure.Devices.Client.1.0.17.nupkg.sha512",
         "Microsoft.Azure.Devices.Client.nuspec",
         "build/native/Microsoft.Azure.Devices.Client.targets",
         "lib/native/Microsoft.Azure.Devices.Client.winmd",
         "lib/net45/Microsoft.Azure.Devices.Client.dll",
+        "lib/portable-net45+wp8+wpa81+win8+MonoAndroid10+MonoTouch10+Xamarin.iOS10+UAP10/Microsoft.Azure.Devices.Client.PCL.dll",
         "lib/uap10.0/Microsoft.Azure.Devices.Client.winmd",
         "thirdpartynotice.txt"
       ]
@@ -16804,13 +16695,13 @@
         "ref/xamarinwatchos10/_._"
       ]
     },
-    "Microsoft.Net.Http/2.2.28": {
-      "sha512": "hPL9k+rPIpAj84RZSq3WtJkOD9uMStBovAIAz/0OQ+9hQIwQ2XqQlAhMqI4kw0XDxweJySIqNTMlkhRRuthcPQ==",
+    "Microsoft.Net.Http/2.2.22": {
+      "sha512": "bqVLJ2UimlAEs2bn3y28lB1pmFRxuysv9pFyB0A86WEMYGYTfDyfjAGjm0fiaSRjlMNU1jVnp8Mxt8qe4OmpXQ==",
       "type": "package",
-      "path": "Microsoft.Net.Http/2.2.28",
+      "path": "Microsoft.Net.Http/2.2.22",
       "files": [
         "License-Stable.rtf",
-        "Microsoft.Net.Http.2.2.28.nupkg.sha512",
+        "Microsoft.Net.Http.2.2.22.nupkg.sha512",
         "Microsoft.Net.Http.nuspec",
         "lib/monoandroid/System.Net.Http.Extensions.XML",
         "lib/monoandroid/System.Net.Http.Extensions.dll",
@@ -23052,8 +22943,7 @@
   },
   "projectFileDependencyGroups": {
     "": [
-      "Microsoft.AspNet.SignalR.Client >= 2.2.1",
-      "Microsoft.Azure.Devices.Client >= 1.0.13",
+      "Microsoft.Azure.Devices.Client >= 1.0.17",
       "Microsoft.NETCore.Targets.UniversalWindowsPlatform >= 5.0.0",
       "Microsoft.NETCore.UniversalWindowsPlatform >= 5.2.2"
     ],
