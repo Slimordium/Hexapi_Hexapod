@@ -40,13 +40,13 @@ namespace HexapiBackground.Gps
 
         internal async Task<bool> InitializeAsync()
         {
-            _gpsSerialDevice = await StartupTask.SerialDeviceHelper.GetSerialDeviceAsync("AH03F3RY", 57600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+            _gpsSerialDevice = await StartupTask.SerialDeviceHelper.GetSerialDeviceAsync("AH03F3RY", 57600, TimeSpan.FromMilliseconds(200), TimeSpan.FromMilliseconds(200));
 
             if (_gpsSerialDevice == null)
                 return false;
 
             _outputStream = new DataWriter(_gpsSerialDevice.OutputStream);
-            _inputStream = new DataReader(_gpsSerialDevice.InputStream);
+            _inputStream = new DataReader(_gpsSerialDevice.InputStream) {InputStreamOptions = InputStreamOptions.Partial};
 
             return true;
         }
@@ -83,7 +83,6 @@ namespace HexapiBackground.Gps
                     {
                         //It happens
                     }
-
                 }
 
                 var byteList = new List<byte> {0x00};
