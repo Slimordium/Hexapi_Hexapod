@@ -249,22 +249,6 @@ namespace HexapiBackground
                             _signalToNoiseRatio = signalToNoiseRatio;
 
                         break;
-                    case "GPGSA": //dilution of precision and active satellites
-
-                        var fix3d = tokens[2]; //1 no fix, 2 = 2d fix, 3 = 3d fix
-                                               //var PRNs OfSatsUsedForFix = tokens 3 + 11 total 12
-
-                        //                        GSA Satellite status
-                        //A        Auto selection of 2D or 3D fix(M = manual)
-                        //     3        3D fix - values include: 1 = no fix
-                        //                                       2 = 2D fix
-                        //                                       3 = 3D fix
-                        //     04,05...PRNs of satellites used for fix(space for 12)
-                        //                                2.5      PDOP(dilution of precision)
-                        //     1.3      Horizontal dilution of precision (HDOP)
-                        //     2.1      Vertical dilution of precision(VDOP)
-
-                        break;
                     case "PSTI":
                         if (!tokens[1].Equals("030") || tokens.Length < 15)
                             break;
