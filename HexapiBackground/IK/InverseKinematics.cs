@@ -498,7 +498,7 @@ namespace HexapiBackground.IK
                 return false;
             }
 
-            _serialDevice = await StartupTask.SerialDeviceHelper.GetSerialDeviceAsync("BCM2836", 115200, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1)); //The PI 3 on-board UART
+            _serialDevice = await StartupTask.SerialDeviceHelper.GetSerialDeviceAsync("BCM2836", 115200, TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(250)); //The PI 3 on-board UART
 
             if (_serialDevice == null)
                 return false;
@@ -517,6 +517,7 @@ namespace HexapiBackground.IK
             {
                 if (_inputStream == null || _outputStream == null)
                 {
+                    await Task.Delay(500);
                     continue;
                 }
 
