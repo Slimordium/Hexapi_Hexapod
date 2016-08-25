@@ -16,34 +16,34 @@ namespace HexapiBackground.Hardware
         internal delegate void ButtonChangedHandler(int button);
         internal delegate void DirectionChangedHandler(ControllerVector sender);
         internal delegate void TriggerChangedHandler(int trigger);
-        internal static event ButtonChangedHandler FunctionButtonChanged;
-        internal static event ButtonChangedHandler BumperButtonChanged;
-        internal static event DirectionChangedHandler LeftDirectionChanged;
-        internal static event DirectionChangedHandler RightDirectionChanged;
-        internal static event DirectionChangedHandler DpadDirectionChanged;
-        internal static event TriggerChangedHandler LeftTriggerChanged;
-        internal static event TriggerChangedHandler RightTriggerChanged;
-        private static double _deadzoneTolerance = 5000; //Was 1000
-        private static HidDevice _deviceHandle;
-        private static ControllerVector _dpadDirectionVector = new ControllerVector();
-        private static ControllerVector _leftStickDirectionVector = new ControllerVector();
-        private static ControllerVector _rightStickDirectionVector = new ControllerVector();
-        private static int _rightTrigger;
-        private static int _leftTrigger;
-        private static SparkFunSerial16X2Lcd _display;
+        internal event ButtonChangedHandler FunctionButtonChanged;
+        internal event ButtonChangedHandler BumperButtonChanged;
+        internal event DirectionChangedHandler LeftDirectionChanged;
+        internal event DirectionChangedHandler RightDirectionChanged;
+        internal event DirectionChangedHandler DpadDirectionChanged;
+        internal event TriggerChangedHandler LeftTriggerChanged;
+        internal event TriggerChangedHandler RightTriggerChanged;
+        private double _deadzoneTolerance = 5000; //Was 1000
+        private HidDevice _deviceHandle;
+        private ControllerVector _dpadDirectionVector = new ControllerVector();
+        private ControllerVector _leftStickDirectionVector = new ControllerVector();
+        private ControllerVector _rightStickDirectionVector = new ControllerVector();
+        private int _rightTrigger;
+        private int _leftTrigger;
+        //private static SparkFunSerial16X2Lcd _display;
 
         //private Timer _disconnectTimer = new Timer(DisconnectCheckTimer, null, 0, 500);
 
         /// <summary>
         /// True when connected
         /// </summary>
-        internal static event EventHandler<DisconnectedEventArgs> DisconnectedEvent;
+        //internal event EventHandler<DisconnectedEventArgs> DisconnectedEvent;
 
-        private static bool _isConnected;
+        //private static bool _isConnected;
 
-        internal XboxController(SparkFunSerial16X2Lcd display)
+        internal XboxController()
         {
-            _display = display;
+            //_display = display;
         }
 
         internal async Task<bool> InitializeAsync()
@@ -69,7 +69,7 @@ namespace HexapiBackground.Hardware
             return true;
         }
 
-        private static async Task ConnectToController(DeviceInformationCollection deviceInformationCollection)
+        private async Task ConnectToController(DeviceInformationCollection deviceInformationCollection)
         {
             foreach (var d in deviceInformationCollection)
             {
@@ -77,13 +77,13 @@ namespace HexapiBackground.Hardware
 
                 if (_deviceHandle == null)
                 {
-                    await _display.WriteAsync("No Xbox controller");
+                    //await _display.WriteAsync("No Xbox controller");
                     continue;
                 }
 
                 _deviceHandle.InputReportReceived += InputReportReceived;
 
-                _isConnected = true;
+                //_isConnected = true;
                 break;
             }
         }
@@ -92,34 +92,34 @@ namespace HexapiBackground.Hardware
         {
             var deviceInformationCollection = await DeviceInformation.FindAllAsync(HidDevice.GetDeviceSelector(0x01, 0x05));
 
-            if (deviceInformationCollection.Count == 0)
-                await _display.WriteAsync("No Xbox controller");
+            //if (deviceInformationCollection.Count == 0)
+            //    await _display.WriteAsync("No Xbox controller");
 
             return deviceInformationCollection;
         }
 
-        private static async void DisconnectCheckTimer(object sender)
-        {
-            var deviceInformationCollection = await DeviceInformation.FindAllAsync(HidDevice.GetDeviceSelector(0x01, 0x05));
+        //private async void DisconnectCheckTimer(object sender)
+        //{
+        //    var deviceInformationCollection = await DeviceInformation.FindAllAsync(HidDevice.GetDeviceSelector(0x01, 0x05));
 
-            if (_isConnected && deviceInformationCollection.Count == 0)
-            {
-                _deviceHandle.Dispose();
-                _deviceHandle = null;
+        //    if (_isConnected && deviceInformationCollection.Count == 0)
+        //    {
+        //        _deviceHandle.Dispose();
+        //        _deviceHandle = null;
 
-                _isConnected = false;
-                DisconnectedEvent?.Invoke(null, new DisconnectedEventArgs { IsConnected = false });
-            }
+        //        _isConnected = false;
+        //        DisconnectedEvent?.Invoke(null, new DisconnectedEventArgs { IsConnected = false });
+        //    }
 
-            if (!_isConnected && deviceInformationCollection.Count > 0)
-            {
-                await ConnectToController(deviceInformationCollection);
+        //    if (!_isConnected && deviceInformationCollection.Count > 0)
+        //    {
+        //        await ConnectToController(deviceInformationCollection);
 
-                DisconnectedEvent?.Invoke(null, new DisconnectedEventArgs { IsConnected = true });
-            }
-        }
+        //        DisconnectedEvent?.Invoke(null, new DisconnectedEventArgs { IsConnected = true });
+        //    }
+        //}
 
-        private static void InputReportReceived(HidDevice sender, HidInputReportReceivedEventArgs args)
+        private void InputReportReceived(HidDevice sender, HidInputReportReceivedEventArgs args)
         {
             var dPad = (int)args.Report.GetNumericControl(0x01, 0x39).Value;
 
@@ -206,7 +206,7 @@ namespace HexapiBackground.Hardware
         /// <param name="x">Horizontal coordinate</param>
         /// <param name="y">Vertical coordinate</param>
         /// <returns>True if the coordinates are inside the dead zone</returns>
-        internal static int GetMagnitude(double x, double y)
+        internal int GetMagnitude(double x, double y)
         {
             var magnitude = Math.Sqrt(Math.Pow(x, 2) + Math.Pow(y, 2));
 

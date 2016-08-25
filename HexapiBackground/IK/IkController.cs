@@ -80,9 +80,9 @@ namespace HexapiBackground.IK
 
         internal async Task StartAsync()
         {
-            //var imuEventTimer = new Timer(ImuEventTimerCallback, null, 0, 20);
-            //var displayTimer = new Timer(DisplayTimerCallback, null, 0, 50);
-            //var rangeTimer = new Timer(RangeTimerCallback, null, 0, 20);
+            var imuEventTimer = new Timer(ImuEventTimerCallback, null, 0, 20);
+            var displayTimer = new Timer(DisplayTimerCallback, null, 0, 50);
+            var rangeTimer = new Timer(RangeTimerCallback, null, 0, 20);
 
             while (true)
             {
@@ -90,21 +90,6 @@ namespace HexapiBackground.IK
                 {
                     continue;
                 }
-
-                //byte startChar = 0x00;
-                //while (startChar != 0x0a)
-                //{
-                //    await _arduinoDataReader.LoadAsync(1).AsTask();
-                //    startChar = _arduinoDataReader.ReadByte();
-                //}
-
-                //var bytesIn = new List<byte> {0x00};
-
-                //while (bytesIn.Last() != 0x0d)
-                //{
-                //    await _arduinoDataReader.LoadAsync(1).AsTask();
-                //    bytesIn.Add(_arduinoDataReader.ReadByte());
-                //}
 
                 var numBytesIn = await _arduinoDataReader.LoadAsync(128).AsTask();
                 var bytesIn = new byte[numBytesIn];

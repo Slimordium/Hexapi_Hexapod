@@ -17,9 +17,21 @@ namespace HexapiBackground.Gps
     internal sealed class Gps
     {
         private SerialDevice _gpsSerialDevice;
-        private GpsFixData CurrentGpsFixData = new GpsFixData();
 
-        private SparkFunSerial16X2Lcd _display;
+        private static readonly object _fixDataLock = new object();
+
+        private static GpsFixData _gpsFixData;
+
+        internal static GpsFixData CurrentGpsFixData
+        {
+            get
+            {
+                lock (_fixDataLock)
+                    return _gpsFixData;
+            }
+        }
+
+        private static SparkFunSerial16X2Lcd _display;
         private readonly NtripClient _ntripClientTcp;
         private static IoTClient _ioTClient;
 
@@ -28,16 +40,13 @@ namespace HexapiBackground.Gps
 
         //private Timer _iotUpdateTimer = new Timer(o => { SendToIotHub();  }, null, 0, 1000);
 
-        //internal delegate void GpsEventHandler(GpsArgs args);
-        //internal event GpsEventHandler GpsEvent;
+        private static async void SendToIotHub()
+        {
+            if (CurrentGpsFixData == null)
+                return;
 
-        //private static async void SendToIotHub()
-        //{
-        //    if (CurrentGpsFixData == null)
-        //        return;
-
-        //    await _ioTClient.SendEventAsync("GPS", CurrentGpsFixData.ToString());
-        //}
+            await _ioTClient.SendEventAsync("GPS", CurrentGpsFixData.ToString());
+        }
 
         internal Gps(SparkFunSerial16X2Lcd display, NtripClient ntripClientTcp, IoTClient ioTClient)
         {
@@ -55,9 +64,6 @@ namespace HexapiBackground.Gps
 
             _outputStream = new DataWriter(_gpsSerialDevice.OutputStream);
             _inputStream = new DataReader(_gpsSerialDevice.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
-
-            //if (_ntripClientTcp != null)
-            //    _ntripClientTcp.NtripDataArrivedEvent += NtripClient_NtripDataArrivedEvent;
 
             return true;
         }
@@ -89,59 +95,40 @@ namespace HexapiBackground.Gps
                     continue;
                 }
 
-                var byteCount = await _inputStream.LoadAsync(256).AsTask();
+                var byteCount = await _inputStream.LoadAsync(512).AsTask();
                 var bytes = new byte[byteCount];
                 _inputStream.ReadBytes(bytes);
 
-                var sentences = Encoding.ASCII.GetString(bytes).Replace("\0", "").Replace("\r", "");
+                var sentences = Encoding.ASCII.GetString(bytes).Replace("\0", "").Replace("\r", "").Replace("\n","");
 
                 foreach (var sentence in sentences.Split('$'))
                 {
+                    if (string.IsNullOrEmpty(sentence))
+                        continue;
+
                     var parsedData = sentence.ParseNmea();
-                    if (parsedData != null)
-                        CurrentGpsFixData = parsedData;
+                    if (parsedData == null)
+                        continue;
+
+                    lock (_fixDataLock)
+                        _gpsFixData = parsedData;
                 }
 
-                var ntripBytes = await _ntripClientTcp.ReadNtripAsync();
+                var rtkBytes = await _ntripClientTcp.ReadNtripAsync();
 
-                _outputStream.WriteBytes(ntripBytes);
+                _outputStream.WriteBytes(rtkBytes);
                 await _outputStream.StoreAsync().AsTask();
             }
         }
 
-        //private Timer _eventTimer = new Timer(sender =>
-        //{
-        //    if (_currentGpsFixData == null)
-        //        return;
+        private Timer _statusTimer = new Timer(async sender =>
+        {
+            if (CurrentGpsFixData == null)
+                return;
 
-        //    if (_currentGpsFixData != null)
-        //        GpsEvent?.Invoke(new GpsArgs { GpsFixData = _currentGpsFixData });
-        //}, null, 0, 100);
-
-        //private Timer _statusTimer = new Timer(async sender =>
-        //{
-        //    if (CurrentGpsFixData == null)
-        //        return;
-
-        //    await _display.WriteAsync($"{CurrentGpsFixData.Quality} S{CurrentGpsFixData.SatellitesInView}", 1);
-        //    await _display.WriteAsync($"RR{CurrentGpsFixData.RtkRatio}, RV{CurrentGpsFixData.RtkAge}, NR{CurrentGpsFixData.SignalToNoiseRatio}", 2);
-        //}, null, 0, 5000);
-
-        //private async void NtripClient_NtripDataArrivedEvent(object sender, NtripEventArgs e)
-        //{
-        //    if (_gpsSerialDevice == null || _outputStream == null)
-        //        return;
-
-        //    try
-        //    {
-        //        _outputStream.WriteBytes(e.NtripBytes);
-        //        await _outputStream.StoreAsync().AsTask();
-        //    }
-        //    catch
-        //    {
-        //        await _display.WriteAsync("NTRIP update failed");
-        //    }
-        //}
+            await _display.WriteAsync($"{CurrentGpsFixData.Quality} S{CurrentGpsFixData.SatellitesInView}", 1);
+            await _display.WriteAsync($"RR{CurrentGpsFixData.RtkRatio}, RV{CurrentGpsFixData.RtkAge}, NR{CurrentGpsFixData.SignalToNoiseRatio}", 2);
+        }, null, 0, 5000);
     }
 
     internal class GpsArgs : EventArgs

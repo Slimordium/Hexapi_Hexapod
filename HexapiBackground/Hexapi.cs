@@ -68,14 +68,14 @@ namespace HexapiBackground
 
             SetGaitOptions();
 
-            XboxController.LeftDirectionChanged += XboxController_LeftDirectionChanged;
-            XboxController.RightDirectionChanged += XboxController_RightDirectionChanged;
-            XboxController.DpadDirectionChanged += XboxController_DpadDirectionChanged;
-            XboxController.LeftTriggerChanged += XboxController_LeftTriggerChanged;
-            XboxController.RightTriggerChanged += XboxController_RightTriggerChanged;
-            XboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
-            XboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
-            XboxController.DisconnectedEvent += XboxController_DisconnectedEvent; ;
+            _xboxController.LeftDirectionChanged += XboxController_LeftDirectionChanged;
+            _xboxController.RightDirectionChanged += XboxController_RightDirectionChanged;
+            _xboxController.DpadDirectionChanged += XboxController_DpadDirectionChanged;
+            _xboxController.LeftTriggerChanged += XboxController_LeftTriggerChanged;
+            _xboxController.RightTriggerChanged += XboxController_RightTriggerChanged;
+            _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
+            _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
+            //XboxController.DisconnectedEvent += XboxController_DisconnectedEvent; ;
         }
 
         internal static double LegLiftHeightUpperLimit { get; set; }

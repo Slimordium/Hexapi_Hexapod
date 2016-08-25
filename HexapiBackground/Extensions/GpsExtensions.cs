@@ -245,14 +245,19 @@ namespace HexapiBackground
 
                         break;
                     case "PSTI":
+                        if (tokens.Length < 1)
+                            break;
+
                         if (!tokens[1].Equals("030") || tokens.Length < 15)
                             break;
 
                         _lat = Latitude2Double(tokens[4], tokens[5]);
                         _lon = Longitude2Double(tokens[6], tokens[7]);
 
-                        double.TryParse(tokens[13], out _rtkAge);
-                        double.TryParse(tokens[14], out _rtkRatio);
+                        double.TryParse(tokens[14], out _rtkAge);
+
+                        var t = tokens[15].Split('*')[0];
+                        double.TryParse(t, out _rtkRatio);
 
                         break;
                     default:

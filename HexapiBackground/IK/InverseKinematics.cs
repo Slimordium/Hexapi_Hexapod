@@ -193,7 +193,6 @@ namespace HexapiBackground.IK
         internal InverseKinematics(SparkFunSerial16X2Lcd display)
         {
             IkController.RangingEvent += RangingEventHandler;
-
             IkController.ImuEvent += ImuEventHandler;
 
             _display = display;
@@ -282,7 +281,7 @@ namespace HexapiBackground.IK
 
             _travelLengthZ = -1;
 
-            await Task.Delay(700).ContinueWith(t =>
+            await Task.Delay(900).ContinueWith(t =>
             {
                 _travelLengthZ = 0;
                 _oscillations = 0;

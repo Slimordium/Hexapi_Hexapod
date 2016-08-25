@@ -10,7 +10,6 @@ namespace HexapiBackground.Gps.Ntrip
 {
     internal class NtripClient
     {
-        private static readonly Encoding Encoding = new ASCIIEncoding();
         private readonly IPEndPoint _endPoint;
         private readonly string _ntripMountPoint; //P041_RTCM3
         private readonly string _password;
@@ -121,19 +120,10 @@ namespace HexapiBackground.Gps.Ntrip
             return Encoding.ASCII.GetBytes(msg);
         }
 
-        ///// <summary>
-        ///// Authenticates and starts the transfer
-        ///// </summary>
-        //internal async Task StartAsync()
-        //{
-           
-
-        //}
-
         internal Task<byte[]> ReadNtripAsync()
         {
             var tcs = new TaskCompletionSource<byte[]>();
-            var buffer = new ArraySegment<byte>(new byte[1024]);
+            var buffer = new ArraySegment<byte>(new byte[100]);
 
             var args = new SocketAsyncEventArgs
             {
@@ -144,11 +134,7 @@ namespace HexapiBackground.Gps.Ntrip
 
             args.Completed += (sender, e) =>
             {
-                var data = new byte[e.BytesTransferred];
-
-                Array.Copy(e.BufferList[0].Array, data, e.BytesTransferred);
-
-                tcs.SetResult(data);
+                tcs.SetResult(e.BufferList[0].Array);
             };
 
             _socket.ReceiveAsync(args);
@@ -156,12 +142,10 @@ namespace HexapiBackground.Gps.Ntrip
             return tcs.Task;
         }
 
-
         internal static string ToBase64(string str)
         {
-            var byteArray = Encoding.GetBytes(str);
+            var byteArray = Encoding.ASCII.GetBytes(str);
             return Convert.ToBase64String(byteArray, 0, byteArray.Length);
         }
     }
-    
 }
