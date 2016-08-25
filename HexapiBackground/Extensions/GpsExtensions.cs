@@ -12,7 +12,7 @@ namespace HexapiBackground
         private static double _lat;
         private static double _lon;
         private static GpsFixQuality _quality;
-        private static double _heading;
+        private static int _heading;
         private static float _altitude;
         private static double _feetPerSecond;
         private static DateTime _dateTime;
@@ -227,7 +227,7 @@ namespace HexapiBackground
 
                         double dir = 0;
                         if (double.TryParse(tokens[8], out dir))
-                            _heading = dir; //angle from true north that you are traveling or "Course made good"
+                            _heading = (int)dir; //angle from true north that you are traveling or "Course made good"
 
                         break;
                     case "GPGSV": //Satellites in View
