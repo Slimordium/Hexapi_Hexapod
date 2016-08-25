@@ -8,6 +8,7 @@ using Windows.ApplicationModel.Background;
 using HexapiBackground.Gps.Ntrip;
 using HexapiBackground.Hardware;
 using HexapiBackground.IK;
+using HexapiBackground.Iot;
 using HexapiBackground.Navigation;
 
 namespace HexapiBackground
@@ -24,7 +25,7 @@ namespace HexapiBackground
         private IkController _ikController;
         private InverseKinematics _inverseKinematics;
         private Hexapi _hexapi;
-        private Navigator _navigator;
+        private GpsNavigator _navigator;
         private NtripClient _ntripClient;
         private IoTClient _ioTClient;
 
@@ -37,12 +38,12 @@ namespace HexapiBackground
 
             _display = new SparkFunSerial16X2Lcd();
             _xboxController = new XboxController(_display);
-            _ntripClient = new NtripClient("172.16.0.237", 8000, "", "", "", _display); //172.16.0.227
-            _ioTClient = new IoTClient(_display);
-            _gps = new Gps.Gps( _display, _ntripClient);
+            _ntripClient = new NtripClient("172.16.0.245", 8000, "", "", "", _display); //172.16.0.227
+            //_ioTClient = new IoTClient(_display);
+            _gps = new Gps.Gps( _display, _ntripClient, _ioTClient);
             _inverseKinematics = new InverseKinematics(_display);
             _ikController = new IkController(_inverseKinematics, _display, _ioTClient, _gps); //Range and yaw/pitch/roll data from Arduino and SparkFun Razor IMU
-            _navigator = new Navigator(_ikController, _display, _gps);
+            _navigator = new GpsNavigator(_ikController, _display);
             _hexapi = new Hexapi(_ikController, _xboxController, _navigator, _display, _gps, _ioTClient);
 
             _initializeTasks.Add(_display.InitializeAsync());
@@ -51,9 +52,8 @@ namespace HexapiBackground
             _initializeTasks.Add(_ntripClient.InitializeAsync());
             _initializeTasks.Add(_gps.InitializeAsync());
             _initializeTasks.Add(_inverseKinematics.InitializeAsync());
-            _initializeTasks.Add(_ioTClient.InitializeAsync());
+            //_initializeTasks.Add(_ioTClient.InitializeAsync());
 
-            _startTasks.Add(_ntripClient.StartAsync());
             _startTasks.Add(_ikController.StartAsync());
             _startTasks.Add(_gps.StartAsync());
             _startTasks.Add(_inverseKinematics.StartAsync());

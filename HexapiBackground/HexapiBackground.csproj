@@ -137,7 +137,7 @@
     <Compile Include="Enums\GaitType.cs" />
     <Compile Include="Enums\GpsFixQuality.cs" />
     <Compile Include="Enums\SelectedIkFunction.cs" />
-    <Compile Include="Gps\LatLon.cs" />
+    <Compile Include="Gps\GpsFixData.cs" />
     <Compile Include="Extensions\MathExtensions.cs" />
     <Compile Include="Hexapi.cs" />
     <Compile Include="Hardware\I2CDevice.cs" />

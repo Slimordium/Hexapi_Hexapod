@@ -32,7 +32,7 @@ namespace HexapiBackground.Hardware
         private static int _leftTrigger;
         private static SparkFunSerial16X2Lcd _display;
 
-        private Timer _disconnectTimer = new Timer(DisconnectCheckTimer, null, 0, 500);
+        //private Timer _disconnectTimer = new Timer(DisconnectCheckTimer, null, 0, 500);
 
         /// <summary>
         /// True when connected
@@ -148,12 +148,14 @@ namespace HexapiBackground.Hardware
             {
                 LeftTriggerChanged?.Invoke(lt);
                 _leftTrigger = lt;
+                return;
             }
 
             if (_rightTrigger != rt)
             {
                 RightTriggerChanged?.Invoke(rt);
                 _rightTrigger = rt;
+                return;
             }
 
             var lStickMagnitude = GetMagnitude(lstickX, lstickY);
@@ -169,6 +171,7 @@ namespace HexapiBackground.Hardware
             {
                 _leftStickDirectionVector = vector;
                 LeftDirectionChanged(_leftStickDirectionVector);
+                return;
             }
 
             vector = new ControllerVector
@@ -181,6 +184,7 @@ namespace HexapiBackground.Hardware
             {
                 _rightStickDirectionVector = vector;
                 RightDirectionChanged(_rightStickDirectionVector);
+                return;
             }
 
             vector = new ControllerVector

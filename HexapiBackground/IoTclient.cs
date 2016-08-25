@@ -4,8 +4,9 @@ using System.Text;
 using System.Threading.Tasks;
 using HexapiBackground.Hardware;
 using Microsoft.Azure.Devices.Client;
+using TransportType = Microsoft.Azure.Devices.Client.TransportType;
 
-namespace HexapiBackground
+namespace HexapiBackground.Iot
 {
     /// <summary>
     /// Azure IoT Hub MQTT client
@@ -17,6 +18,9 @@ namespace HexapiBackground
 
         internal static event EventHandler<IotEventArgs> IotEvent;
 
+        private string _connectionString =
+            @"";
+
         internal IoTClient(SparkFunSerial16X2Lcd display)
         {
             _display = display;
@@ -26,21 +30,33 @@ namespace HexapiBackground
         {
             try
             {
-                _deviceClient = DeviceClient.CreateFromConnectionString("", TransportType.Mqtt); //add connection string
+                _deviceClient = DeviceClient.CreateFromConnectionString(_connectionString, TransportType.Amqp); //add connection string
 
                 await _deviceClient.OpenAsync();
             }
-            catch
+            catch (Exception)
             {
-                //   
+                //Display?
             }
         }
 
-        internal async Task SendEventAsync(string eventData)
+        internal async Task SendEventAsync(string key, string eventData)
         {
-            var eventMessage = new Message(Encoding.UTF8.GetBytes(eventData));
+            if (_deviceClient == null || string.IsNullOrEmpty(eventData))
+                return;
 
-            await _deviceClient.SendEventAsync(eventMessage);
+            try
+            {
+                var eventMessage = new Message();
+
+                eventMessage.Properties.Add(key, eventData);
+
+                await _deviceClient.SendEventAsync(eventMessage);
+            }
+            catch (Exception)
+            {
+                //Display?
+            }
         }
 
         /// <summary>
@@ -49,6 +65,9 @@ namespace HexapiBackground
         /// <returns></returns>
         internal async Task StartAsync()
         {
+            if (_deviceClient == null)
+                return;
+
             while (true)
             {
                 try
@@ -67,7 +86,7 @@ namespace HexapiBackground
 
                     var messageData = Encoding.ASCII.GetString(receivedMessage.GetBytes());
 
-                    IotEvent?.Invoke(null, new IotEventArgs { EventData = receivedMessage.Properties, MessageData = messageData});
+                    IotEvent?.Invoke(null, new IotEventArgs { EventData = receivedMessage.Properties, MessageData = messageData });
                 }
                 catch
                 {

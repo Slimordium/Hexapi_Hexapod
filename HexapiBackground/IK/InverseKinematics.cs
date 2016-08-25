@@ -498,12 +498,12 @@ namespace HexapiBackground.IK
                 return false;
             }
 
-            _serialDevice = await StartupTask.SerialDeviceHelper.GetSerialDeviceAsync("BCM2836", 115200, TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(250)); //The PI 3 on-board UART
+            _serialDevice = await StartupTask.SerialDeviceHelper.GetSerialDeviceAsync("BCM2836", 115200, TimeSpan.FromMilliseconds(500), TimeSpan.FromMilliseconds(500)); //The PI 3 on-board UART
 
             if (_serialDevice == null)
                 return false;
 
-            _inputStream = new DataReader(_serialDevice.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
+            _inputStream = new DataReader(_serialDevice.InputStream);
             _outputStream = new DataWriter(_serialDevice.OutputStream);
 
             return true;

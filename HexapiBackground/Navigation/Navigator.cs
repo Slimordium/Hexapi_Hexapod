@@ -1,196 +1,139 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Threading;
+using HexapiBackground.Enums;
 using HexapiBackground.Gps;
 using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
 using HexapiBackground.IK;
-using System.Threading;
 
 namespace HexapiBackground.Navigation
 {
-    internal sealed class Navigator
+    internal sealed class GpsNavigator
     {
-        private readonly IkController _ikController;
-        private readonly Gps.Gps _gps;
-        private List<LatLon> _waypoints;
+        private readonly IkController _controller;
+        //private readonly Gps.Gps _gps;
+        private List<GpsFixData> _waypoints;
         private readonly SparkFunSerial16X2Lcd _display;
+        private GpsFixData _gpsFixData;
+        private double _travelLengthX = 0;
+        private double _travelLengthZ;
+        private double _gaitSpeed = 30;
 
-        private bool _navRunning;
-
-        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
-
-        internal Navigator(IkController ikController,  SparkFunSerial16X2Lcd display, Gps.Gps gps)
+        internal GpsNavigator(IkController controller, SparkFunSerial16X2Lcd display)
         {
-            _ikController = ikController;
-            _gps = gps;
+            _controller = controller;
+            //_gps = gps;
             _display = display;
-        }
-            
-        internal async Task InitializeAsync()
-        {
-            if (_gps == null)
-                return;
 
+            //Gps.Gps.GpsEvent += _gps_GpsEvent;
+        }
+
+        private void _gps_GpsEvent(GpsArgs args)
+        {
+            _gpsFixData = args.GpsFixData;
+        }
+
+        internal async Task StartAsync(CancellationToken token)
+        {
             _waypoints = await GpsExtensions.LoadWaypoints();
 
             await _display.WriteAsync($"{_waypoints.Count} waypoints");
-        }
 
-        internal async Task StartAsync()
-        {
-            if (_gps == null || _navRunning)
-                return;
-
-            _navRunning = true;
+            _controller.RequestSetGaitType(GaitType.Tripod8);
+            _gaitSpeed = 30;
 
             foreach (var wp in _waypoints)
             {
-                if (wp.Lat == 0 || wp.Lon == 0)
+                if (Math.Abs(wp.Lat) < 1 || Math.Abs(wp.Lon) < 1)
                     continue;
 
-                await NavigateToWaypoint(wp, _cancellationTokenSource.Token);
+                await NavigateToWaypoint(wp, token);
 
-                if (_cancellationTokenSource.IsCancellationRequested || !_navRunning)
+                if (token.IsCancellationRequested)
                     break;
             }
         }
 
-        internal void Stop()
+        internal async Task<bool> NavigateToWaypoint(GpsFixData currentWaypoint, CancellationToken cancelationToken)
         {
-            _cancellationTokenSource.Cancel();
-            _navRunning = false;
-        }
-        
-        internal async Task<bool> NavigateToWaypoint(LatLon currentWaypoint, CancellationToken cancelationToken)
-        {
-            var distanceHeading = GpsExtensions.GetDistanceAndHeadingToDestination(Gps.Gps.CurrentLatLon.Lat, Gps.Gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
-            var distanceToWaypoint = distanceHeading[0];
-            var headingToWaypoint = distanceHeading[1];
+            var distanceToWaypoint = GpsExtensions.GetDistanceToDestination(_gpsFixData.Lat, _gpsFixData.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
+            var headingToWaypoint = GpsExtensions.GetHeadingToDestination(_gpsFixData.Lat, _gpsFixData.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
 
-            var travelLengthX = 0D;
-            var travelLengthZ = 0D;
-            var travelRotationY = 0D;
-            var nomGaitSpeed = 50D;
-            
-            travelLengthZ = -50;
+            var startDistanceToWp = 0d;
 
-            var turnDirection = "None";
-
-            while (distanceToWaypoint > 10) //Inches
+            while (distanceToWaypoint > 36) //Inches
             {
+                if (Math.Abs(startDistanceToWp) < .1)
+                    startDistanceToWp = distanceToWaypoint;
+
                 if (cancelationToken.IsCancellationRequested)
                     return false;
 
-                await _display.WriteAsync($"WP D/H {distanceToWaypoint}, {headingToWaypoint}", 1);
-                await _display.WriteAsync($"{turnDirection} {Gps.Gps.CurrentLatLon.Heading}", 2);
+                var turnMagnitude = Convert.ToInt32(distanceToWaypoint.Map(0, startDistanceToWp, 1, 3)); //How much should we turn
+                _travelLengthZ = Convert.ToInt32(distanceToWaypoint.Map(0, startDistanceToWp, 30, 120)); //Forward movement
 
-                if (headingToWaypoint + 5 > 359 && Math.Abs(headingToWaypoint - Gps.Gps.CurrentLatLon.Heading) > 1)
-                {
-                    var tempHeading = (headingToWaypoint + 5) - 359;
+                await _display.WriteAsync($"Tm:{turnMagnitude} Z:{_travelLengthZ}", 1);
+                await _display.WriteAsync($"D:{distanceToWaypoint} H:{headingToWaypoint}", 2);
 
-                    if (Gps.Gps.CurrentLatLon.Heading > tempHeading)
-                    {
-                        turnDirection = "Right";
-                        travelRotationY = -1;
-                    }
-                    else
-                    {
-                        turnDirection = "Left";
-                        travelRotationY = 1;
-                    }
-                }
-                else if (headingToWaypoint - 5 < 1 && Math.Abs(headingToWaypoint - Gps.Gps.CurrentLatLon.Heading) > 1)
+                if (headingToWaypoint + 1 > 359 && Math.Abs(headingToWaypoint - _gpsFixData.Heading) >= 1)
                 {
-                    var tempHeading = (headingToWaypoint + 359) - 5;
-
-                    
-
-                    if (Gps.Gps.CurrentLatLon.Heading < tempHeading)
-                    {
-                        turnDirection = "Right";
-                        travelRotationY = 1;
-                    }
-                    else
-                    {
-                        turnDirection = "Left";
-                        travelRotationY = -1;
-                    }
+                    var tempHeading = (headingToWaypoint + 1) - 359;
+                    await RequestMove(_gpsFixData.Heading, tempHeading, turnMagnitude);
                 }
-                else if (Gps.Gps.CurrentLatLon.Heading > headingToWaypoint - 5 && Gps.Gps.CurrentLatLon.Heading < headingToWaypoint + 5)
+                else if (headingToWaypoint - 1 < 1 && Math.Abs(headingToWaypoint - _gpsFixData.Heading) >= 1)
                 {
-                    travelRotationY = 0;
-                    turnDirection = "None";
+                    var tempHeading = (headingToWaypoint + 359) - 1;
+                    await RequestMove(_gpsFixData.Heading, tempHeading, turnMagnitude);
                 }
-                else if (headingToWaypoint > Gps.Gps.CurrentLatLon.Heading + 20)
+                else if (_gpsFixData.Heading > headingToWaypoint - 3 && _gpsFixData.Heading < headingToWaypoint + 3) //Make a run for it! 
                 {
-                    if (Gps.Gps.CurrentLatLon.Heading - headingToWaypoint > 180)
-                    {
-                        turnDirection = "Left+";
-                        travelRotationY = -2;
-                    }
-                    else
-                    {
-                        turnDirection = "Right+";
-                        travelRotationY = 2;
-                    }
+                    _travelLengthZ = 40;
+                    _controller.RequestMovement(_gaitSpeed, _travelLengthX, _travelLengthZ, 0);
                 }
-                else if (headingToWaypoint > Gps.Gps.CurrentLatLon.Heading)
+                else if (headingToWaypoint > _gpsFixData.Heading)
                 {
-                    if (Gps.Gps.CurrentLatLon.Heading - headingToWaypoint > 180)
-                    {
-                        turnDirection = "Left";
-                        travelRotationY = -1;
-                    }
-                    else
-                    {
-                        turnDirection = "Right";
-                        travelRotationY = 1;
-                    }
+                    await RequestMove(_gpsFixData.Heading, headingToWaypoint, turnMagnitude);
                 }
-                else if (headingToWaypoint < Gps.Gps.CurrentLatLon.Heading - 20) //If it has a long ways to turn, go fast!
+                else if (headingToWaypoint < _gpsFixData.Heading)
                 {
-                    if (Gps.Gps.CurrentLatLon.Heading - headingToWaypoint < 180)
-                    {
-                        turnDirection = "Left+";
-                        travelRotationY = -2;
-                    }
-                    else
-                    {
-                        turnDirection = "Right+";
-                        travelRotationY = 2; //Turn towards its right
-                    }
-                }
-                else if (headingToWaypoint < Gps.Gps.CurrentLatLon.Heading)
-                {
-                    if (Gps.Gps.CurrentLatLon.Heading - headingToWaypoint < 180)
-                    {
-                        turnDirection = "Left";
-                        travelRotationY = -1;
-                    }
-                    else
-                    {
-                        turnDirection = "Right";
-                        travelRotationY = 1;
-                    }
+                    await RequestMove(_gpsFixData.Heading, headingToWaypoint, turnMagnitude);
                 }
 
-                _ikController.RequestMovement(nomGaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
+                await Task.Delay(50);
 
-                await Task.Delay(50, cancelationToken);
-
-                distanceHeading = GpsExtensions.GetDistanceAndHeadingToDestination(Gps.Gps.CurrentLatLon.Lat, Gps.Gps.CurrentLatLon.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
-                distanceToWaypoint = distanceHeading[0];
-                headingToWaypoint = distanceHeading[1];
+                distanceToWaypoint = GpsExtensions.GetDistanceToDestination(_gpsFixData.Lat, _gpsFixData.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
+                headingToWaypoint = GpsExtensions.GetHeadingToDestination(_gpsFixData.Lat, _gpsFixData.Lon, currentWaypoint.Lat, currentWaypoint.Lon);
 
                 if (cancelationToken.IsCancellationRequested)
                     return false;
             }
 
-            await _display.WriteAsync($"WP D/H {distanceToWaypoint}, {headingToWaypoint}", 1);
-            await _display.WriteAsync($"Heading {Gps.Gps.CurrentLatLon.Heading}", 2);
+            await _display.WriteAsync("At waypoint...", 1);
+            await _display.WriteAsync($"D:{distanceToWaypoint} H:{headingToWaypoint}", 2);
 
             return true;
         }
+
+        private async Task RequestMove(double currentHeading, double headingToWaypoint, int turnMagnitude)
+        {
+            int travelRotationY;
+
+            if (_gpsFixData.Heading - headingToWaypoint < 180)
+            {
+                travelRotationY = -turnMagnitude;
+            }
+            else
+            {
+                travelRotationY = turnMagnitude;
+            }
+
+            await _display.WriteAsync($"rotY {travelRotationY}", 1);
+            await _display.WriteAsync($"Z {_travelLengthZ}", 2);
+
+            _controller.RequestMovement(_gaitSpeed, _travelLengthX, _travelLengthZ, travelRotationY);
+        }
+
     }
 }

@@ -273,9 +273,6 @@
           "lib/netstandard1.0/_._": {}
         }
       },
-      "Microsoft.NETCore.Targets.UniversalWindowsPlatform/5.0.0": {
-        "type": "package"
-      },
       "Microsoft.NETCore.UniversalWindowsPlatform/5.2.2": {
         "type": "package",
         "dependencies": {
@@ -2458,9 +2455,6 @@
         "runtime": {
           "lib/netstandard1.0/_._": {}
         }
-      },
-      "Microsoft.NETCore.Targets.UniversalWindowsPlatform/5.0.0": {
-        "type": "package"
       },
       "Microsoft.NETCore.UniversalWindowsPlatform/5.2.2": {
         "type": "package",
@@ -4806,9 +4800,6 @@
         "runtime": {
           "lib/netstandard1.0/_._": {}
         }
-      },
-      "Microsoft.NETCore.Targets.UniversalWindowsPlatform/5.0.0": {
-        "type": "package"
       },
       "Microsoft.NETCore.UniversalWindowsPlatform/5.2.2": {
         "type": "package",
@@ -7195,9 +7186,6 @@
           "lib/netstandard1.0/_._": {}
         }
       },
-      "Microsoft.NETCore.Targets.UniversalWindowsPlatform/5.0.0": {
-        "type": "package"
-      },
       "Microsoft.NETCore.UniversalWindowsPlatform/5.2.2": {
         "type": "package",
         "dependencies": {
@@ -9551,9 +9539,6 @@
         "runtime": {
           "lib/netstandard1.0/_._": {}
         }
-      },
-      "Microsoft.NETCore.Targets.UniversalWindowsPlatform/5.0.0": {
-        "type": "package"
       },
       "Microsoft.NETCore.UniversalWindowsPlatform/5.2.2": {
         "type": "package",
@@ -11946,9 +11931,6 @@
           "lib/netstandard1.0/_._": {}
         }
       },
-      "Microsoft.NETCore.Targets.UniversalWindowsPlatform/5.0.0": {
-        "type": "package"
-      },
       "Microsoft.NETCore.UniversalWindowsPlatform/5.2.2": {
         "type": "package",
         "dependencies": {
@@ -14302,9 +14284,6 @@
         "runtime": {
           "lib/netstandard1.0/_._": {}
         }
-      },
-      "Microsoft.NETCore.Targets.UniversalWindowsPlatform/5.0.0": {
-        "type": "package"
       },
       "Microsoft.NETCore.UniversalWindowsPlatform/5.2.2": {
         "type": "package",
@@ -16898,15 +16877,6 @@
         "ThirdPartyNotices.txt",
         "dotnet_library_license.txt",
         "lib/netstandard1.0/_._",
-        "runtime.json"
-      ]
-    },
-    "Microsoft.NETCore.Targets.UniversalWindowsPlatform/5.0.0": {
-      "sha512": "jszcJ6okLlhqF4OQbhSbixLOuLUyVT3BP7Y7/i7fcDMwnHBd1Pmdz6M1Al9SMDKVLA2oSaItg4tq6C0ydv8lYQ==",
-      "type": "package",
-      "files": [
-        "Microsoft.NETCore.Targets.UniversalWindowsPlatform.5.0.0.nupkg.sha512",
-        "Microsoft.NETCore.Targets.UniversalWindowsPlatform.nuspec",
         "runtime.json"
       ]
     },
@@ -22944,7 +22914,6 @@
   "projectFileDependencyGroups": {
     "": [
       "Microsoft.Azure.Devices.Client >= 1.0.17",
-      "Microsoft.NETCore.Targets.UniversalWindowsPlatform >= 5.0.0",
       "Microsoft.NETCore.UniversalWindowsPlatform >= 5.2.2"
     ],
     "UAP,Version=v10.0": []

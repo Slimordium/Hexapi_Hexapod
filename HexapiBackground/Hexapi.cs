@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using HexapiBackground.Enums;
 using HexapiBackground.Hardware;
 using HexapiBackground.Helpers;
 using HexapiBackground.IK;
+using HexapiBackground.Iot;
 using HexapiBackground.Navigation;
 
 // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
@@ -15,7 +17,7 @@ namespace HexapiBackground
     {
         private readonly Gps.Gps _gps;
         private readonly IkController _ik;
-        private readonly Navigator _navigator;
+        private readonly GpsNavigator _navigator;
         private readonly XboxController _xboxController;
         private readonly SparkFunSerial16X2Lcd _display;
         private readonly IoTClient _ioTClient;
@@ -49,7 +51,7 @@ namespace HexapiBackground
 
         internal Hexapi(IkController ikController, 
                         XboxController xboxController, 
-                        Navigator navigator, 
+                        GpsNavigator navigator, 
                         SparkFunSerial16X2Lcd display, 
                         Gps.Gps gps,
                         IoTClient ioTClient)
@@ -102,6 +104,7 @@ namespace HexapiBackground
         }
 
 
+        private CancellationTokenSource _cancellationTokenSourceNavigators;
 
         private async void XboxController_FunctionButtonChanged(int button)
         {
@@ -136,14 +139,16 @@ namespace HexapiBackground
 
                     if (_selectedGpsFunction == SelectedGpsFunction.GpsDisabled)
                     {
-                        await _navigator.StartAsync();
+                        _cancellationTokenSourceNavigators = new CancellationTokenSource();
+
+                        await _navigator.StartAsync(_cancellationTokenSourceNavigators.Token);
                         await _display.WriteAsync("GPS Nav Enabled", 1);
                         _selectedGpsFunction = SelectedGpsFunction.GpsEnabled;
                     }
                     else
                     {
                         await _display.WriteAsync("GPS Nav Disabled", 1);
-                        _navigator.Stop();
+                        _cancellationTokenSourceNavigators.Cancel();
                         _selectedGpsFunction = SelectedGpsFunction.GpsDisabled;
                     }
 
@@ -170,7 +175,7 @@ namespace HexapiBackground
                     _ik.RequestSetMovement(_isMovementStarted);
                     break;
                 case 6: //back button
-                    await Gps.Gps.CurrentLatLon.SaveWaypoint();
+                    await _gps.SaveWaypoint();
 
                     break;
                 default:
@@ -233,12 +238,12 @@ namespace HexapiBackground
                 case GaitType.Tripod8:
                     _bodyPosY = 80;
                     _legLiftHeight = 40;
-                    _gaitSpeed = 45;
+                    _gaitSpeed = 44;
                     GaitSpeedMax = 500;
-                    GaitSpeedMin = 40;
-                    LegLiftHeightUpperLimit = 45;
+                    GaitSpeedMin = 30;
+                    LegLiftHeightUpperLimit = 65;
                     LegLiftHeightLowerLimit = 30;
-                    TravelLengthZupperLimit = 100;
+                    TravelLengthZupperLimit = 130;
                     TravelLengthZlowerLimit = 80;
                     TravelLengthXlimit = 25;
                     TravelRotationYlimit = 25;

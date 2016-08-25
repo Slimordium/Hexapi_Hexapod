@@ -8,6 +8,8 @@ using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
 using HexapiBackground.Enums;
 using HexapiBackground.Hardware;
+using HexapiBackground.Iot;
+
 // ReSharper disable FunctionNeverReturns
 
 namespace HexapiBackground.IK
@@ -66,21 +68,21 @@ namespace HexapiBackground.IK
 
         internal async Task<bool> InitializeAsync()
         {
-            _serialDevice = await StartupTask.SerialDeviceHelper.GetSerialDeviceAsync("AH03FK33", 57600, new TimeSpan(0, 0, 0, 1), new TimeSpan(0, 0, 0, 1));
+            _serialDevice = await StartupTask.SerialDeviceHelper.GetSerialDeviceAsync("AH03FK33", 57600, TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(50));
 
             if (_serialDevice == null)
                 return false;
 
-            _arduinoDataReader = new DataReader(_serialDevice.InputStream);
+            _arduinoDataReader = new DataReader(_serialDevice.InputStream) {InputStreamOptions = InputStreamOptions.Partial};
 
             return true;
         }
 
         internal async Task StartAsync()
         {
-            var imuEventTimer = new Timer(ImuEventTimerCallback, null, 0, 20);
-            var displayTimer = new Timer(DisplayTimerCallback, null, 0, 50);
-            var rangeTimer = new Timer(RangeTimerCallback, null, 0, 20);
+            //var imuEventTimer = new Timer(ImuEventTimerCallback, null, 0, 20);
+            //var displayTimer = new Timer(DisplayTimerCallback, null, 0, 50);
+            //var rangeTimer = new Timer(RangeTimerCallback, null, 0, 20);
 
             while (true)
             {
@@ -89,31 +91,38 @@ namespace HexapiBackground.IK
                     continue;
                 }
 
-                byte startChar = 0x00;
-                while (startChar != 0x0a)
-                {
-                    await _arduinoDataReader.LoadAsync(1).AsTask();
-                    startChar = _arduinoDataReader.ReadByte();
-                }
+                //byte startChar = 0x00;
+                //while (startChar != 0x0a)
+                //{
+                //    await _arduinoDataReader.LoadAsync(1).AsTask();
+                //    startChar = _arduinoDataReader.ReadByte();
+                //}
 
-                var bytesIn = new List<byte> {0x00};
+                //var bytesIn = new List<byte> {0x00};
 
-                while (bytesIn.Last() != 0x0d)
-                {
-                    await _arduinoDataReader.LoadAsync(1).AsTask();
-                    bytesIn.Add(_arduinoDataReader.ReadByte());
-                }
+                //while (bytesIn.Last() != 0x0d)
+                //{
+                //    await _arduinoDataReader.LoadAsync(1).AsTask();
+                //    bytesIn.Add(_arduinoDataReader.ReadByte());
+                //}
+
+                var numBytesIn = await _arduinoDataReader.LoadAsync(128).AsTask();
+                var bytesIn = new byte[numBytesIn];
+                _arduinoDataReader.ReadBytes(bytesIn);
 
                 try
                 {
-                    var rawData = Encoding.ASCII.GetString(bytesIn.ToArray());
+                    var rawData = Encoding.ASCII.GetString(bytesIn);
 
-                    rawData = rawData.Replace("\0", "").Replace("\r", "");
+                    foreach (var d in rawData.Split('\r'))
+                    {
+                        var data = d.Replace("\0", "").Replace("\n", "");
 
-                    if (string.IsNullOrEmpty(rawData)) 
-                        continue;
+                        if (string.IsNullOrEmpty(data))
+                            continue;
 
-                    Parse(rawData);
+                        Parse(data);
+                    }
                 }
                 catch
                 {
