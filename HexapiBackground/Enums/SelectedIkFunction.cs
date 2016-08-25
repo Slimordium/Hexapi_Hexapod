@@ -10,8 +10,6 @@
         Posture,
         TranslateHorizontal,
         Translate3D,
-        SingleLeg,
-        SetFootHeightOffset,
         PingSetup,
         DisplayYPR,
         DisplayPing,

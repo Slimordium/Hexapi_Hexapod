@@ -447,27 +447,27 @@ namespace HexapiBackground.IK
             _selectedFunction = selectedIkFunction;
         }
 
-        internal void CalibrateFootHeight()
-        {
-            _selectedFunction = SelectedIkFunction.SetFootHeightOffset;
+        //internal void CalibrateFootHeight()
+        //{
+        //    _selectedFunction = SelectedIkFunction.SetFootHeightOffset;
 
-            Task.Factory.StartNew(() =>
-            {
-                var height = 0;
+        //    Task.Factory.StartNew(() =>
+        //    {
+        //        var height = 0;
 
-                for (var i = 0; i < 6; i++)
-                {
-                    while (_legGpioPins[i].Read() != GpioPinValue.Low)
-                    {
-                        height += 2;
+        //        for (var i = 0; i < 6; i++)
+        //        {
+        //            while (_legGpioPins[i].Read() != GpioPinValue.Low)
+        //            {
+        //                height += 2;
 
-                        RequestLegYHeight(i, height);
-                    }
-                }
+        //                RequestLegYHeight(i, height);
+        //            }
+        //        }
 
-                _calibrated = true;
-            });
-        }
+        //        _calibrated = true;
+        //    });
+        //}
 
         internal void RequestLegYHeight(int leg, double yPos)
         {

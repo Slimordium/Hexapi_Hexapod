@@ -128,8 +128,8 @@ namespace HexapiBackground
                     break;
                 case 1: //B
                     _selectedIkFunction++;
-                    if ((int) _selectedIkFunction > 14)
-                        _selectedIkFunction = (SelectedIkFunction) 14;
+                    if ((int) _selectedIkFunction > 12)
+                        _selectedIkFunction = (SelectedIkFunction) 12;
 
                     await _display.WriteAsync($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
 
@@ -243,7 +243,7 @@ namespace HexapiBackground
                     GaitSpeedMin = 30;
                     LegLiftHeightUpperLimit = 65;
                     LegLiftHeightLowerLimit = 30;
-                    TravelLengthZupperLimit = 130;
+                    TravelLengthZupperLimit = 170;
                     TravelLengthZlowerLimit = 80;
                     TravelLengthXlimit = 25;
                     TravelRotationYlimit = 25;
@@ -254,7 +254,7 @@ namespace HexapiBackground
                     _gaitSpeed = 25;
                     GaitSpeedMax = 500;
                     GaitSpeedMin = 25;
-                    TravelLengthZupperLimit = 140;
+                    TravelLengthZupperLimit = 170;
                     TravelLengthZlowerLimit = 80;
                     TravelLengthXlimit = 25;
                     LegLiftHeightUpperLimit = 110;
@@ -267,7 +267,7 @@ namespace HexapiBackground
                     _gaitSpeed = 25;
                     GaitSpeedMax = 500;
                     GaitSpeedMin = 20;
-                    TravelLengthZupperLimit = 140;
+                    TravelLengthZupperLimit = 170;
                     TravelLengthZlowerLimit = 80;
                     TravelLengthXlimit = 25;
                     LegLiftHeightUpperLimit = 110;
@@ -280,7 +280,7 @@ namespace HexapiBackground
                     _legLiftHeight = 35;
                     GaitSpeedMax = 500;
                     GaitSpeedMin = 25;
-                    TravelLengthZupperLimit = 140;
+                    TravelLengthZupperLimit = 170;
                     TravelLengthZlowerLimit = 80;
                     TravelLengthXlimit = 35;
                     TravelRotationYlimit = 30;
@@ -344,12 +344,12 @@ namespace HexapiBackground
                             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
                             await _display.WriteAsync($"_gaitSpeed = {_gaitSpeed}", 2);
                             break;
-                        case SelectedIkFunction.SetFootHeightOffset:
-                            _selectedLeg--;
-                            if (_selectedLeg < 0)
-                                _selectedLeg = 0;
-                            await _display.WriteAsync($"_selectedLeg = {_selectedLeg}", 2);
-                            break;
+                        //case SelectedIkFunction.SetFootHeightOffset:
+                        //    _selectedLeg--;
+                        //    if (_selectedLeg < 0)
+                        //        _selectedLeg = 0;
+                        //    await _display.WriteAsync($"_selectedLeg = {_selectedLeg}", 2);
+                        //    break;
                     }
                     break;
                 case ControllerDirection.Right:
@@ -379,13 +379,13 @@ namespace HexapiBackground
                             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
                             await _display.WriteAsync($"_gaitSpeed = {_gaitSpeed}", 2);
                             break;
-                        case SelectedIkFunction.SetFootHeightOffset:
-                            _selectedLeg++;
-                            if (_selectedLeg == 5)
-                                _selectedLeg = 5;
+                        //case SelectedIkFunction.SetFootHeightOffset:
+                        //    _selectedLeg++;
+                        //    if (_selectedLeg == 5)
+                        //        _selectedLeg = 5;
 
-                            await _display.WriteAsync($"_selectedLeg = {_selectedLeg}", 2);
-                            break;
+                        //    await _display.WriteAsync($"_selectedLeg = {_selectedLeg}", 2);
+                        //    break;
                     }
                     break;
                 case ControllerDirection.Up:
@@ -401,10 +401,10 @@ namespace HexapiBackground
 
                             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
                             break;
-                        case SelectedIkFunction.SetFootHeightOffset:
-                            _legPosY = _legPosY + 1;
-                            _ik.RequestLegYHeight(_selectedLeg, _legPosY);
-                            break;
+                        //case SelectedIkFunction.SetFootHeightOffset:
+                        //    _legPosY = _legPosY + 1;
+                        //    _ik.RequestLegYHeight(_selectedLeg, _legPosY);
+                        //    break;
                         case SelectedIkFunction.PingSetup:
                             _ik.RequestNewPerimeter(true);
                             break;
@@ -438,10 +438,10 @@ namespace HexapiBackground
 
                             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
                             break;
-                        case SelectedIkFunction.SetFootHeightOffset:
-                            _legPosY = _legPosY - 1;
-                            _ik.RequestLegYHeight(_selectedLeg, _legPosY);
-                            break;
+                        //case SelectedIkFunction.SetFootHeightOffset:
+                        //    _legPosY = _legPosY - 1;
+                        //    _ik.RequestLegYHeight(_selectedLeg, _legPosY);
+                        //    break;
                         case SelectedIkFunction.PingSetup:
                             _ik.RequestNewPerimeter(false);
                             break;
