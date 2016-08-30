@@ -129,7 +129,6 @@
     <Compile Include="Hardware\RemoteArduino.cs" />
     <Compile Include="Extensions\GpsExtensions.cs" />
     <Compile Include="Extensions\FileExtensions.cs" />
-    <Compile Include="Gps\NtripClient.cs" />
     <Compile Include="IK\IkController.cs" />
     <Compile Include="IK\ImuDataEventArgs.cs" />
     <Compile Include="IoTclient.cs" />
@@ -144,7 +143,6 @@
     <Compile Include="Hardware\Mpu\Mpu9150Old.cs" />
     <Compile Include="IK\InverseKinematics.cs" />
     <Compile Include="IK\RangeDataEventArgs.cs" />
-    <Compile Include="SignalR\HexapiLeapMotionClient.cs" />
     <Compile Include="StartupTask.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Hardware\XboxController.cs" />

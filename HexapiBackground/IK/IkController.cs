@@ -24,7 +24,7 @@ namespace HexapiBackground.IK
         private readonly InverseKinematics _inverseKinematics;
         private readonly SparkFunSerial16X2Lcd _display;
         private readonly IoTClient _ioTClient;
-        private readonly Gps.Gps _gps;
+        private readonly Hardware.Gps _gps;
 
         private SerialDevice _serialDevice;
         private DataReader _arduinoDataReader;
@@ -53,7 +53,7 @@ namespace HexapiBackground.IK
         internal IkController(InverseKinematics inverseKinematics, 
                               SparkFunSerial16X2Lcd display, 
                               IoTClient ioTClient,
-                              Gps.Gps gps)
+                              Hardware.Gps gps)
         {
             _inverseKinematics = inverseKinematics;
             _display = display;

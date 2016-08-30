@@ -61,14 +61,14 @@ namespace HexapiBackground
         }
 
         /// <summary>
-        ///     Returns distance to heading in inches
+        ///     Returns double[] [0] = distance to heading in inches. [1] = heading to destination waypoint
         /// </summary>
         /// <param name="currentLat"></param>
         /// <param name="currentLon"></param>
         /// <param name="destinationLat"></param>
         /// <param name="destinationLon"></param>
-        /// <returns>distance to waypoint</returns>
-        internal static int GetDistanceToDestination(double currentLat, double currentLon,
+        /// <returns>distance to waypoint, and heading to waypoint</returns>
+        internal static double[] GetDistanceAndHeadingToDestination(double currentLat, double currentLon,
             double destinationLat, double destinationLon)
         {
             try
@@ -93,27 +93,9 @@ namespace HexapiBackground
                 //Converting to meters. 6371000 is the magic number,  3959 is average Earth radius in miles
                 distCalc = Math.Round(distCalc * 39.3701, 1); // and then to inches.
 
-                return Convert.ToInt32(distCalc);
-            }
-            catch
-            {
-                return 0;
-            }
-        }
+                currentLon = currentLon.ToRadians();
+                destinationLon = destinationLon.ToRadians();
 
-        /// <summary>
-        ///     Returns heading to destination waypoint
-        /// </summary>
-        /// <param name="currentLat"></param>
-        /// <param name="currentLon"></param>
-        /// <param name="destinationLat"></param>
-        /// <param name="destinationLon"></param>
-        /// <returns>heading to waypoint</returns>
-        internal static int GetHeadingToDestination(double currentLat, double currentLon,
-            double destinationLat, double destinationLon)
-        {
-            try
-            {
                 var heading = Math.Atan2(Math.Sin(destinationLon - currentLon) * Math.Cos(destinationLat),
                     Math.Cos(currentLat) * Math.Sin(destinationLat) -
                     Math.Sin(currentLat) * Math.Cos(destinationLat) * Math.Cos(destinationLon - currentLon));
@@ -123,11 +105,11 @@ namespace HexapiBackground
                 if (heading < 0)
                     heading += 360;
 
-                return Convert.ToInt32(heading);
+                return new[] { Math.Round(distCalc, 1), Math.Round(heading, 1) };
             }
-            catch
+            catch (Exception e)
             {
-                return 0;
+                return new double[] { 0, 0 };
             }
         }
 

@@ -15,7 +15,7 @@ namespace HexapiBackground
 {
     internal sealed class Hexapi
     {
-        private readonly Gps.Gps _gps;
+        private readonly Hardware.Gps _gps;
         private readonly IkController _ik;
         private readonly GpsNavigator _navigator;
         private readonly XboxController _xboxController;
@@ -53,7 +53,7 @@ namespace HexapiBackground
                         XboxController xboxController, 
                         GpsNavigator navigator, 
                         SparkFunSerial16X2Lcd display, 
-                        Gps.Gps gps,
+                        Hardware.Gps gps,
                         IoTClient ioTClient)
         {
             _ik = ikController;
