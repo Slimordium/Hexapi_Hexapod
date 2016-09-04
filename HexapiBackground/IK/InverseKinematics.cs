@@ -522,14 +522,20 @@ namespace HexapiBackground.IK
 
                 if (_movementStarted)
                 {
-                    if (_rangeDataEventArgs.LeftBlocked && _travelRotationY > 0)
-                        _travelRotationY = 0;
-
-                    if (_rangeDataEventArgs.CenterBlocked && _travelLengthZ < 0)
-                        _travelLengthZ = 0;
-
-                    if (_rangeDataEventArgs.RightBlocked && _travelRotationY < 0)
-                        _travelRotationY = 0;
+                    if (_rangeDataEventArgs.CenterBlocked && _travelLengthZ < 0 && !_rangeDataEventArgs.LeftBlocked)
+                    {
+                        _travelRotationY = 2;
+                        _travelLengthZ = -50;
+                    }
+                    else if (_rangeDataEventArgs.CenterBlocked && _travelLengthZ < 0 && !_rangeDataEventArgs.RightBlocked)
+                    {
+                        _travelRotationY = -2;
+                        _travelLengthZ = -50;
+                    }
+                    else if (_rangeDataEventArgs.LeftBlocked && _travelRotationY > 0)
+                        _travelRotationY = -2;
+                    else if (_rangeDataEventArgs.RightBlocked && _travelRotationY < 0)
+                        _travelRotationY = 2;
 
                     _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) || (Math.Abs(_travelLengthZ) > TravelDeadZone) || (Math.Abs(_travelRotationY) > TravelDeadZone);
 

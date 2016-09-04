@@ -71,6 +71,9 @@ namespace HexapiBackground.Navigation
                 var degDiff = Math.Abs(headingToWaypoint - gpsFixData.Heading); //How far do we need to turn?
                 var turnMagnitude = degDiff.Map(0, 359, 0, 3); //Map to magnitude was 30000
 
+                if (turnMagnitude > 3)
+                    turnMagnitude = 3;
+
                 await RequestMove(gpsFixData.Heading, headingToWaypoint, turnMagnitude, travelLengthZ);
 
                 await Task.Delay(50);
