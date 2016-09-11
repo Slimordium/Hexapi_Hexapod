@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using HexapiBackground.Enums;
-using HexapiBackground.Gps;
 using HexapiBackground.Helpers;
 
 namespace HexapiBackground
@@ -12,7 +11,7 @@ namespace HexapiBackground
         private static double _lat;
         private static double _lon;
         private static GpsFixQuality _quality;
-        private static int _heading;
+        private static double _heading;
         private static float _altitude;
         private static double _feetPerSecond;
         private static DateTime _dateTime;
@@ -21,11 +20,9 @@ namespace HexapiBackground
         private static double _rtkAge;
         private static double _rtkRatio;
         private static double _hdop;
+        private static GpsFixData _lastGpsFixSaved = new GpsFixData();
 
-        internal static async Task SaveWaypoint(this GpsFixData gpsFixData)
-        {
-            await FileExtensions.SaveStringToFile("waypoints.txt", gpsFixData.ToString());
-        }
+
 
         internal static async Task<List<GpsFixData>> LoadWaypoints()
         {
@@ -107,7 +104,7 @@ namespace HexapiBackground
 
                 return new[] { Math.Round(distCalc, 1), Math.Round(heading, 1) };
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return new double[] { 0, 0 };
             }
@@ -167,6 +164,7 @@ namespace HexapiBackground
         {
             try
             {
+                data = data.Replace("$", "");
                 var tokens = data.Split(',');
                 var type = tokens[0];
 
@@ -209,7 +207,7 @@ namespace HexapiBackground
 
                         double dir = 0;
                         if (double.TryParse(tokens[8], out dir))
-                            _heading = (int)dir; //angle from true north that you are traveling or "Course made good"
+                            _heading = dir; //angle from true north that you are traveling or "Course made good"
 
                         break;
                     case "GPGSV": //Satellites in View
@@ -227,10 +225,10 @@ namespace HexapiBackground
 
                         break;
                     case "PSTI":
-                        if (tokens.Length < 1)
+                        if (tokens.Length <= 1)
                             break;
 
-                        if (!tokens[1].Equals("030") || tokens.Length < 15)
+                        if (!tokens[1].Equals("030") || tokens.Length < 16)
                             break;
 
                         _lat = Latitude2Double(tokens[4], tokens[5]);
@@ -246,8 +244,8 @@ namespace HexapiBackground
                         return null;
                 }
 
-                if (Math.Abs(_lat) < .1 || Math.Abs(_lon) < .1)
-                    return null;
+                //if (Math.Abs(_lat) < .1 || Math.Abs(_lon) < .1)
+                //    return null;
             }
             catch
             {

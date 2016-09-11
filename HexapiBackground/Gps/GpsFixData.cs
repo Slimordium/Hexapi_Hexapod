@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using HexapiBackground.Enums;
 
-namespace HexapiBackground.Gps
+namespace HexapiBackground
 {
     internal class GpsFixData
     {
@@ -21,7 +21,7 @@ namespace HexapiBackground.Gps
             DateTime = Convert.ToDateTime(aParsed[0]);
             Lat = double.Parse(aParsed[1]);
             Lon = double.Parse(aParsed[2]);
-            Heading = int.Parse(aParsed[3]);
+            Heading = double.Parse(aParsed[3]);
             FeetPerSecond = double.Parse(aParsed[4]);
             Quality = (GpsFixQuality)Enum.Parse(typeof(GpsFixQuality), aParsed[5]);
         }
@@ -29,7 +29,7 @@ namespace HexapiBackground.Gps
         internal double Lat { get; set; } = 0;
         internal double Lon { get; set; } = 0;
         internal GpsFixQuality Quality { get; set; } = GpsFixQuality.NoFix;
-        internal int Heading { get; set; } = 0;
+        internal double Heading { get; set; } = 0;
         internal float Altitude { get; set; } = 0;
         internal double FeetPerSecond { get; set; } = 0;
         internal DateTime DateTime { get; set; } = DateTime.MinValue;

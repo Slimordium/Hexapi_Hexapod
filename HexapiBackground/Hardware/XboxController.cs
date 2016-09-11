@@ -23,7 +23,7 @@ namespace HexapiBackground.Hardware
         internal event DirectionChangedHandler DpadDirectionChanged;
         internal event TriggerChangedHandler LeftTriggerChanged;
         internal event TriggerChangedHandler RightTriggerChanged;
-        private double _deadzoneTolerance = 5000; //Was 1000
+        private double _deadzoneTolerance = 7000; //Was 1000
         private HidDevice _deviceHandle;
         private ControllerVector _dpadDirectionVector = new ControllerVector();
         private ControllerVector _leftStickDirectionVector = new ControllerVector();

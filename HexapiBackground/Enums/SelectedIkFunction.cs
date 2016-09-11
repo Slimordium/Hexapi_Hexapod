@@ -6,15 +6,15 @@
         GaitType,
         BodyHeight,
         LegLiftHeight,
-        Behavior,
-        Posture,
-        TranslateHorizontal,
-        Translate3D,
+        //Behavior,
+        //Posture,
+        //TranslateHorizontal,
+        //Translate3D,
         PingSetup,
-        DisplayYPR,
+        //DisplayYPR,
         DisplayPing,
         DisplayCoordinate,
-        DisplayAccel
+        //DisplayAccel
 
 
     }

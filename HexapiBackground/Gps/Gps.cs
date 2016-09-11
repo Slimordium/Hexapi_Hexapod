@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -6,8 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
-using HexapiBackground.Gps;
-using HexapiBackground.Iot;
+//using HexapiBackground.Iot;
 
 namespace HexapiBackground.Hardware
 {
@@ -15,9 +15,10 @@ namespace HexapiBackground.Hardware
     {
         private SerialDevice _gpsSerialDevice;
         private static SparkFunSerial16X2Lcd _display;
-        private static IoTClient _ioTClient;
+        //private static IoTClient _ioTClient;
 
         private DataReader _inputStream;
+        private DataWriter _outputStream;
 
         private static readonly object _fixDataLock = new object();
 
@@ -32,47 +33,43 @@ namespace HexapiBackground.Hardware
             }
         }
 
-        private Timer _iotUpdateTimer = new Timer(async o => { await SendToIotHub(); }, null, 0, 1000);
+        //private Timer _iotUpdateTimer = new Timer(async o => { await SendToIotHub(); }, null, 0, 1000);
 
-        private static async Task SendToIotHub()
-        {
-            if (CurrentGpsFixData == null)
-                return;
+        //private static async Task SendToIotHub()
+        //{
+        //    if (CurrentGpsFixData == null)
+        //        return;
 
-            await _ioTClient.SendEventAsync("GPS", CurrentGpsFixData.ToString());
-        }
+        //    //await _ioTClient.SendEventAsync("GPS", CurrentGpsFixData.ToString());
+        //}
 
-        internal Gps(SparkFunSerial16X2Lcd display, IoTClient ioTClient)
+        internal Gps(SparkFunSerial16X2Lcd display)
         {
             _display = display;
-            _ioTClient = ioTClient;
+            //_ioTClient = ioTClient;
         }
 
         internal async Task<bool> InitializeAsync()
         {
-            _gpsSerialDevice = await StartupTask.SerialDeviceHelper.GetSerialDeviceAsync("BCM2836", 57600, TimeSpan.FromMilliseconds(1000), TimeSpan.FromMilliseconds(1000));
+            _gpsSerialDevice = await StartupTask.SerialDeviceHelper.GetSerialDeviceAsync("AH03F3RYA", 57600, TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(100));
 
             if (_gpsSerialDevice == null)
                 return false;
 
             _inputStream = new DataReader(_gpsSerialDevice.InputStream) { InputStreamOptions = InputStreamOptions.Partial };
+            _outputStream = new DataWriter(_gpsSerialDevice.OutputStream);
 
             return true;
         }
 
-        internal async Task SaveWaypoint()
-        {
-            await _display.WriteAsync("Saving wp");
-            await Task.Delay(500);
-            await _display.WriteAsync($"{CurrentGpsFixData.Lat}", 1);
-            await _display.WriteAsync($"{CurrentGpsFixData.Lon}", 2);
-            await CurrentGpsFixData.SaveWaypoint();
-            await Task.Delay(1500);
-            await _display.WriteAsync("Saved");
-        }
-
         internal async Task StartAsync()
         {
+            //if (!_gpsReset)
+            //{
+            //    await StartupTask.ResetGps();
+            //    _gpsReset = true;
+            //}
+
             while (true)
             {
                 if (_inputStream == null)
@@ -81,43 +78,46 @@ namespace HexapiBackground.Hardware
                     continue;
                 }
 
-                var byteCount = await _inputStream.LoadAsync(256).AsTask();
-                var bytes = new byte[byteCount];
-                _inputStream.ReadBytes(bytes);
-
-                foreach (var sentence in Encoding.ASCII.GetString(bytes).Split('$'))
-                {
-                    if (string.IsNullOrEmpty(sentence))
-                        continue;
-
-                    var parsedData = sentence.ParseNmea();
-                    if (parsedData == null)
-                        continue;
-
-                    lock (_fixDataLock)
-                        _gpsFixData = parsedData;
-                }
+                await ReadGps();
             }
         }
 
-        internal async Task StartNtripAsync()
+        private async Task ReadGps() 
         {
-            var ipEndPoint = new IPEndPoint(IPAddress.Any, 8000);
-            var udpClient = new UdpClient(ipEndPoint);
-            var outputStream = new DataWriter(_gpsSerialDevice.OutputStream);
+            var byteCount = await _inputStream.LoadAsync(1024).AsTask();
+            var bytes = new byte[byteCount];
+            _inputStream.ReadBytes(bytes);
+
+            var sentences = Encoding.ASCII.GetString(bytes).Split('\n');
+
+            if (sentences.Length == 0)
+                return;
+
+            foreach (var sentence in sentences)
+            {
+                if (!sentence.StartsWith("$"))
+                    continue;
+
+                var data = sentence.ParseNmea();
+
+                if (data == null)
+                    continue;
+
+                lock (_fixDataLock)
+                    _gpsFixData = data;
+            }
+
+        }
+
+        internal async Task StartRtkUdpFeedAsync()
+        {
+            var receivingUdpClient = new UdpClient(8000);
 
             while (true)
             {
-                try
-                {
-                    var udpReceive = await udpClient.ReceiveAsync();
-                    outputStream.WriteBytes(udpReceive.Buffer);
-                    await outputStream.StoreAsync().AsTask();
-                }
-                catch (Exception)
-                {
-                    //
-                }
+                var udpReceiveResult = await receivingUdpClient.ReceiveAsync();
+                _outputStream.WriteBytes(udpReceiveResult.Buffer);
+                await _outputStream.StoreAsync();
             }
         }
 

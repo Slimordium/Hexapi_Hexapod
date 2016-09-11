@@ -43,7 +43,7 @@ namespace HexapiBackground.IK
         //private SelectedIkFunction _lastSelectedIkFunction = SelectedIkFunction.Translate3D;
         //private int _lastSelectedFunctionLeg = -1;
         private bool _movementStarted;
-        private SelectedIkFunction _selectedFunction = SelectedIkFunction.Translate3D;
+        //private SelectedIkFunction _selectedFunction = SelectedIkFunction.Translate3D;
         private int _selectedFunctionLeg = -1;
         private static SerialDevice _serialDevice;
 
@@ -69,12 +69,12 @@ namespace HexapiBackground.IK
         private const int Rm = 1;
         private const int Rr = 0;
 
-        private const double CoxaMin = -630;
-        private const double CoxaMax = 630;
-        private const double FemurMin = -610;
-        private const double FemurMax = 610;
-        private const double TibiaMin = -610;
-        private const double TibiaMax = 610; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -640;
+        private const double CoxaMax = 640;
+        private const double FemurMin = -660;
+        private const double FemurMax = 660;
+        private const double TibiaMin = -660;
+        private const double TibiaMax = 660; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double RrCoxaAngle = -450; //450 = 45 degrees off center
         private const double RmCoxaAngle = 0;
@@ -96,7 +96,7 @@ namespace HexapiBackground.IK
         private const double LmOffsetZ = 0;
         private const double LmOffsetX = 135;
 
-        private const double TravelDeadZone = 2;
+        private const double TravelDeadZone = 5;
 
         private const double TenThousand = 10000;
         private const double OneMillion = 1000000;
@@ -175,7 +175,7 @@ namespace HexapiBackground.IK
 
         private static int _gaitStep = 1;
         private GaitType _gaitType = GaitType.Tripod8;
-        private GaitType _lastGaitType = GaitType.Tripod8;
+        //private GaitType _lastGaitType = GaitType.Tripod8;
         private static double _gaitSpeedInMs = 40; //Nominal speed of the gait in ms
 
         private double _travelLengthX; //Current Travel length X - Left/Right
@@ -193,7 +193,7 @@ namespace HexapiBackground.IK
         internal InverseKinematics(SparkFunSerial16X2Lcd display)
         {
             IkController.RangingEvent += RangingEventHandler;
-            IkController.ImuEvent += ImuEventHandler;
+            //IkController.ImuEvent += ImuEventHandler;
 
             _display = display;
 
@@ -210,7 +210,12 @@ namespace HexapiBackground.IK
                 _legPosY[legIndex] = _initPosY[legIndex];
                 _legPosZ[legIndex] = _initPosZ[legIndex];
 
-                LegYHeightCorrector[legIndex] = 0;
+                if (legIndex == 2)
+                    LegYHeightCorrector[legIndex] = 9;
+                else if (legIndex == 5)
+                    LegYHeightCorrector[legIndex] = 5;
+                else
+                    LegYHeightCorrector[legIndex] = 0;
             }
 
             _oscillateStopwatch.Start();
@@ -431,7 +436,7 @@ namespace HexapiBackground.IK
 
         internal void RequestSetGaitType(GaitType gaitType)
         {
-            _lastGaitType = _gaitType;
+//            _lastGaitType = _gaitType;
             _gaitType = gaitType;
 
             GaitSelect();
@@ -444,7 +449,7 @@ namespace HexapiBackground.IK
 
         internal void RequestSetFunction(SelectedIkFunction selectedIkFunction)
         {
-            _selectedFunction = selectedIkFunction;
+            //_selectedFunction = selectedIkFunction;
         }
 
         //internal void CalibrateFootHeight()
@@ -648,33 +653,33 @@ namespace HexapiBackground.IK
                     _tlDivisionFactor = 8;
                     _stepsInGait = 12;
                     break;
-                case GaitType.TripleTripod16:
-                    _gaitLegNumber[Rf] = 4;
-                    _gaitLegNumber[Lm] = 5;
-                    _gaitLegNumber[Rr] = 6;
-                    _gaitLegNumber[Lf] = 12;
-                    _gaitLegNumber[Rm] = 13;
-                    _gaitLegNumber[Lr] = 14;
+                //case GaitType.TripleTripod16:
+                //    _gaitLegNumber[Rf] = 4;
+                //    _gaitLegNumber[Lm] = 5;
+                //    _gaitLegNumber[Rr] = 6;
+                //    _gaitLegNumber[Lf] = 12;
+                //    _gaitLegNumber[Rm] = 13;
+                //    _gaitLegNumber[Lr] = 14;
 
-                    _numberOfLiftedPositions = 5;
-                    _halfLiftHeight = 1;
-                    _tlDivisionFactor = 10;
-                    _stepsInGait = 16;
-                    break;
-                case GaitType.Wave24:
-                    _gaitLegNumber[Lr] = 1;
-                    _gaitLegNumber[Rf] = 21;
-                    _gaitLegNumber[Lm] = 5;
+                //    _numberOfLiftedPositions = 5;
+                //    _halfLiftHeight = 1;
+                //    _tlDivisionFactor = 10;
+                //    _stepsInGait = 16;
+                //    break;
+                //case GaitType.Wave24:
+                //    _gaitLegNumber[Lr] = 1;
+                //    _gaitLegNumber[Rf] = 21;
+                //    _gaitLegNumber[Lm] = 5;
 
-                    _gaitLegNumber[Rr] = 13;
-                    _gaitLegNumber[Lf] = 9;
-                    _gaitLegNumber[Rm] = 17;
+                //    _gaitLegNumber[Rr] = 13;
+                //    _gaitLegNumber[Lf] = 9;
+                //    _gaitLegNumber[Rm] = 17;
 
-                    _numberOfLiftedPositions = 3;
-                    _halfLiftHeight = 3;
-                    _tlDivisionFactor = 20;
-                    _stepsInGait = 24;
-                    break;
+                //    _numberOfLiftedPositions = 3;
+                //    _halfLiftHeight = 3;
+                //    _tlDivisionFactor = 20;
+                //    _stepsInGait = 24;
+                //    break;
             }
 
             _liftDivisionFactor = _numberOfLiftedPositions == 5 ? 4 : 2;

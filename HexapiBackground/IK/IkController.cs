@@ -8,7 +8,7 @@ using Windows.Devices.SerialCommunication;
 using Windows.Storage.Streams;
 using HexapiBackground.Enums;
 using HexapiBackground.Hardware;
-using HexapiBackground.Iot;
+//using HexapiBackground.Iot;
 
 // ReSharper disable FunctionNeverReturns
 
@@ -23,7 +23,7 @@ namespace HexapiBackground.IK
 
         private readonly InverseKinematics _inverseKinematics;
         private readonly SparkFunSerial16X2Lcd _display;
-        private readonly IoTClient _ioTClient;
+        //private readonly IoTClient _ioTClient;
         private readonly Hardware.Gps _gps;
 
         private SerialDevice _serialDevice;
@@ -40,9 +40,9 @@ namespace HexapiBackground.IK
         internal static event EventHandler<RangeDataEventArgs> RangingEvent;
         internal static event EventHandler<ImuDataEventArgs> ImuEvent;
 
-        private double _yaw;
-        private double _pitch;
-        private double _roll;
+        //private double _yaw;
+        //private double _pitch;
+        //private double _roll;
 
         private double _accelX;
         private double _accelY;
@@ -52,12 +52,11 @@ namespace HexapiBackground.IK
 
         internal IkController(InverseKinematics inverseKinematics, 
                               SparkFunSerial16X2Lcd display, 
-                              IoTClient ioTClient,
-                              Hardware.Gps gps)
+                              Gps gps)
         {
             _inverseKinematics = inverseKinematics;
             _display = display;
-            _ioTClient = ioTClient;
+            //_ioTClient = ioTClient;
             _gps = gps;
 
             _perimeterInInches = 15;
@@ -80,7 +79,7 @@ namespace HexapiBackground.IK
 
         internal async Task StartAsync()
         {
-            var imuEventTimer = new Timer(ImuEventTimerCallback, null, 0, 20);
+            //var imuEventTimer = new Timer(ImuEventTimerCallback, null, 0, 20);
             var displayTimer = new Timer(DisplayTimerCallback, null, 0, 50);
             var rangeTimer = new Timer(RangeTimerCallback, null, 0, 20);
 
@@ -116,10 +115,10 @@ namespace HexapiBackground.IK
             }
         }
 
-        private void ImuEventTimerCallback(object state)
-        {
-            ImuEvent?.Invoke(null, new ImuDataEventArgs { Yaw = _yaw, Pitch = _pitch, Roll = _roll, AccelX = _accelX, AccelY = _accelY, AccelZ = _accelZ });
-        }
+        //private void ImuEventTimerCallback(object state)
+        //{
+        //    ImuEvent?.Invoke(null, new ImuDataEventArgs { Yaw = _yaw, Pitch = _pitch, Roll = _roll, AccelX = _accelX, AccelY = _accelY, AccelZ = _accelZ });
+        //}
 
         private async void DisplayTimerCallback(object state)
         {
@@ -128,15 +127,15 @@ namespace HexapiBackground.IK
                 await _display.WriteAsync($"{_leftInches} {_centerInches} {_rightInches}", 2);
             }
 
-            if (_selectedIkFunction == SelectedIkFunction.DisplayYPR)
-            {
-                await _display.WriteAsync($"{_yaw} {_pitch} {_roll}", 2);
-            }
+            //if (_selectedIkFunction == SelectedIkFunction.DisplayYPR)
+            //{
+            //    await _display.WriteAsync($"{_yaw} {_pitch} {_roll}", 2);
+            //}
 
-            if (_selectedIkFunction == SelectedIkFunction.DisplayAccel)
-            {
-                await _display.WriteAsync($"{_accelY}", 2);
-            }
+            //if (_selectedIkFunction == SelectedIkFunction.DisplayAccel)
+            //{
+            //    await _display.WriteAsync($"{_accelY}", 2);
+            //}
         }
 
         private void RangeTimerCallback(object state)
@@ -144,199 +143,199 @@ namespace HexapiBackground.IK
             RangingEvent?.Invoke(null, new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches, _farLeftInches, _farRightInches));
         }
 
-        internal async void RequestBehavior(Behavior behavior, bool start)
-        {
-            _behavior = behavior;
+        //internal async void RequestBehavior(Behavior behavior, bool start)
+        //{
+        //    _behavior = behavior;
 
-            if (start)
-            {
-                _cancellationTokenSource = new CancellationTokenSource();
-            }
-            else
-            {
-                _cancellationTokenSource.Cancel();
-            }
+        //    if (start)
+        //    {
+        //        _cancellationTokenSource = new CancellationTokenSource();
+        //    }
+        //    else
+        //    {
+        //        _cancellationTokenSource.Cancel();
+        //    }
 
-            if (!start)
-                return;
+        //    if (!start)
+        //        return;
 
-            switch (behavior)
-            {
-                case Behavior.Offensive:
-                    break;
-                case Behavior.Defensive:
-                    break;
-                case Behavior.Bounce:
-                    await BehaviorBounceAsync(_cancellationTokenSource.Token);
-                    break;
-                case Behavior.Balance:
-                    break;
-            }
-        }
+        //    switch (behavior)
+        //    {
+        //        case Behavior.Offensive:
+        //            break;
+        //        case Behavior.Defensive:
+        //            break;
+        //        case Behavior.Bounce:
+        //            await BehaviorBounceAsync(_cancellationTokenSource.Token);
+        //            break;
+        //        case Behavior.Balance:
+        //            break;
+        //    }
+        //}
 
-        private async Task BehaviorBounceAsync(CancellationToken cancellationToken)
-        {
-            if (_behaviorRunning)
-                return;
+        //private async Task BehaviorBounceAsync(CancellationToken cancellationToken)
+        //{
+        //    if (_behaviorRunning)
+        //        return;
 
-            _behaviorRunning = true;
+        //    _behaviorRunning = true;
 
-            var randomNumber = new Random(DateTime.Now.Millisecond);
+        //    var randomNumber = new Random(DateTime.Now.Millisecond);
 
-            await _display.WriteAsync("Bounce started", 2);
+        //    await _display.WriteAsync("Bounce started", 2);
 
-            RequestSetMovement(true);
-            RequestSetGaitType(GaitType.Tripod8);
+        //    RequestSetMovement(true);
+        //    RequestSetGaitType(GaitType.Tripod8);
 
-            double travelLengthZ = 40;
-            double travelLengthX = 0;
-            double travelRotationY = 0;
-            double gaitSpeed = 50;
+        //    double travelLengthZ = 40;
+        //    double travelLengthX = 0;
+        //    double travelRotationY = 0;
+        //    double gaitSpeed = 50;
 
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                await Task.Delay(100, cancellationToken);
+        //    while (!cancellationToken.IsCancellationRequested)
+        //    {
+        //        await Task.Delay(100, cancellationToken);
 
-                if (_leftInches > _perimeterInInches && _centerInches > _perimeterInInches && _rightInches > _perimeterInInches)
-                {
-                    await _display.WriteAsync("Forward", 2);
+        //        if (_leftInches > _perimeterInInches && _centerInches > _perimeterInInches && _rightInches > _perimeterInInches)
+        //        {
+        //            await _display.WriteAsync("Forward", 2);
 
-                    travelLengthZ = -50;
-                    travelLengthX = 0;
-                    travelRotationY = 0;
-                }
+        //            travelLengthZ = -50;
+        //            travelLengthX = 0;
+        //            travelRotationY = 0;
+        //        }
 
-                if (_leftInches <= _perimeterInInches && _rightInches > _perimeterInInches)
-                {
-                    await _display.WriteAsync("Left", 2);
+        //        if (_leftInches <= _perimeterInInches && _rightInches > _perimeterInInches)
+        //        {
+        //            await _display.WriteAsync("Left", 2);
 
-                    travelLengthZ = _centerInches > _perimeterInInches ? -20 : 0;
-                    travelLengthX = 0;
-                    travelRotationY = -30;
-                }
+        //            travelLengthZ = _centerInches > _perimeterInInches ? -20 : 0;
+        //            travelLengthX = 0;
+        //            travelRotationY = -30;
+        //        }
 
-                if (_leftInches > _perimeterInInches && _rightInches <= _perimeterInInches)
-                {
-                    await _display.WriteAsync("Right", 2);
+        //        if (_leftInches > _perimeterInInches && _rightInches <= _perimeterInInches)
+        //        {
+        //            await _display.WriteAsync("Right", 2);
 
-                    travelLengthZ = _centerInches > _perimeterInInches ? -20 : 0;
-                    travelLengthX = 0;
-                    travelRotationY = 30;
-                }
-                else if (_leftInches > _perimeterInInches && _rightInches <= _perimeterInInches)
-                {
-                    await _display.WriteAsync("Right", 2);
+        //            travelLengthZ = _centerInches > _perimeterInInches ? -20 : 0;
+        //            travelLengthX = 0;
+        //            travelRotationY = 30;
+        //        }
+        //        else if (_leftInches > _perimeterInInches && _rightInches <= _perimeterInInches)
+        //        {
+        //            await _display.WriteAsync("Right", 2);
 
-                    travelLengthZ = _centerInches > _perimeterInInches ? -20 : 0;
-                    travelLengthX = 0;
-                    travelRotationY = 30;
-                }
+        //            travelLengthZ = _centerInches > _perimeterInInches ? -20 : 0;
+        //            travelLengthX = 0;
+        //            travelRotationY = 30;
+        //        }
 
-                if (_leftInches <= _perimeterInInches && _rightInches <= _perimeterInInches)
-                {
-                    travelLengthX = 0;
-                    travelRotationY = 0;
+        //        if (_leftInches <= _perimeterInInches && _rightInches <= _perimeterInInches)
+        //        {
+        //            travelLengthX = 0;
+        //            travelRotationY = 0;
 
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        RequestMovement(50, 0, 0, 0);
-                        _behaviorRunning = false;
-                        return;
-                    }
+        //            if (cancellationToken.IsCancellationRequested)
+        //            {
+        //                RequestMovement(50, 0, 0, 0);
+        //                _behaviorRunning = false;
+        //                return;
+        //            }
 
-                    if (_centerInches < _perimeterInInches)
-                    {
-                        if (cancellationToken.IsCancellationRequested)
-                        {
-                            RequestMovement(50, 0, 0, 0);
-                            _behaviorRunning = false;
-                            return;
-                        }
+        //            if (_centerInches < _perimeterInInches)
+        //            {
+        //                if (cancellationToken.IsCancellationRequested)
+        //                {
+        //                    RequestMovement(50, 0, 0, 0);
+        //                    _behaviorRunning = false;
+        //                    return;
+        //                }
 
-                        await _display.WriteAsync("Reverse", 2);
+        //                await _display.WriteAsync("Reverse", 2);
 
-                        travelLengthZ = 30; //Reverse
-                        RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
+        //                travelLengthZ = 30; //Reverse
+        //                RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
 
-                        await Task.Delay(6000, cancellationToken);
+        //                await Task.Delay(6000, cancellationToken);
 
-                        if (cancellationToken.IsCancellationRequested)
-                        {
-                            RequestMovement(50, 0, 0, 0);
-                            _behaviorRunning = false;
-                            return;
-                        }
+        //                if (cancellationToken.IsCancellationRequested)
+        //                {
+        //                    RequestMovement(50, 0, 0, 0);
+        //                    _behaviorRunning = false;
+        //                    return;
+        //                }
 
-                        travelLengthZ = 0;
+        //                travelLengthZ = 0;
 
-                        if (randomNumber.Next(0, 5) >= 3)
-                        {
-                            await _display.WriteAsync("Turn Right", 2);
-                            travelRotationY = 30;
+        //                if (randomNumber.Next(0, 5) >= 3)
+        //                {
+        //                    await _display.WriteAsync("Turn Right", 2);
+        //                    travelRotationY = 30;
 
-                            RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
+        //                    RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
 
-                            var targetYaw = _yaw + 5;
+        //                    var targetYaw = _yaw + 5;
 
-                            if (targetYaw > 359)
-                                targetYaw = targetYaw - 359;
+        //                    if (targetYaw > 359)
+        //                        targetYaw = targetYaw - 359;
                             
-                            while (_yaw < targetYaw)
-                            {
+        //                    while (_yaw < targetYaw)
+        //                    {
                                 
-                            }
-                        }
-                        else
-                        {
-                            await _display.WriteAsync("Turn Left", 2);
-                            travelRotationY = -30;
+        //                    }
+        //                }
+        //                else
+        //                {
+        //                    await _display.WriteAsync("Turn Left", 2);
+        //                    travelRotationY = -30;
 
-                            RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
+        //                    RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
 
-                            var targetYaw = _yaw - 5;
+        //                    var targetYaw = _yaw - 5;
 
-                            if (targetYaw < 0)
-                                targetYaw = targetYaw + 359;
+        //                    if (targetYaw < 0)
+        //                        targetYaw = targetYaw + 359;
 
-                            while (_yaw > targetYaw)
-                            {
+        //                    while (_yaw > targetYaw)
+        //                    {
 
-                            }
-                        }
+        //                    }
+        //                }
 
-                        //RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
-                        //await Task.Delay(2000);
+        //                //RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
+        //                //await Task.Delay(2000);
 
-                        if (cancellationToken.IsCancellationRequested)
-                        {
-                            RequestMovement(50, 0, 0, 0);
-                            _behaviorRunning = false;
-                            return;
-                        }
+        //                if (cancellationToken.IsCancellationRequested)
+        //                {
+        //                    RequestMovement(50, 0, 0, 0);
+        //                    _behaviorRunning = false;
+        //                    return;
+        //                }
 
-                        await _display.WriteAsync("Stop", 2);
+        //                await _display.WriteAsync("Stop", 2);
 
-                        travelLengthX = 0;
-                        travelRotationY = 0;
+        //                travelLengthX = 0;
+        //                travelRotationY = 0;
 
-                        RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
+        //                RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
 
-                        continue;
-                    }
-                }
+        //                continue;
+        //            }
+        //        }
 
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    RequestMovement(50, 0, 0, 0);
-                    _behaviorRunning = false;
-                    return;
-                }
+        //        if (cancellationToken.IsCancellationRequested)
+        //        {
+        //            RequestMovement(50, 0, 0, 0);
+        //            _behaviorRunning = false;
+        //            return;
+        //        }
 
-                RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
-            }
+        //        RequestMovement(gaitSpeed, travelLengthX, travelLengthZ, travelRotationY);
+        //    }
 
-            _behaviorRunning = false;
-        }
+        //    _behaviorRunning = false;
+        //}
 
         /// <summary>
         /// 
@@ -377,8 +376,8 @@ namespace HexapiBackground.IK
 
             _selectedIkFunction = selectedIkFunction;
 
-            if (_selectedIkFunction == SelectedIkFunction.DisplayCoordinate)
-                await _gps.DisplayCoordinates();
+            //if (_selectedIkFunction == SelectedIkFunction.DisplayCoordinate)
+            //    await _gps.DisplayCoordinates();
         }
 
         internal async void RequestLegYHeight(int leg, double yPos)
@@ -407,32 +406,32 @@ namespace HexapiBackground.IK
             {
                 double ping;
 
-                if (data.Contains("#YPR"))
-                {
-                    data = data.Replace("#YPR=", "");
+                //if (data.Contains("#YPR"))
+                //{
+                //    data = data.Replace("#YPR=", "");
 
-                    var yprArray = data.Split(',');
+                //    var yprArray = data.Split(',');
 
-                    if (yprArray.Length >= 1)
-                    {
-                        double.TryParse(yprArray[0], out _yaw);
-                        _yaw = Math.Round(_yaw, 1);
-                    }
+                //    if (yprArray.Length >= 1)
+                //    {
+                //        double.TryParse(yprArray[0], out _yaw);
+                //        _yaw = Math.Round(_yaw, 1);
+                //    }
 
-                    if (yprArray.Length >= 2)
-                    {
-                        double.TryParse(yprArray[1], out _pitch);
-                        _pitch = Math.Round(_pitch, 1);
-                    }
+                //    if (yprArray.Length >= 2)
+                //    {
+                //        double.TryParse(yprArray[1], out _pitch);
+                //        _pitch = Math.Round(_pitch, 1);
+                //    }
 
-                    if (yprArray.Length >= 3)
-                    {
-                        double.TryParse(yprArray[2], out _roll);
-                        _roll = Math.Round(_roll, 1);
-                    }
+                //    if (yprArray.Length >= 3)
+                //    {
+                //        double.TryParse(yprArray[2], out _roll);
+                //        _roll = Math.Round(_roll, 1);
+                //    }
 
-                    return;
-                }
+                //    return;
+                //}
                     
                 if (data.Contains("#A-C="))
                 {

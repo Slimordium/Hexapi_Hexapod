@@ -28,8 +28,8 @@ void setup()
 	pinMode(leftTrigPin, OUTPUT); //trig
 	pinMode(leftEchoPin, INPUT); //echo
 
-	pinMode(farLeftTrigPin, OUTPUT); //trig
-	pinMode(farLeftEchoPin, INPUT); //echo
+	//pinMode(farLeftTrigPin, OUTPUT); //trig
+	//pinMode(farLeftEchoPin, INPUT); //echo
 
 	pinMode(centerTrigPin, OUTPUT); //trig
 	pinMode(centerEchoPin, INPUT); //echo
@@ -37,20 +37,20 @@ void setup()
 	pinMode(rightTrigPin, OUTPUT); //trig
 	pinMode(rightEchoPin, INPUT); //echo
 
-	pinMode(farRightTrigPin, OUTPUT); //trig
-	pinMode(farRightEchoPin, INPUT); //echo
+	//pinMode(farRightTrigPin, OUTPUT); //trig
+	//pinMode(farRightEchoPin, INPUT); //echo
 
 	Serial.begin(57600); //TX debug
 
 	Serial1.begin(57600); //TX - Raspberry PI 3 - Stream all data here, PI will parse and act
 
-	Serial2.begin(57600); //RX/TX - SparkFun Razor IMU
+	//Serial2.begin(57600); //RX/TX - SparkFun Razor IMU
 
 	delay(100);
 
-	Serial2.println("#o0"); //Disable streaming from Razor IMU, send frames only as they are requested.
+	//Serial2.println("#o0"); //Disable streaming from Razor IMU, send frames only as they are requested.
 
-	delay(100);
+	//delay(100);
 }
 
 void loop()
@@ -59,29 +59,29 @@ void loop()
 	Serial.println(center);
 	Serial1.println(center);
 
-	GetYpr();
+	//GetYpr();
 
-	left = String("#FL" + Ping(5));
-	Serial.println(left);
-	Serial1.println(left);
+	//left = String("#FL" + Ping(5));
+	//Serial.println(left);
+	//Serial1.println(left);
 
-	GetRawData();
+	//GetRawData();
 
 	right = String("#R" + Ping(3));
 	Serial.println(right);
 	Serial1.println(right);
 
-	GetYpr();
+	//GetYpr();
 
 	left = String("#L" + Ping(1));
 	Serial.println(left);
 	Serial1.println(left);
 
-	GetRawData();
+	//GetRawData();
 
-	right = String("#FR" + Ping(4));
-	Serial.println(right);
-	Serial1.println(right);
+	//right = String("#FR" + Ping(4));
+	//Serial.println(right);
+	//Serial1.println(right);
 }
 
 void GetYpr()
