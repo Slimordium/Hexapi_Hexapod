@@ -212,6 +212,10 @@ namespace HexapiBackground.IK
 
                 if (legIndex == 2)
                     LegYHeightCorrector[legIndex] = 9;
+                else if (legIndex == 1)
+                    LegYHeightCorrector[legIndex] = 5;
+                else if (legIndex == 4)
+                    LegYHeightCorrector[legIndex] = 8;
                 else if (legIndex == 5)
                     LegYHeightCorrector[legIndex] = 5;
                 else

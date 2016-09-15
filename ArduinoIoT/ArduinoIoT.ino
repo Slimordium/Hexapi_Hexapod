@@ -56,7 +56,7 @@ void setup()
 void loop()
 {
 	center = String("#C" + Ping(2));
-	Serial.println(center);
+	//Serial.println(center);
 	Serial1.println(center);
 
 	//GetYpr();
@@ -68,13 +68,13 @@ void loop()
 	//GetRawData();
 
 	right = String("#R" + Ping(3));
-	Serial.println(right);
+	//Serial.println(right);
 	Serial1.println(right);
 
 	//GetYpr();
 
 	left = String("#L" + Ping(1));
-	Serial.println(left);
+	//Serial.println(left);
 	Serial1.println(left);
 
 	//GetRawData();
@@ -82,6 +82,8 @@ void loop()
 	//right = String("#FR" + Ping(4));
 	//Serial.println(right);
 	//Serial1.println(right);
+
+	String asdf = Serial1.readStringUntil('\n');
 }
 
 void GetYpr()
