@@ -81,10 +81,10 @@ namespace HexapiBackground.Navigation
                     return false;
 
                 var degDiff = Math.Abs(headingToWaypoint - gpsFixData.Heading); //How far do we need to turn?
-                var turnMagnitude = degDiff.Map(0, 359, 0, 3);
+                var turnMagnitude = degDiff.Map(0, 359, 0, 25);
 
-                if (turnMagnitude > 3)
-                    turnMagnitude = 3;
+                if (turnMagnitude > 25)
+                    turnMagnitude = 25;
 
                 RequestMove(gpsFixData.Heading, headingToWaypoint, turnMagnitude, travelLengthZ);
 

@@ -18,8 +18,9 @@ namespace HexapiBackground.Hardware{
 
         private SerialDevice _lcdSerialDevice;
 
-        internal SparkFunSerial16X2Lcd()
+        internal SparkFunSerial16X2Lcd(DataWriter dataWriter)
         {
+            _outputStream = dataWriter;
         }
 
         internal async Task<bool> InitializeAsync()
@@ -57,7 +58,7 @@ namespace HexapiBackground.Hardware{
                 }
             }
 
-            if (_outputStream == null || _lcdSerialDevice == null)
+            if (_outputStream == null)// || _lcdSerialDevice == null)
             {
                 Debug.WriteLine(text);
                 return;

@@ -217,7 +217,7 @@ namespace HexapiBackground.IK
                 else if (legIndex == 4)
                     LegYHeightCorrector[legIndex] = 8;
                 else if (legIndex == 5)
-                    LegYHeightCorrector[legIndex] = 5;
+                   LegYHeightCorrector[legIndex] = 10;
                 else
                     LegYHeightCorrector[legIndex] = 0;
             }
@@ -227,7 +227,8 @@ namespace HexapiBackground.IK
 
         private void RangingEventHandler(object sender, RangeDataEventArgs e)
         {
-            _rangeDataEventArgs = e;
+            lock (_lock)
+                _rangeDataEventArgs = e;
         }
 
         private async void ImuEventHandler(object sender, ImuDataEventArgs e)
@@ -411,14 +412,52 @@ namespace HexapiBackground.IK
 
         #region Request movement
 
+        private object _lock = new object();
+
         internal void RequestMovement(double gaitSpeed, double travelLengthX, double travelLengthZ, double travelRotationY)
         {
+            RangeDataEventArgs rangeDataEventArgs;
+
+            lock (_lock)
+            {
+                rangeDataEventArgs = _rangeDataEventArgs;
+
+            }
+
+            if (rangeDataEventArgs.CenterBlocked && !rangeDataEventArgs.LeftBlocked)
+            {
+                travelRotationY = 25;
+                travelLengthZ = -50;
+            }
+            else if (rangeDataEventArgs.CenterBlocked && !rangeDataEventArgs.RightBlocked)
+            {
+                travelRotationY = -25;
+                travelLengthZ = -50;
+            }
+            else if (rangeDataEventArgs.RightBlocked && rangeDataEventArgs.LeftBlocked && rangeDataEventArgs.CenterBlocked)
+            {
+                travelLengthZ = 2;
+
+                //Random rnd = new Random();
+                //var r = rnd.Next(10);
+                //if (r < 5)
+                //    _travelLengthX = 45;
+                //else
+                //    _travelLengthX = -45;
+            }
+            else if (rangeDataEventArgs.LeftBlocked)
+                travelRotationY = -25;
+            else if (rangeDataEventArgs.RightBlocked)
+                travelRotationY = 25;
+            else if (rangeDataEventArgs.RightBlocked && rangeDataEventArgs.LeftBlocked)
+                travelRotationY = 0;
+
             _gaitSpeedInMs = gaitSpeed;
             _travelLengthX = travelLengthX;
             _travelLengthZ = travelLengthZ;
             _travelRotationY = travelRotationY;
 
-            _oscillateStopwatch.Restart();
+            //_oscillateStopwatch.Restart();
         }
 
         internal void RequestBodyPosition(double bodyRotX1, double bodyRotZ1, double bodyPosX, double bodyPosZ, double bodyPosY, double bodyRotY1)
@@ -531,21 +570,6 @@ namespace HexapiBackground.IK
 
                 if (_movementStarted)
                 {
-                    if (_rangeDataEventArgs.CenterBlocked && _travelLengthZ < 0 && !_rangeDataEventArgs.LeftBlocked)
-                    {
-                        _travelRotationY = 2;
-                        _travelLengthZ = -50;
-                    }
-                    else if (_rangeDataEventArgs.CenterBlocked && _travelLengthZ < 0 && !_rangeDataEventArgs.RightBlocked)
-                    {
-                        _travelRotationY = -2;
-                        _travelLengthZ = -50;
-                    }
-                    else if (_rangeDataEventArgs.LeftBlocked && _travelRotationY > 0)
-                        _travelRotationY = -2;
-                    else if (_rangeDataEventArgs.RightBlocked && _travelRotationY < 0)
-                        _travelRotationY = 2;
-
                     _travelRequest = (Math.Abs(_travelLengthX) > TravelDeadZone) || (Math.Abs(_travelLengthZ) > TravelDeadZone) || (Math.Abs(_travelRotationY) > TravelDeadZone);
 
                     IkLoop();

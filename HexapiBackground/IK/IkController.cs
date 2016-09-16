@@ -29,7 +29,7 @@ namespace HexapiBackground.IK
         private SerialDevice _serialDevice;
         private DataReader _arduinoDataReader;
 
-        private int _perimeterInInches;
+        private int _perimeterInInches = 20;
 
         private double _leftInches;
         private double _farLeftInches;
@@ -52,17 +52,18 @@ namespace HexapiBackground.IK
 
         internal IkController(InverseKinematics inverseKinematics, 
                               SparkFunSerial16X2Lcd display, 
-                              Gps gps)
+                              Gps gps,
+                              DataReader dataReader)
         {
             _inverseKinematics = inverseKinematics;
             _display = display;
             //_ioTClient = ioTClient;
             _gps = gps;
 
-            _perimeterInInches = 15;
-
             _selectedIkFunction = SelectedIkFunction.BodyHeight;
             _behavior = Behavior.Bounce;
+
+            _arduinoDataReader = dataReader;
         }
 
         internal async Task<bool> InitializeAsync()
@@ -85,27 +86,26 @@ namespace HexapiBackground.IK
 
             while (true)
             {
-                if (_arduinoDataReader == null)
+                if (_arduinoDataReader == null || _arduinoDataReader == null)
                 {
+                    await Task.Delay(500);
                     continue;
                 }
 
-                var numBytesIn = await _arduinoDataReader.LoadAsync(128).AsTask();
+                var numBytesIn = await _arduinoDataReader.LoadAsync(32).AsTask();
                 var bytesIn = new byte[numBytesIn];
                 _arduinoDataReader.ReadBytes(bytesIn);
 
                 try
                 {
-                    var rawData = Encoding.ASCII.GetString(bytesIn);
+                    var rawData = Encoding.ASCII.GetString(bytesIn).Replace("\0", "").Replace("\r", "");
 
-                    foreach (var d in rawData.Split('\r'))
+                    foreach (var ds in rawData.Split('#'))
                     {
-                        var data = d.Replace("\0", "").Replace("\n", "");
-
-                        if (string.IsNullOrEmpty(data))
+                        if (string.IsNullOrEmpty(ds))
                             continue;
 
-                        Parse(data);
+                        Parse(ds);
                     }
                 }
                 catch
@@ -140,7 +140,8 @@ namespace HexapiBackground.IK
 
         private void RangeTimerCallback(object state)
         {
-            RangingEvent?.Invoke(null, new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches, _farLeftInches, _farRightInches));
+            lock (_lock)
+                RangingEvent?.Invoke(null, new RangeDataEventArgs(_perimeterInInches, _leftInches, _centerInches, _rightInches, _farLeftInches, _farRightInches));
         }
 
         //internal async void RequestBehavior(Behavior behavior, bool start)
@@ -393,113 +394,47 @@ namespace HexapiBackground.IK
             else
                 _perimeterInInches--;
 
-            if (_perimeterInInches < 1)
-                _perimeterInInches = 1;
+            if (_perimeterInInches < 5)
+                _perimeterInInches = 5;
 
             await _display.WriteAsync($"Perimeter {_perimeterInInches}", 1);
             await _display.WriteAsync($"{_leftInches} {_centerInches} {_rightInches}", 2);
         }
 
+        object _lock = new object();
+
         internal void Parse(string data)
         {
+            lock (_lock)
             try
             {
+
+                if (!data.EndsWith("\n"))
+                    return;
+
+                var newData = data.Replace("L", string.Empty).Replace("C", string.Empty).Replace("R", string.Empty).Replace("\n", string.Empty);
+
                 double ping;
 
-                //if (data.Contains("#YPR"))
-                //{
-                //    data = data.Replace("#YPR=", "");
-
-                //    var yprArray = data.Split(',');
-
-                //    if (yprArray.Length >= 1)
-                //    {
-                //        double.TryParse(yprArray[0], out _yaw);
-                //        _yaw = Math.Round(_yaw, 1);
-                //    }
-
-                //    if (yprArray.Length >= 2)
-                //    {
-                //        double.TryParse(yprArray[1], out _pitch);
-                //        _pitch = Math.Round(_pitch, 1);
-                //    }
-
-                //    if (yprArray.Length >= 3)
-                //    {
-                //        double.TryParse(yprArray[2], out _roll);
-                //        _roll = Math.Round(_roll, 1);
-                //    }
-
-                //    return;
-                //}
-                    
-                if (data.Contains("#A-C="))
-                {
-                    var accelData = data.Replace("#A-C=", "").Split(',');
-
-                    if (accelData.Length >= 1)
-                    {
-                        double.TryParse(accelData[0], out _accelX);
-                        _accelX = Math.Round(_accelX, 1);
-                    }
-
-                    if (accelData.Length >= 2)
-                    {
-                        double.TryParse(accelData[1], out _accelY);
-                        _accelY = Math.Round(_accelY, 1);
-                    }
-
-                    if (accelData.Length >= 3)
-                    {
-                        double.TryParse(accelData[2], out _accelZ);
-                        _accelZ = Math.Round(_accelZ, 1);
-                    }
-
+                if (!double.TryParse(newData, out ping))
                     return;
-                }
 
-                if (data.Contains("#L"))
-                {
-                    data = data.Replace("#L", "");
-
-                    if (double.TryParse(data, out ping))
-                        _leftInches = GetInchesFromPingDuration(ping);
-
+                if (ping <= 1)
                     return;
-                }
-                if (data.Contains("#FL"))
+
+                var inches = GetInchesFromPingDuration(ping);
+
+                if (data.StartsWith("R"))
                 {
-                    data = data.Replace("#FL", "");
-
-                    if (double.TryParse(data, out ping))
-                        _farLeftInches = GetInchesFromPingDuration(ping);
-
-                    return;
+                    _rightInches = inches;
                 }
-                if (data.Contains("#C"))
+                else if (data.StartsWith("C"))
                 {
-                    data = data.Replace("#C", "");
-
-                    if (double.TryParse(data, out ping))
-                        _centerInches = GetInchesFromPingDuration(ping);
-
-                    return;
+                    _centerInches = inches;
                 }
-                if (data.Contains("#R"))
+                else if (data.StartsWith("L"))
                 {
-                    data = data.Replace("#R", "");
-
-                    if (double.TryParse(data, out ping))
-                        _rightInches = GetInchesFromPingDuration(ping);
-
-                    return;
-                }
-                if (data.Contains("#FR"))
-                {
-                    data = data.Replace("#FR", "");
-
-                    if (double.TryParse(data, out ping))
-                        _farRightInches = GetInchesFromPingDuration(ping);
+                    _leftInches = inches;
                 }
             }
             catch

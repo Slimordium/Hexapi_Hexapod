@@ -23,6 +23,9 @@ String farRight = "";
 String inYpr = "";
 String inSensorData = "";
 
+String inputString = "";         // a string to hold incoming data
+boolean stringComplete = false;  // whether the string is complete
+
 void setup()
 {
 	pinMode(leftTrigPin, OUTPUT); //trig
@@ -46,11 +49,15 @@ void setup()
 
 	//Serial2.begin(57600); //RX/TX - SparkFun Razor IMU
 
+	Serial2.begin(9600); //RX/TX - SparkFun 64 char display
+
 	delay(100);
 
 	//Serial2.println("#o0"); //Disable streaming from Razor IMU, send frames only as they are requested.
 
 	//delay(100);
+
+	inputString.reserve(80);
 }
 
 void loop()
@@ -83,7 +90,27 @@ void loop()
 	//Serial.println(right);
 	//Serial1.println(right);
 
-	String asdf = Serial1.readStringUntil('\n');
+	while (Serial1.available()) {
+		// get the new byte:
+		char inChar = (char)Serial1.read();
+		// add it to the inputString:
+		inputString += inChar;
+
+		// if the incoming character is a newline, set a flag
+		// so the main loop can do something about it:
+		//if (inChar == '\n') {
+		//	stringComplete = true;
+		//}
+	}
+
+	if (inputString != "")
+	{
+		Serial2.print(inputString);
+
+		Serial.println(inputString);
+
+		inputString = "";
+	}
 }
 
 void GetYpr()
