@@ -67,7 +67,7 @@ namespace HexapiBackground
 
             SetGaitOptions();
 
-            //_xboxController.LeftDirectionChanged += XboxController_LeftDirectionChanged;
+            _xboxController.LeftDirectionChanged += XboxController_LeftDirectionChanged;
             _xboxController.RightDirectionChanged += XboxController_RightDirectionChanged;
             _xboxController.DpadDirectionChanged += XboxController_DpadDirectionChanged;
             _xboxController.LeftTriggerChanged += XboxController_LeftTriggerChanged;
@@ -118,7 +118,7 @@ namespace HexapiBackground
 
                     await _display.WriteAsync($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
 
-                    //await _ik.RequestSetFunctionAsync(_selectedIkFunction);
+                    await _ik.RequestSetFunctionAsync(_selectedIkFunction);
                     _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
                     _ik.RequestSetGaitType(_gaitType);
                     break;
@@ -129,7 +129,7 @@ namespace HexapiBackground
 
                     await _display.WriteAsync($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
 
-                    //await _ik.RequestSetFunctionAsync(_selectedIkFunction);
+                    await _ik.RequestSetFunctionAsync(_selectedIkFunction);
                     _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
                     _ik.RequestSetGaitType(_gaitType);
                     break;
@@ -173,7 +173,7 @@ namespace HexapiBackground
                     _ik.RequestSetMovement(_isMovementStarted);
                     break;
                 case 6: //back button
-                    await _navigator.SaveWaypoint();
+                    //await _navigator.SaveWaypoint();
                     break;
                 default:
                     await _display.WriteAsync($"Unknown button {button}", 1);
@@ -230,73 +230,73 @@ namespace HexapiBackground
 
         private void SetGaitOptions()
         {
-            //switch (_gaitType)
-            //{
-            //    case GaitType.Tripod8:
-            //        _bodyPosY = 80;
-            //        _legLiftHeight = 60;
-            //        _gaitSpeed = 44;
-            //        GaitSpeedMax = 500;
-            //        GaitSpeedMin = 30;
-            //        LegLiftHeightUpperLimit = 65;
-            //        LegLiftHeightLowerLimit = 30;
-            //        TravelLengthZupperLimit = 170;
-            //        TravelLengthZlowerLimit = 80;
-            //        TravelLengthXlimit = 25;
-            //        TravelRotationYlimit = 25;
-            //        break;
-            //    case GaitType.TripleTripod12:
-            //        _bodyPosY = 75;
-            //        _legLiftHeight = 60;
-            //        _gaitSpeed = 25;
-            //        GaitSpeedMax = 500;
-            //        GaitSpeedMin = 25;
-            //        TravelLengthZupperLimit = 170;
-            //        TravelLengthZlowerLimit = 80;
-            //        TravelLengthXlimit = 25;
-            //        LegLiftHeightUpperLimit = 110;
-            //        LegLiftHeightLowerLimit = 30;
-            //        TravelRotationYlimit = 30;
-            //        break;
-            //    //case GaitType.TripleTripod16:
-            //    //    _bodyPosY = 75;
-            //    //    _legLiftHeight = 80;
-            //    //    _gaitSpeed = 25;
-            //    //    GaitSpeedMax = 500;
-            //    //    GaitSpeedMin = 20;
-            //    //    TravelLengthZupperLimit = 170;
-            //    //    TravelLengthZlowerLimit = 80;
-            //    //    TravelLengthXlimit = 25;
-            //    //    LegLiftHeightUpperLimit = 110;
-            //    //    LegLiftHeightLowerLimit = 30;
-            //    //    TravelRotationYlimit = 30;
-            //    //    break;
-            //    default:
-            //        _gaitSpeed = 40;
-            //        _bodyPosY = 90;
-            //        _legLiftHeight = 35;
-            //        GaitSpeedMax = 500;
-            //        GaitSpeedMin = 25;
-            //        TravelLengthZupperLimit = 170;
-            //        TravelLengthZlowerLimit = 80;
-            //        TravelLengthXlimit = 35;
-            //        TravelRotationYlimit = 30;
-            //        LegLiftHeightUpperLimit = 110;
-            //        LegLiftHeightLowerLimit = 30;
-            //        break;
-            //}
+            switch (_gaitType)
+            {
+                case GaitType.Tripod8:
+                    _bodyPosY = 80;
+                    _legLiftHeight = 60;
+                    _gaitSpeed = 44;
+                    GaitSpeedMax = 500;
+                    GaitSpeedMin = 30;
+                    LegLiftHeightUpperLimit = 65;
+                    LegLiftHeightLowerLimit = 30;
+                    TravelLengthZupperLimit = 170;
+                    TravelLengthZlowerLimit = 80;
+                    TravelLengthXlimit = 25;
+                    TravelRotationYlimit = 25;
+                    break;
+                case GaitType.TripleTripod12:
+                    _bodyPosY = 75;
+                    _legLiftHeight = 60;
+                    _gaitSpeed = 25;
+                    GaitSpeedMax = 500;
+                    GaitSpeedMin = 25;
+                    TravelLengthZupperLimit = 170;
+                    TravelLengthZlowerLimit = 80;
+                    TravelLengthXlimit = 25;
+                    LegLiftHeightUpperLimit = 110;
+                    LegLiftHeightLowerLimit = 30;
+                    TravelRotationYlimit = 30;
+                    break;
+                //case GaitType.TripleTripod16:
+                //    _bodyPosY = 75;
+                //    _legLiftHeight = 80;
+                //    _gaitSpeed = 25;
+                //    GaitSpeedMax = 500;
+                //    GaitSpeedMin = 20;
+                //    TravelLengthZupperLimit = 170;
+                //    TravelLengthZlowerLimit = 80;
+                //    TravelLengthXlimit = 25;
+                //    LegLiftHeightUpperLimit = 110;
+                //    LegLiftHeightLowerLimit = 30;
+                //    TravelRotationYlimit = 30;
+                //    break;
+                default:
+                    _gaitSpeed = 40;
+                    _bodyPosY = 90;
+                    _legLiftHeight = 35;
+                    GaitSpeedMax = 500;
+                    GaitSpeedMin = 25;
+                    TravelLengthZupperLimit = 170;
+                    TravelLengthZlowerLimit = 80;
+                    TravelLengthXlimit = 35;
+                    TravelRotationYlimit = 30;
+                    LegLiftHeightUpperLimit = 110;
+                    LegLiftHeightLowerLimit = 30;
+                    break;
+            }
 
-            _bodyPosY = 80;
-            _legLiftHeight = 45;
-            _gaitSpeed = 44;
-            GaitSpeedMax = 500;
-            GaitSpeedMin = 20;
-            LegLiftHeightUpperLimit = 75;
-            LegLiftHeightLowerLimit = 30;
-            TravelLengthZupperLimit = 180;
-            TravelLengthZlowerLimit = 80;
-            TravelLengthXlimit = 25;
-            TravelRotationYlimit = 25;
+            //_bodyPosY = 80;
+            //_legLiftHeight = 45;
+            //_gaitSpeed = 44;
+            //GaitSpeedMax = 500;
+            //GaitSpeedMin = 20;
+            //LegLiftHeightUpperLimit = 75;
+            //LegLiftHeightLowerLimit = 30;
+            //TravelLengthZupperLimit = 180;
+            //TravelLengthZlowerLimit = 80;
+            //TravelLengthXlimit = 25;
+            //TravelRotationYlimit = 25;
 
             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
             _ik.RequestSetGaitType(_gaitType);
@@ -344,7 +344,7 @@ namespace HexapiBackground
                                 _gaitType = (GaitType)0;
 
                             await _display.WriteAsync(Enum.GetName(typeof(GaitType), _gaitType), 2);
-                            //SetGaitOptions();
+                            SetGaitOptions();
 
                             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
                             _ik.RequestSetGaitType(_gaitType);
@@ -382,7 +382,7 @@ namespace HexapiBackground
                                 _gaitType = (GaitType)2;
 
                             await _display.WriteAsync(Enum.GetName(typeof(GaitType), _gaitType), 2);
-                            //SetGaitOptions();
+                            SetGaitOptions();
                             _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
                             _ik.RequestSetGaitType(_gaitType);
                             break;
@@ -520,103 +520,103 @@ namespace HexapiBackground
             _ik.RequestMovement(_gaitSpeed, _travelLengthX, _travelLengthZ, _travelRotationY);
         }
 
-        //private void SetBodyRot(ControllerVector sender)
-        //{
-        //    switch (sender.Direction)
-        //    {
-        //        case ControllerDirection.Left:
-        //            _bodyRotX = 0;
-        //            _bodyRotZ = -sender.Magnitude.Map(0, 10000, 0, 10);
-        //            break;
-        //        case ControllerDirection.UpLeft:
-        //            _bodyRotX = sender.Magnitude.Map(0, 10000, 0, 10);
-        //            _bodyRotZ = -sender.Magnitude.Map(0, 10000, 0, 10);
-        //            break;
-        //        case ControllerDirection.UpRight:
-        //            _bodyRotX = sender.Magnitude.Map(0, 10000, 0, 10);
-        //            _bodyRotZ = sender.Magnitude.Map(0, 10000, 0, 10);
-        //            break;
-        //        case ControllerDirection.Right:
-        //            _bodyRotX = 0;
-        //            _bodyRotZ = sender.Magnitude.Map(0, 10000, 0, 10);
-        //            break;
-        //        case ControllerDirection.Up:
-        //            _bodyRotX = sender.Magnitude.Map(0, 10000, 0, 10);
-        //            _bodyRotZ = 0;
-        //            break;
-        //        case ControllerDirection.Down:
-        //            _bodyRotX = -sender.Magnitude.Map(0, 10000, 0, 10);
-        //            _bodyRotZ = 0;
-        //            break;
-        //        case ControllerDirection.DownLeft:
-        //            _bodyRotZ = -sender.Magnitude.Map(0, 10000, 0, 10);
-        //            _bodyRotX = -sender.Magnitude.Map(0, 10000, 0, 10);
-        //            break;
-        //        case ControllerDirection.DownRight:
-        //            _bodyRotZ = sender.Magnitude.Map(0, 10000, 0, 10);
-        //            _bodyRotX = -sender.Magnitude.Map(0, 10000, 0, 10);
-        //            break;
-        //    }
+        private void SetBodyRot(ControllerVector sender)
+        {
+            switch (sender.Direction)
+            {
+                case ControllerDirection.Left:
+                    _bodyRotX = 0;
+                    _bodyRotZ = -sender.Magnitude.Map(0, 10000, 0, 10);
+                    break;
+                case ControllerDirection.UpLeft:
+                    _bodyRotX = sender.Magnitude.Map(0, 10000, 0, 10);
+                    _bodyRotZ = -sender.Magnitude.Map(0, 10000, 0, 10);
+                    break;
+                case ControllerDirection.UpRight:
+                    _bodyRotX = sender.Magnitude.Map(0, 10000, 0, 10);
+                    _bodyRotZ = sender.Magnitude.Map(0, 10000, 0, 10);
+                    break;
+                case ControllerDirection.Right:
+                    _bodyRotX = 0;
+                    _bodyRotZ = sender.Magnitude.Map(0, 10000, 0, 10);
+                    break;
+                case ControllerDirection.Up:
+                    _bodyRotX = sender.Magnitude.Map(0, 10000, 0, 10);
+                    _bodyRotZ = 0;
+                    break;
+                case ControllerDirection.Down:
+                    _bodyRotX = -sender.Magnitude.Map(0, 10000, 0, 10);
+                    _bodyRotZ = 0;
+                    break;
+                case ControllerDirection.DownLeft:
+                    _bodyRotZ = -sender.Magnitude.Map(0, 10000, 0, 10);
+                    _bodyRotX = -sender.Magnitude.Map(0, 10000, 0, 10);
+                    break;
+                case ControllerDirection.DownRight:
+                    _bodyRotZ = sender.Magnitude.Map(0, 10000, 0, 10);
+                    _bodyRotX = -sender.Magnitude.Map(0, 10000, 0, 10);
+                    break;
+            }
 
-        //    _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
-        //}
+            _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
+        }
 
-        //private void SetBodyHorizontalOffset(ControllerVector sender)
-        //{
-        //    switch (sender.Direction)
-        //    {
-        //        case ControllerDirection.Left:
-        //            _bodyPosX = sender.Magnitude.Map(0, 10000, 0, 30);
-        //            _bodyPosZ = 0;
-        //            break;
-        //        case ControllerDirection.UpLeft:
-        //            _bodyPosX = sender.Magnitude.Map(0, 10000, 0, 30);
-        //            _bodyPosZ = -sender.Magnitude.Map(0, 10000, 0, 30);
-        //            break;
-        //        case ControllerDirection.UpRight:
-        //            _bodyPosX = sender.Magnitude.Map(0, 10000, 0, 30);
-        //            _bodyPosZ = sender.Magnitude.Map(0, 10000, 0, 30);
-        //            break;
-        //        case ControllerDirection.Right:
-        //            _bodyPosX = -sender.Magnitude.Map(0, 10000, 0, 30);
-        //            _bodyPosZ = 0;
-        //            break;
-        //        case ControllerDirection.Up:
-        //            _bodyPosX = sender.Magnitude.Map(0, 10000, 0, 30);
-        //            _bodyPosZ = 0;
-        //            break;
-        //        case ControllerDirection.Down:
-        //            _bodyPosX = -sender.Magnitude.Map(0, 10000, 0, 30);
-        //            _bodyPosZ = 0;
-        //            break;
-        //        case ControllerDirection.DownLeft:
-        //            _bodyPosZ = -sender.Magnitude.Map(0, 10000, 0, 30);
-        //            _bodyPosX = -sender.Magnitude.Map(0, 10000, 0, 30);
-        //            break;
-        //        case ControllerDirection.DownRight:
-        //            _bodyPosZ = sender.Magnitude.Map(0, 10000, 0, 30);
-        //            _bodyPosX = -sender.Magnitude.Map(0, 10000, 0, 30);
-        //            break;
-        //    }
+        private void SetBodyHorizontalOffset(ControllerVector sender)
+        {
+            switch (sender.Direction)
+            {
+                case ControllerDirection.Left:
+                    _bodyPosX = sender.Magnitude.Map(0, 10000, 0, 30);
+                    _bodyPosZ = 0;
+                    break;
+                case ControllerDirection.UpLeft:
+                    _bodyPosX = sender.Magnitude.Map(0, 10000, 0, 30);
+                    _bodyPosZ = -sender.Magnitude.Map(0, 10000, 0, 30);
+                    break;
+                case ControllerDirection.UpRight:
+                    _bodyPosX = sender.Magnitude.Map(0, 10000, 0, 30);
+                    _bodyPosZ = sender.Magnitude.Map(0, 10000, 0, 30);
+                    break;
+                case ControllerDirection.Right:
+                    _bodyPosX = -sender.Magnitude.Map(0, 10000, 0, 30);
+                    _bodyPosZ = 0;
+                    break;
+                case ControllerDirection.Up:
+                    _bodyPosX = sender.Magnitude.Map(0, 10000, 0, 30);
+                    _bodyPosZ = 0;
+                    break;
+                case ControllerDirection.Down:
+                    _bodyPosX = -sender.Magnitude.Map(0, 10000, 0, 30);
+                    _bodyPosZ = 0;
+                    break;
+                case ControllerDirection.DownLeft:
+                    _bodyPosZ = -sender.Magnitude.Map(0, 10000, 0, 30);
+                    _bodyPosX = -sender.Magnitude.Map(0, 10000, 0, 30);
+                    break;
+                case ControllerDirection.DownRight:
+                    _bodyPosZ = sender.Magnitude.Map(0, 10000, 0, 30);
+                    _bodyPosX = -sender.Magnitude.Map(0, 10000, 0, 30);
+                    break;
+            }
 
-        //    _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
-        //}
+            _ik.RequestBodyPosition(_bodyRotX, _bodyRotZ, _bodyPosX, _bodyPosZ, _bodyPosY, _bodyRotY);
+        }
 
-        //private void XboxController_LeftDirectionChanged(ControllerVector sender)
-        //{
-        //    switch (_selectedIkFunction)
-        //    {
-        //        case SelectedIkFunction.TranslateHorizontal:
-        //            SetBodyHorizontalOffset(sender);
-        //            break;
-        //        case SelectedIkFunction.Translate3D:
-        //            SetBodyRot(sender);
-        //            break;
-        //        default:
-        //            SetBodyRot(sender);
-        //            break;
-        //    }
-        //}
+        private void XboxController_LeftDirectionChanged(ControllerVector sender)
+        {
+            switch (_selectedIkFunction)
+            {
+                case SelectedIkFunction.TranslateHorizontal:
+                    SetBodyHorizontalOffset(sender);
+                    break;
+                case SelectedIkFunction.Translate3D:
+                    SetBodyRot(sender);
+                    break;
+                default:
+                    SetBodyRot(sender);
+                    break;
+            }
+        }
 
         #endregion
     }

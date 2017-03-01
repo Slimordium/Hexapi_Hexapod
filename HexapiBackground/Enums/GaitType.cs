@@ -5,7 +5,7 @@
         RippleGait12,
         Tripod8,
         TripleTripod12,
-        //TripleTripod16,
-        //Wave24,
+        TripleTripod16,
+        Wave24,
     }
 }

@@ -40,10 +40,10 @@ namespace HexapiBackground.IK
         private readonly byte[] _querySsc = {0x51, 0x0d}; //0x51 = Q, 0x0d = carriage return
         private bool _calibrated;
         private GpioController _gpioController;
-        //private SelectedIkFunction _lastSelectedIkFunction = SelectedIkFunction.Translate3D;
+        private SelectedIkFunction _lastSelectedIkFunction = SelectedIkFunction.Translate3D;
         //private int _lastSelectedFunctionLeg = -1;
         private bool _movementStarted;
-        //private SelectedIkFunction _selectedFunction = SelectedIkFunction.Translate3D;
+        private SelectedIkFunction _selectedFunction = SelectedIkFunction.Translate3D;
         private int _selectedFunctionLeg = -1;
         private static SerialDevice _serialDevice;
 
@@ -227,7 +227,7 @@ namespace HexapiBackground.IK
 
         private void RangingEventHandler(object sender, RangeDataEventArgs e)
         {
-            lock (_lock)
+            //lock (_lock)
                 _rangeDataEventArgs = e;
         }
 
@@ -412,45 +412,45 @@ namespace HexapiBackground.IK
 
         #region Request movement
 
-        private object _lock = new object();
+        //private object _lock = new object();
 
         internal void RequestMovement(double gaitSpeed, double travelLengthX, double travelLengthZ, double travelRotationY)
         {
-            RangeDataEventArgs rangeDataEventArgs;
+            //RangeDataEventArgs rangeDataEventArgs;
 
-            lock (_lock)
-            {
-                rangeDataEventArgs = _rangeDataEventArgs;
+            ////lock (_lock)
+            ////{
+            //    rangeDataEventArgs = _rangeDataEventArgs;
 
-            }
+            ////}
 
-            if (rangeDataEventArgs.CenterBlocked && !rangeDataEventArgs.LeftBlocked)
-            {
-                travelRotationY = 25;
-                travelLengthZ = -50;
-            }
-            else if (rangeDataEventArgs.CenterBlocked && !rangeDataEventArgs.RightBlocked)
-            {
-                travelRotationY = -25;
-                travelLengthZ = -50;
-            }
-            else if (rangeDataEventArgs.RightBlocked && rangeDataEventArgs.LeftBlocked && rangeDataEventArgs.CenterBlocked)
-            {
-                travelLengthZ = 2;
+            //if (rangeDataEventArgs.CenterBlocked && !rangeDataEventArgs.LeftBlocked)
+            //{
+            //    travelRotationY = 25;
+            //    travelLengthZ = -50;
+            //}
+            //else if (rangeDataEventArgs.CenterBlocked && !rangeDataEventArgs.RightBlocked)
+            //{
+            //    travelRotationY = -25;
+            //    travelLengthZ = -50;
+            //}
+            //else if (rangeDataEventArgs.RightBlocked && rangeDataEventArgs.LeftBlocked && rangeDataEventArgs.CenterBlocked)
+            //{
+            //    travelLengthZ = 2;
 
-                //Random rnd = new Random();
-                //var r = rnd.Next(10);
-                //if (r < 5)
-                //    _travelLengthX = 45;
-                //else
-                //    _travelLengthX = -45;
-            }
-            else if (rangeDataEventArgs.LeftBlocked)
-                travelRotationY = -25;
-            else if (rangeDataEventArgs.RightBlocked)
-                travelRotationY = 25;
-            else if (rangeDataEventArgs.RightBlocked && rangeDataEventArgs.LeftBlocked)
-                travelRotationY = 0;
+            //    //Random rnd = new Random();
+            //    //var r = rnd.Next(10);
+            //    //if (r < 5)
+            //    //    _travelLengthX = 45;
+            //    //else
+            //    //    _travelLengthX = -45;
+            //}
+            //else if (rangeDataEventArgs.LeftBlocked)
+            //    travelRotationY = -25;
+            //else if (rangeDataEventArgs.RightBlocked)
+            //    travelRotationY = 25;
+            //else if (rangeDataEventArgs.RightBlocked && rangeDataEventArgs.LeftBlocked)
+            //    travelRotationY = 0;
 
             _gaitSpeedInMs = gaitSpeed;
             _travelLengthX = travelLengthX;
@@ -492,7 +492,7 @@ namespace HexapiBackground.IK
 
         internal void RequestSetFunction(SelectedIkFunction selectedIkFunction)
         {
-            //_selectedFunction = selectedIkFunction;
+            _selectedFunction = selectedIkFunction;
         }
 
         //internal void CalibrateFootHeight()
@@ -681,33 +681,33 @@ namespace HexapiBackground.IK
                     _tlDivisionFactor = 8;
                     _stepsInGait = 12;
                     break;
-                //case GaitType.TripleTripod16:
-                //    _gaitLegNumber[Rf] = 4;
-                //    _gaitLegNumber[Lm] = 5;
-                //    _gaitLegNumber[Rr] = 6;
-                //    _gaitLegNumber[Lf] = 12;
-                //    _gaitLegNumber[Rm] = 13;
-                //    _gaitLegNumber[Lr] = 14;
+                case GaitType.TripleTripod16:
+                    _gaitLegNumber[Rf] = 4;
+                    _gaitLegNumber[Lm] = 5;
+                    _gaitLegNumber[Rr] = 6;
+                    _gaitLegNumber[Lf] = 12;
+                    _gaitLegNumber[Rm] = 13;
+                    _gaitLegNumber[Lr] = 14;
 
-                //    _numberOfLiftedPositions = 5;
-                //    _halfLiftHeight = 1;
-                //    _tlDivisionFactor = 10;
-                //    _stepsInGait = 16;
-                //    break;
-                //case GaitType.Wave24:
-                //    _gaitLegNumber[Lr] = 1;
-                //    _gaitLegNumber[Rf] = 21;
-                //    _gaitLegNumber[Lm] = 5;
+                    _numberOfLiftedPositions = 5;
+                    _halfLiftHeight = 1;
+                    _tlDivisionFactor = 10;
+                    _stepsInGait = 16;
+                    break;
+                case GaitType.Wave24:
+                    _gaitLegNumber[Lr] = 1;
+                    _gaitLegNumber[Rf] = 21;
+                    _gaitLegNumber[Lm] = 5;
 
-                //    _gaitLegNumber[Rr] = 13;
-                //    _gaitLegNumber[Lf] = 9;
-                //    _gaitLegNumber[Rm] = 17;
+                    _gaitLegNumber[Rr] = 13;
+                    _gaitLegNumber[Lf] = 9;
+                    _gaitLegNumber[Rm] = 17;
 
-                //    _numberOfLiftedPositions = 3;
-                //    _halfLiftHeight = 3;
-                //    _tlDivisionFactor = 20;
-                //    _stepsInGait = 24;
-                //    break;
+                    _numberOfLiftedPositions = 3;
+                    _halfLiftHeight = 3;
+                    _tlDivisionFactor = 20;
+                    _stepsInGait = 24;
+                    break;
             }
 
             _liftDivisionFactor = _numberOfLiftedPositions == 5 ? 4 : 2;

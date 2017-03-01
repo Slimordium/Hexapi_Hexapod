@@ -8,13 +8,13 @@
         LegLiftHeight,
         //Behavior,
         //Posture,
-        //TranslateHorizontal,
-        //Translate3D,
+        TranslateHorizontal,
+        Translate3D,
         PingSetup,
-        //DisplayYPR,
+        DisplayYPR,
         DisplayPing,
-        DisplayCoordinate,
-        //DisplayAccel
+        //DisplayCoordinate,
+        DisplayAccel
 
 
     }

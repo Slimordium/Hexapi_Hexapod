@@ -40,9 +40,9 @@ namespace HexapiBackground.IK
         internal static event EventHandler<RangeDataEventArgs> RangingEvent;
         internal static event EventHandler<ImuDataEventArgs> ImuEvent;
 
-        //private double _yaw;
-        //private double _pitch;
-        //private double _roll;
+        private double _yaw;
+        private double _pitch;
+        private double _roll;
 
         private double _accelX;
         private double _accelY;
@@ -80,13 +80,13 @@ namespace HexapiBackground.IK
 
         internal async Task StartAsync()
         {
-            //var imuEventTimer = new Timer(ImuEventTimerCallback, null, 0, 20);
+            var imuEventTimer = new Timer(ImuEventTimerCallback, null, 0, 20);
             var displayTimer = new Timer(DisplayTimerCallback, null, 0, 50);
             var rangeTimer = new Timer(RangeTimerCallback, null, 0, 20);
 
             while (true)
             {
-                if (_arduinoDataReader == null || _arduinoDataReader == null)
+                if (_arduinoDataReader == null)
                 {
                     await Task.Delay(500);
                     continue;
@@ -115,10 +115,10 @@ namespace HexapiBackground.IK
             }
         }
 
-        //private void ImuEventTimerCallback(object state)
-        //{
-        //    ImuEvent?.Invoke(null, new ImuDataEventArgs { Yaw = _yaw, Pitch = _pitch, Roll = _roll, AccelX = _accelX, AccelY = _accelY, AccelZ = _accelZ });
-        //}
+        private void ImuEventTimerCallback(object state)
+        {
+            ImuEvent?.Invoke(null, new ImuDataEventArgs { Yaw = _yaw, Pitch = _pitch, Roll = _roll, AccelX = _accelX, AccelY = _accelY, AccelZ = _accelZ });
+        }
 
         private async void DisplayTimerCallback(object state)
         {
@@ -127,12 +127,12 @@ namespace HexapiBackground.IK
                 await _display.WriteAsync($"{_leftInches} {_centerInches} {_rightInches}", 2);
             }
 
-            //if (_selectedIkFunction == SelectedIkFunction.DisplayYPR)
+            //if (_selectedIkFunction == SelectedIkFunction.)
             //{
             //    await _display.WriteAsync($"{_yaw} {_pitch} {_roll}", 2);
             //}
 
-            //if (_selectedIkFunction == SelectedIkFunction.DisplayAccel)
+            //if (_selectedIkFunction == SelectedIkFunction.)
             //{
             //    await _display.WriteAsync($"{_accelY}", 2);
             //}
