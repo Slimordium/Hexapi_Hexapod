@@ -62,7 +62,7 @@ namespace HexapiBackground
             _display = new SparkFunSerial16X2Lcd(_arduinoDataWriter);
 
             //ioTClient = new IoTClient(_display);
-            _gps = new Hardware.Gps( _display);
+            //_gps = new Hardware.Gps( _display);
             _inverseKinematics = new InverseKinematics(_display);
 
             _ikController = new IkController(_inverseKinematics, _display, _gps, _arduinoDataReader); //Range and yaw/pitch/roll data from Arduino and SparkFun Razor IMU
@@ -72,14 +72,14 @@ namespace HexapiBackground
             //_initializeTasks.Add(_display.InitializeAsync());
             _initializeTasks.Add(_xboxController.InitializeAsync());
             //_initializeTasks.Add(_ikController.InitializeAsync());
-            _initializeTasks.Add(_gps.InitializeAsync());
+            //_initializeTasks.Add(_gps.InitializeAsync());
             _initializeTasks.Add(_inverseKinematics.InitializeAsync());
             _initializeTasks.Add(InitGpioAsync());
             //_initializeTasks.Add(_ioTClient.InitializeAsync());
 
             _startTasks.Add(_ikController.StartAsync());
-            _startTasks.Add(_gps.StartAsync());
-            _startTasks.Add(_gps.StartRtkUdpFeedAsync());
+            //_startTasks.Add(_gps.StartAsync());
+            //_startTasks.Add(_gps.StartRtkUdpFeedAsync());
             _startTasks.Add(_inverseKinematics.StartAsync());
             //_startTasks.Add(_ioTClient.StartAsync());//only needed if expecting messages from the server
 

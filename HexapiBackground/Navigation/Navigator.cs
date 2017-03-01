@@ -52,7 +52,7 @@ namespace HexapiBackground.Navigation
             var gpsFixData = Gps.CurrentGpsFixData;
 
 
-            if (gpsFixData.Lat == _lastSavedLat && gpsFixData.Lon == _lastSavedLon)
+            if (Math.Abs(gpsFixData.Lat - _lastSavedLat) < 1 && Math.Abs(gpsFixData.Lon - _lastSavedLon) < 1)
                 return;
 
             _lastSavedLat = gpsFixData.Lat;

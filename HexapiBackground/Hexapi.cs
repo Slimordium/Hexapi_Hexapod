@@ -124,20 +124,20 @@ namespace HexapiBackground
                     break;
                 case 2: //X
 
-                    if (_selectedGpsFunction == SelectedGpsFunction.GpsDisabled)
-                    {
-                        _cancellationTokenSourceNavigators = new CancellationTokenSource();
+                    //if (_selectedGpsFunction == SelectedGpsFunction.GpsDisabled)
+                    //{
+                    //    _cancellationTokenSourceNavigators = new CancellationTokenSource();
 
-                        await _navigator.StartAsync(_cancellationTokenSourceNavigators.Token, null);
-                        await _display.WriteAsync("GPS Nav Enabled", 1);
-                        _selectedGpsFunction = SelectedGpsFunction.GpsEnabled;
-                    }
-                    else
-                    {
-                        await _display.WriteAsync("GPS Nav Disabled", 1);
-                        _cancellationTokenSourceNavigators.Cancel();
-                        _selectedGpsFunction = SelectedGpsFunction.GpsDisabled;
-                    }
+                    //    await _navigator.StartAsync(_cancellationTokenSourceNavigators.Token, null);
+                    //    await _display.WriteAsync("GPS Nav Enabled", 1);
+                    //    _selectedGpsFunction = SelectedGpsFunction.GpsEnabled;
+                    //}
+                    //else
+                    //{
+                    //    await _display.WriteAsync("GPS Nav Disabled", 1);
+                    //    _cancellationTokenSourceNavigators.Cancel();
+                    //    _selectedGpsFunction = SelectedGpsFunction.GpsDisabled;
+                    //}
 
                     break;
                 case 3: //Y
