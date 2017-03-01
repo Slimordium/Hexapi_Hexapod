@@ -121,16 +121,16 @@ namespace HexapiBackground.Hardware
 
         private void InputReportReceived(HidDevice sender, HidInputReportReceivedEventArgs args)
         {
-            var dPad = (int)args.Report.GetNumericControl(0x01, 0x39).Value;
+            var dPad = args.Report.GetNumericControl(0x01, 0x39).Value;
 
-            var lstickX = args.Report.GetNumericControl(0x01, 0x30).Value - 32768;
-            var lstickY = args.Report.GetNumericControl(0x01, 0x31).Value - 32768;
+            var lstickX = args.Report.GetNumericControl(0x01, 0x30).Value - 32768d;
+            var lstickY = args.Report.GetNumericControl(0x01, 0x31).Value - 32768d;
 
-            var rstickX = args.Report.GetNumericControl(0x01, 0x33).Value - 32768;
-            var rstickY = args.Report.GetNumericControl(0x01, 0x34).Value - 32768;
+            var rstickX = args.Report.GetNumericControl(0x01, 0x33).Value - 32768d;
+            var rstickY = args.Report.GetNumericControl(0x01, 0x34).Value - 32768d;
 
-            var lt = (int)Math.Max(0, args.Report.GetNumericControl(0x01, 0x32).Value - 32768);
-            var rt = (int)Math.Max(0, -1 * (args.Report.GetNumericControl(0x01, 0x32).Value - 32768));
+            var lt = Math.Max(0, args.Report.GetNumericControl(0x01, 0x32).Value - 32768d);
+            var rt = Math.Max(0, -1 * (args.Report.GetNumericControl(0x01, 0x32).Value - 32768d));
 
             foreach (var btn in args.Report.ActivatedBooleanControls) //StartAsync = 7, Back = 6
             {
@@ -144,17 +144,17 @@ namespace HexapiBackground.Hardware
                     FunctionButtonChanged?.Invoke(id);
             }
 
-            if (_leftTrigger != lt)
+            if (Math.Abs(_leftTrigger - lt) > 2)
             {
-                LeftTriggerChanged?.Invoke(lt);
-                _leftTrigger = lt;
+                LeftTriggerChanged?.Invoke((int)lt);
+                _leftTrigger = (int)lt;
                 return;
             }
 
-            if (_rightTrigger != rt)
+            if (Math.Abs(_rightTrigger - rt) > 2)
             {
-                RightTriggerChanged?.Invoke(rt);
-                _rightTrigger = rt;
+                RightTriggerChanged?.Invoke((int)rt);
+                _rightTrigger = (int)rt;
                 return;
             }
 
@@ -251,21 +251,15 @@ namespace HexapiBackground.Hardware
 
     internal sealed class ControllerVector
     {
-        public ControllerVector()
-        {
-            Direction = ControllerDirection.None;
-            Magnitude = 0;
-        }
-
         /// <summary>
         ///     Get what direction the XboxController is pointing
         /// </summary>
-        public ControllerDirection Direction { get; set; }
+        public ControllerDirection Direction { get; set; } = ControllerDirection.None;
 
         /// <summary>
         ///     Gets a value indicating the magnitude of the direction
         /// </summary>
-        public int Magnitude { get; set; }
+        public double Magnitude { get; set; } = 0;
 
         public new bool Equals(object obj)
         {
@@ -274,7 +268,7 @@ namespace HexapiBackground.Hardware
 
             var otherVector = obj as ControllerVector;
 
-            return otherVector != null && Magnitude == otherVector.Magnitude && Direction == otherVector.Direction;
+            return otherVector != null && Math.Abs(Magnitude - otherVector.Magnitude) < 5 && Direction == otherVector.Direction;
         }
     }
 
@@ -282,5 +276,4 @@ namespace HexapiBackground.Hardware
     {
         internal bool IsConnected { get; set; } = false;
     }
-
 }

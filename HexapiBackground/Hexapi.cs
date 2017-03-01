@@ -53,7 +53,7 @@ namespace HexapiBackground
                         XboxController xboxController, 
                         GpsNavigator navigator, 
                         SparkFunSerial16X2Lcd display, 
-                        Hardware.Gps gps)
+                        Gps gps)
         {
             _ik = ikController;
             _xboxController = xboxController;
@@ -73,7 +73,7 @@ namespace HexapiBackground
             _xboxController.LeftTriggerChanged += XboxController_LeftTriggerChanged;
             _xboxController.RightTriggerChanged += XboxController_RightTriggerChanged;
             _xboxController.FunctionButtonChanged += XboxController_FunctionButtonChanged;
-            _xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
+            //_xboxController.BumperButtonChanged += XboxController_BumperButtonChanged;
             //XboxController.DisconnectedEvent += XboxController_DisconnectedEvent; ;
         }
 
@@ -96,18 +96,11 @@ namespace HexapiBackground
 
         #region XBox 360 Controller related...
 
-        //4 = Left bumper, 5 = Right bumper
-        private void XboxController_BumperButtonChanged(int button)
-        {
-            
-        }
-
-
         private CancellationTokenSource _cancellationTokenSourceNavigators;
 
         private async void XboxController_FunctionButtonChanged(int button)
         {
-         
+            await _display.WriteAsync($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
 
             switch (button)
             {
@@ -116,18 +109,14 @@ namespace HexapiBackground
                     if (_selectedIkFunction < 0)
                         _selectedIkFunction = 0;
 
-                    await _display.WriteAsync($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
-
                     await _ik.RequestSetFunctionAsync(_selectedIkFunction);
                     _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
                     _ik.RequestSetGaitType(_gaitType);
                     break;
                 case 1: //B
                     _selectedIkFunction++;
-                    if ((int) _selectedIkFunction > 6)
-                        _selectedIkFunction = (SelectedIkFunction) 6;
-
-                    await _display.WriteAsync($"{Enum.GetName(typeof(SelectedIkFunction), _selectedIkFunction)}", 1);
+                    if ((int) _selectedIkFunction > 9)
+                        _selectedIkFunction = (SelectedIkFunction) 9;
 
                     await _ik.RequestSetFunctionAsync(_selectedIkFunction);
                     _ik.RequestSetGaitOptions(_gaitSpeed, _legLiftHeight);
@@ -258,19 +247,19 @@ namespace HexapiBackground
                     LegLiftHeightLowerLimit = 30;
                     TravelRotationYlimit = 30;
                     break;
-                //case GaitType.TripleTripod16:
-                //    _bodyPosY = 75;
-                //    _legLiftHeight = 80;
-                //    _gaitSpeed = 25;
-                //    GaitSpeedMax = 500;
-                //    GaitSpeedMin = 20;
-                //    TravelLengthZupperLimit = 170;
-                //    TravelLengthZlowerLimit = 80;
-                //    TravelLengthXlimit = 25;
-                //    LegLiftHeightUpperLimit = 110;
-                //    LegLiftHeightLowerLimit = 30;
-                //    TravelRotationYlimit = 30;
-                //    break;
+                case GaitType.TripleTripod16:
+                    _bodyPosY = 75;
+                    _legLiftHeight = 80;
+                    _gaitSpeed = 25;
+                    GaitSpeedMax = 500;
+                    GaitSpeedMin = 20;
+                    TravelLengthZupperLimit = 170;
+                    TravelLengthZlowerLimit = 80;
+                    TravelLengthXlimit = 25;
+                    LegLiftHeightUpperLimit = 110;
+                    LegLiftHeightLowerLimit = 30;
+                    TravelRotationYlimit = 30;
+                    break;
                 default:
                     _gaitSpeed = 40;
                     _bodyPosY = 90;
@@ -316,7 +305,7 @@ namespace HexapiBackground
 
         private async void XboxController_DpadDirectionChanged(ControllerVector sender)
         {
-            if (_dpadStopwatch.ElapsedMilliseconds > 250)
+            if (_dpadStopwatch.ElapsedMilliseconds > 100)
             {
                 _dpadStopwatch.Restart();
             }
@@ -341,7 +330,7 @@ namespace HexapiBackground
                             _gaitType--;
 
                             if (_gaitType < 0)
-                                _gaitType = (GaitType)0;
+                                _gaitType = 0;
 
                             await _display.WriteAsync(Enum.GetName(typeof(GaitType), _gaitType), 2);
                             SetGaitOptions();
@@ -378,8 +367,8 @@ namespace HexapiBackground
                         case SelectedIkFunction.GaitType:
                             _gaitType++;
 
-                            if ((int)_gaitType > 2)
-                                _gaitType = (GaitType)2;
+                            if ((int)_gaitType > 4)
+                                _gaitType = (GaitType)4;
 
                             await _display.WriteAsync(Enum.GetName(typeof(GaitType), _gaitType), 2);
                             SetGaitOptions();

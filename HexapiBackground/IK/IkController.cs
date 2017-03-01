@@ -381,11 +381,11 @@ namespace HexapiBackground.IK
             //    await _gps.DisplayCoordinates();
         }
 
-        internal async void RequestLegYHeight(int leg, double yPos)
-        {
-            _inverseKinematics.RequestLegYHeight(leg, yPos);
-            await _display.WriteAsync($"Leg {leg} - {yPos}", 2);
-        }
+        //internal async void RequestLegYHeight(int leg, double yPos)
+        //{
+        //    _inverseKinematics.RequestLegYHeight(leg, yPos);
+        //    await _display.WriteAsync($"Leg {leg} - {yPos}", 2);
+        //}
 
         internal async void RequestNewPerimeter(bool increase)
         {

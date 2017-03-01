@@ -26,11 +26,11 @@ namespace HexapiBackground.IK
         private DataReader _inputStream;
         private DataWriter _outputStream;
 
-        private RangeDataEventArgs _rangeDataEventArgs = new RangeDataEventArgs(15, 20, 20, 20, 20, 20);
+        //private RangeDataEventArgs _rangeDataEventArgs = new RangeDataEventArgs(15, 20, 20, 20, 20, 20);
 
         private readonly SparkFunSerial16X2Lcd _display;
 
-        private bool _stabilizing;
+        //private bool _stabilizing;
         private double _oscillations;
 
         private readonly Stopwatch _oscillateStopwatch = new Stopwatch();
@@ -38,9 +38,9 @@ namespace HexapiBackground.IK
 
         private readonly StringBuilder _pinChangedStringBuilder = new StringBuilder();
         private readonly byte[] _querySsc = {0x51, 0x0d}; //0x51 = Q, 0x0d = carriage return
-        private bool _calibrated;
+        //private bool _calibrated;
         private GpioController _gpioController;
-        private SelectedIkFunction _lastSelectedIkFunction = SelectedIkFunction.Translate3D;
+        //private SelectedIkFunction _lastSelectedIkFunction = SelectedIkFunction.Translate3D;
         //private int _lastSelectedFunctionLeg = -1;
         private bool _movementStarted;
         private SelectedIkFunction _selectedFunction = SelectedIkFunction.Translate3D;
@@ -69,12 +69,12 @@ namespace HexapiBackground.IK
         private const int Rm = 1;
         private const int Rr = 0;
 
-        private const double CoxaMin = -640;
-        private const double CoxaMax = 640;
-        private const double FemurMin = -660;
-        private const double FemurMax = 660;
-        private const double TibiaMin = -660;
-        private const double TibiaMax = 660; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
+        private const double CoxaMin = -620;
+        private const double CoxaMax = 620;
+        private const double FemurMin = -620;
+        private const double FemurMax = 620;
+        private const double TibiaMin = -620;
+        private const double TibiaMax = 620; //I think this is the "down" angle limit, meaning how far in relation to the femur can it point towards the center of the bot
 
         private const double RrCoxaAngle = -450; //450 = 45 degrees off center
         private const double RmCoxaAngle = 0;
@@ -163,7 +163,7 @@ namespace HexapiBackground.IK
 
         private double _bodyPosX;
         private double _bodyPosY = 42; //Controls height of the body from the ground
-        private double _lastBodyPosY;
+        //private double _lastBodyPosY;
         private double _bodyPosZ;
 
         private double _bodyRotX; //Global Input pitch of the body
@@ -183,16 +183,16 @@ namespace HexapiBackground.IK
         private double _travelRotationY; //Current Travel Rotation Y 
 
         private static readonly int[][] LegServos = new int[6][]; //Leg index,
-        private static readonly double[] LegYHeightCorrector = new double[6]; //Leg index,
+        //private static readonly double[] LegYHeightCorrector = new double[6]; //Leg index,
 
         private static double _pi1K;
-        private bool _calibrating;
+        //private bool _calibrating;
 
         #endregion
 
         internal InverseKinematics(SparkFunSerial16X2Lcd display)
         {
-            IkController.RangingEvent += RangingEventHandler;
+            //IkController.RangingEvent += RangingEventHandler;
             //IkController.ImuEvent += ImuEventHandler;
 
             _display = display;
@@ -210,16 +210,16 @@ namespace HexapiBackground.IK
                 _legPosY[legIndex] = _initPosY[legIndex];
                 _legPosZ[legIndex] = _initPosZ[legIndex];
 
-                if (legIndex == 2)
-                    LegYHeightCorrector[legIndex] = 9;
-                else if (legIndex == 1)
-                    LegYHeightCorrector[legIndex] = 5;
-                else if (legIndex == 4)
-                    LegYHeightCorrector[legIndex] = 8;
-                else if (legIndex == 5)
-                   LegYHeightCorrector[legIndex] = 10;
-                else
-                    LegYHeightCorrector[legIndex] = 0;
+                //if (legIndex == 2)
+                //    LegYHeightCorrector[legIndex] = 9;
+                //else if (legIndex == 1)
+                //    LegYHeightCorrector[legIndex] = 5;
+                //else if (legIndex == 4)
+                //    LegYHeightCorrector[legIndex] = 8;
+                //else if (legIndex == 5)
+                //   LegYHeightCorrector[legIndex] = 10;
+                //else
+                //    LegYHeightCorrector[legIndex] = 0;
             }
 
             _oscillateStopwatch.Start();
@@ -228,7 +228,7 @@ namespace HexapiBackground.IK
         private void RangingEventHandler(object sender, RangeDataEventArgs e)
         {
             //lock (_lock)
-                _rangeDataEventArgs = e;
+                //_rangeDataEventArgs = e;
         }
 
         private async void ImuEventHandler(object sender, ImuDataEventArgs e)
@@ -335,7 +335,7 @@ namespace HexapiBackground.IK
 
         #region Body and Leg Inverse Kinematics
 
-        private static double[] BodyLegIk(int legIndex,
+        private static Tuple<double, double, double> BodyLegIk(int legIndex,
             double legPosX, double legPosY, double legPosZ,
             double bodyPosX, double bodyPosY, double bodyPosZ,
             double gaitPosX, double gaitPosY, double gaitPosZ, double gaitRotY,
@@ -343,17 +343,17 @@ namespace HexapiBackground.IK
             double bodyRotX, double bodyRotZ, double bodyRotY,
             double coxaAngle)
         {
-            var posX = 0D;
+            double posX;
             if (legIndex <= 2)
                 posX = -legPosX + bodyPosX + gaitPosX;
             else
                 posX = legPosX - bodyPosX + gaitPosX;
 
-            var posY = (legPosY + bodyPosY + gaitPosY)*100;
+            var posY = (legPosY + bodyPosY + gaitPosY)*100d;
             var posZ = legPosZ + bodyPosZ + gaitPosZ;
 
-            var centerOfBodyToFeetX = (offsetX + posX)*100;
-            var centerOfBodyToFeetZ = (offsetZ + posZ)*100;
+            var centerOfBodyToFeetX = (offsetX + posX)*100d;
+            var centerOfBodyToFeetZ = (offsetZ + posZ)*100d;
 
             double bodyRotYSin, bodyRotYCos, bodyRotZSin, bodyRotZCos, bodyRotXSin, bodyRotXCos;
 
@@ -365,23 +365,21 @@ namespace HexapiBackground.IK
             var bodyFkPosX = (centerOfBodyToFeetX -
                               (centerOfBodyToFeetX*bodyRotYCos*bodyRotZCos -
                                centerOfBodyToFeetZ*bodyRotZCos*bodyRotYSin +
-                               posY*bodyRotZSin))/100;
+                               posY*bodyRotZSin))/100d;
 
             var bodyFkPosZ = (centerOfBodyToFeetZ -
                               (centerOfBodyToFeetX*bodyRotXCos*bodyRotYSin +
                                centerOfBodyToFeetX*bodyRotYCos*bodyRotZSin*bodyRotXSin +
                                centerOfBodyToFeetZ*bodyRotYCos*bodyRotXCos -
                                centerOfBodyToFeetZ*bodyRotYSin*bodyRotZSin*bodyRotXSin -
-                               posY*bodyRotZCos*bodyRotXSin))/100;
+                               posY*bodyRotZCos*bodyRotXSin))/100d;
 
             var bodyFkPosY = (posY -
                               (centerOfBodyToFeetX*bodyRotYSin*bodyRotXSin -
                                centerOfBodyToFeetX*bodyRotYCos*bodyRotXCos*bodyRotZSin +
                                centerOfBodyToFeetZ*bodyRotYCos*bodyRotXSin +
                                centerOfBodyToFeetZ*bodyRotXCos*bodyRotYSin*bodyRotZSin +
-                               posY*bodyRotZCos*bodyRotXCos))/100;
-
-            var coxaFemurTibiaAngle = new double[3];
+                               posY*bodyRotZCos*bodyRotXCos))/100d;
 
             double feetPosX;
             if (legIndex <= 2)
@@ -395,17 +393,17 @@ namespace HexapiBackground.IK
             double xyhyp;
             var atan2 = GetATan2(feetPosX, feetPosZ, out xyhyp);
 
-            coxaFemurTibiaAngle[0] = (atan2*180)/_pi1K + coxaAngle;
+            var coxaServoAngle = (atan2 * 180d) / _pi1K + coxaAngle;
 
-            var ikFeetPosXz = xyhyp/100;
+            var ikFeetPosXz = xyhyp/100d;
             var ika14 = GetATan2(feetPosY, ikFeetPosXz - CoxaLengthInMm, out xyhyp);
-            var ika24 = GetArcCos(((FemurLengthInMm*FemurLengthInMm - TibiaLengthInMm*TibiaLengthInMm)*TenThousand + xyhyp*xyhyp)/(2*FemurLengthInMm*100*xyhyp/TenThousand));
+            var ika24 = GetArcCos(((FemurLengthInMm*FemurLengthInMm - TibiaLengthInMm*TibiaLengthInMm)*TenThousand + Math.Pow(xyhyp, 2d)) /(2*FemurLengthInMm*100d*xyhyp/TenThousand));
 
-            coxaFemurTibiaAngle[1] = -(ika14 + ika24)*180/_pi1K + 900;
+            var femurServoAngle = -(ika14 + ika24) * 180d / _pi1K + 900d;
 
-            coxaFemurTibiaAngle[2] = -(900 - GetArcCos(((FemurLengthInMm*FemurLengthInMm + TibiaLengthInMm*TibiaLengthInMm)*TenThousand - xyhyp*xyhyp)/(2*FemurLengthInMm*TibiaLengthInMm))*180/_pi1K);
+            var tibiaServoAngle = -(900d - GetArcCos(((FemurLengthInMm * FemurLengthInMm + TibiaLengthInMm * TibiaLengthInMm) * TenThousand - Math.Pow(xyhyp, 2d)) / (2d * FemurLengthInMm * TibiaLengthInMm)) * 180d / _pi1K);
 
-            return coxaFemurTibiaAngle;
+            return new Tuple<double, double, double>(coxaServoAngle, femurServoAngle, tibiaServoAngle);
         }
 
         #endregion
@@ -479,7 +477,7 @@ namespace HexapiBackground.IK
 
         internal void RequestSetGaitType(GaitType gaitType)
         {
-//            _lastGaitType = _gaitType;
+            //_lastGaitType = _gaitType;
             _gaitType = gaitType;
 
             GaitSelect();
@@ -517,12 +515,12 @@ namespace HexapiBackground.IK
         //    });
         //}
 
-        internal void RequestLegYHeight(int leg, double yPos)
-        {
-            _selectedFunctionLeg = leg;
+        //internal void RequestLegYHeight(int leg, double yPos)
+        //{
+        //    _selectedFunctionLeg = leg;
 
-            LegYHeightCorrector[leg] = yPos;
-        }
+        //    LegYHeightCorrector[leg] = yPos;
+        //}
 
         //The idea here, is that if a foot hits an object, the corrector is set to the negative value of the current foot height,
         //then for that leg, the body height is adjusted accordingly. 
@@ -530,10 +528,10 @@ namespace HexapiBackground.IK
         //Not event sure if this will work!
         //The value will be stored in LegYHeightCorrector
         //IK Calculations will need to be modified to use this.
-        internal void RequestSaveLegYHeightCorrector()
-        {
-            LegYHeightCorrector[_selectedFunctionLeg] = _bodyPosY - _lastBodyPosY;
-        }
+        //internal void RequestSaveLegYHeightCorrector()
+        //{
+        //    LegYHeightCorrector[_selectedFunctionLeg] = _bodyPosY - _lastBodyPosY;
+        //}
 
         #endregion
 
@@ -615,14 +613,15 @@ namespace HexapiBackground.IK
 
             var angles = BodyLegIk(legIndex,
                 _legPosX[legIndex], _legPosY[legIndex], _legPosZ[legIndex],
-                _bodyPosX, _bodyPosY + LegYHeightCorrector[legIndex], _bodyPosZ,
+                //_bodyPosX, _bodyPosY + LegYHeightCorrector[legIndex], _bodyPosZ,
+                _bodyPosX, _bodyPosY, _bodyPosZ,
                 _gaitPosX[legIndex], _gaitPosY[legIndex], _gaitPosZ[legIndex], _gaitRotY[legIndex],
                 _offsetX[legIndex], _offsetZ[legIndex],
                 _bodyRotX, _bodyRotZ, _bodyRotY, _calculatedCoxaAngle[legIndex]);
 
-            _coxaAngle[legIndex] = angles[0];
-            _femurAngle[legIndex] = angles[1];
-            _tibiaAngle[legIndex] = angles[2];
+            _coxaAngle[legIndex] = angles.Item1;
+            _femurAngle[legIndex] = angles.Item2;
+            _tibiaAngle[legIndex] = angles.Item3;
         }
 
         private void IkLoop()
@@ -822,17 +821,18 @@ namespace HexapiBackground.IK
                 double femurPosition;
                 double tibiaPosition;
 
+                //Just dump everything after the decimal
                 if (legIndex < 3)
                 {
-                    coxaPosition = Math.Round((-coxaAngles[legIndex] + 900)*1000/PwmDiv + PfConst);
-                    femurPosition = Math.Round((-femurAngles[legIndex] + 900)*1000/PwmDiv + PfConst);
-                    tibiaPosition = Math.Round((-tibiaAngles[legIndex] + 900)*1000/PwmDiv + PfConst);
+                    coxaPosition = (int)((-coxaAngles[legIndex] + 900)*1000/PwmDiv + PfConst); 
+                    femurPosition = (int)((-femurAngles[legIndex] + 900)*1000/PwmDiv + PfConst);
+                    tibiaPosition = (int)((-tibiaAngles[legIndex] + 900)*1000/PwmDiv + PfConst);
                 }
                 else
                 {
-                    coxaPosition = Math.Round((coxaAngles[legIndex] + 900)*1000/PwmDiv + PfConst);
-                    femurPosition = Math.Round((femurAngles[legIndex] + 900)*1000/PwmDiv + PfConst);
-                    tibiaPosition = Math.Round((tibiaAngles[legIndex] + 900)*1000/PwmDiv + PfConst);
+                    coxaPosition = (int)((coxaAngles[legIndex] + 900)*1000/PwmDiv + PfConst);
+                    femurPosition = (int)((femurAngles[legIndex] + 900)*1000/PwmDiv + PfConst);
+                    tibiaPosition = (int)((tibiaAngles[legIndex] + 900)*1000/PwmDiv + PfConst);
                 }
 
                 CoxaServoAngles[legIndex] = coxaPosition;
