@@ -1,25 +1,30 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <RemoteDebugEnabled>true</RemoteDebugEnabled>
+    <AuthenticationMode>Universal</AuthenticationMode>
+    <RemoteDebugMachine>hexapi</RemoteDebugMachine>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|ARM'">
     <DeviceId>30F105C9-681E-420b-A277-7C086EAD8A4E</DeviceId>
+    <DeployOptionalPackages>false</DeployOptionalPackages>
     <UseEmulator>false</UseEmulator>
     <RemoteDebugEnabled>true</RemoteDebugEnabled>
     <AuthenticationMode>Universal</AuthenticationMode>
-    <RemoteDebugMachine>Hexapi</RemoteDebugMachine>
-    <DoNotLaunchApp>false</DoNotLaunchApp>
-    <AllowLocalNetworkLoopback>true</AllowLocalNetworkLoopback>
+    <RemoteDebugMachine>hexapi</RemoteDebugMachine>
     <CreateCleanLayout>true</CreateCleanLayout>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|ARM'">
     <DeviceId>30F105C9-681E-420b-A277-7C086EAD8A4E</DeviceId>
     <UseEmulator>false</UseEmulator>
+    <RemoteDebugMachine>hexapi</RemoteDebugMachine>
+    <AuthenticationMode>Universal</AuthenticationMode>
     <RemoteDebugEnabled>true</RemoteDebugEnabled>
-    <AuthenticationMode>Universal</AuthenticationMode>
-    <RemoteDebugMachine>hexapi</RemoteDebugMachine>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <RemoteDebugEnabled>false</RemoteDebugEnabled>
-    <RemoteDebugMachine>hexapi</RemoteDebugMachine>
-    <AuthenticationMode>Universal</AuthenticationMode>
+  <PropertyGroup>
+    <AppxPackageIsForStore>False</AppxPackageIsForStore>
+    <AppxShowAllApps>False</AppxShowAllApps>
+    <AppxBuildConfigurationSelection>arm</AppxBuildConfigurationSelection>
+    <PackageOptionalProjectsInIdeBuilds>False</PackageOptionalProjectsInIdeBuilds>
   </PropertyGroup>
 </Project>

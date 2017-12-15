@@ -1,73 +1,44 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2003
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HexapiBackground", "HexapiBackground\HexapiBackground.csproj", "{487F0162-D2F2-430B-93F9-FCE62A5CB471}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HexapiBackground", "HexapiBackground\HexapiBackground.csproj", "{E93616CE-DEEC-417D-94CA-D30CD0C53759}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ArduinoIoT", "ArduinoIoT\ArduinoIoT.vcxproj", "{C5F80730-F44F-4478-BDAE-6634EFC2CA88}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
 		Debug|ARM = Debug|ARM
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
-		Release_Delay_Sign|Any CPU = Release_Delay_Sign|Any CPU
-		Release_Delay_Sign|ARM = Release_Delay_Sign|ARM
-		Release_Delay_Sign|x64 = Release_Delay_Sign|x64
-		Release_Delay_Sign|x86 = Release_Delay_Sign|x86
-		Release|Any CPU = Release|Any CPU
 		Release|ARM = Release|ARM
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Debug|ARM.ActiveCfg = Debug|ARM
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Debug|ARM.Build.0 = Debug|ARM
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Debug|ARM.Deploy.0 = Debug|ARM
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Debug|x64.ActiveCfg = Debug|x64
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Debug|x64.Build.0 = Debug|x64
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Debug|x64.Deploy.0 = Debug|x64
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Debug|x86.ActiveCfg = Debug|x64
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Debug|x86.Build.0 = Debug|x64
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Debug|x86.Deploy.0 = Debug|x64
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release_Delay_Sign|Any CPU.ActiveCfg = Debug|x86
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release_Delay_Sign|Any CPU.Build.0 = Debug|x86
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release_Delay_Sign|Any CPU.Deploy.0 = Debug|x86
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release_Delay_Sign|ARM.ActiveCfg = Release|ARM
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release_Delay_Sign|ARM.Build.0 = Release|ARM
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release_Delay_Sign|ARM.Deploy.0 = Release|ARM
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release_Delay_Sign|x64.ActiveCfg = Release|x64
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release_Delay_Sign|x64.Build.0 = Release|x64
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release_Delay_Sign|x64.Deploy.0 = Release|x64
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release_Delay_Sign|x86.ActiveCfg = Release|x86
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release_Delay_Sign|x86.Build.0 = Release|x86
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release_Delay_Sign|x86.Deploy.0 = Release|x86
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release|Any CPU.ActiveCfg = Release|x86
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release|ARM.ActiveCfg = Release|ARM
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release|ARM.Build.0 = Release|ARM
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release|ARM.Deploy.0 = Release|ARM
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release|x64.ActiveCfg = Release|x64
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release|x64.Build.0 = Release|x64
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release|x64.Deploy.0 = Release|x64
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release|x86.ActiveCfg = Release|x86
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release|x86.Build.0 = Release|x86
-		{487F0162-D2F2-430B-93F9-FCE62A5CB471}.Release|x86.Deploy.0 = Release|x86
-		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Debug|ARM.ActiveCfg = Debug|ARM
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Debug|ARM.Build.0 = Debug|ARM
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Debug|ARM.Deploy.0 = Debug|ARM
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Debug|x64.ActiveCfg = Debug|x64
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Debug|x64.Build.0 = Debug|x64
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Debug|x64.Deploy.0 = Debug|x64
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Debug|x86.ActiveCfg = Debug|x86
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Debug|x86.Build.0 = Debug|x86
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Debug|x86.Deploy.0 = Debug|x86
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Release|ARM.ActiveCfg = Release|ARM
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Release|ARM.Build.0 = Release|ARM
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Release|ARM.Deploy.0 = Release|ARM
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Release|x64.ActiveCfg = Release|x64
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Release|x64.Build.0 = Release|x64
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Release|x64.Deploy.0 = Release|x64
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Release|x86.ActiveCfg = Release|x86
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Release|x86.Build.0 = Release|x86
+		{E93616CE-DEEC-417D-94CA-D30CD0C53759}.Release|x86.Deploy.0 = Release|x86
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|ARM.ActiveCfg = Debug|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x64.ActiveCfg = Debug|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x86.ActiveCfg = Debug|Win32
-		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release_Delay_Sign|Any CPU.ActiveCfg = Release|Win32
-		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release_Delay_Sign|Any CPU.Build.0 = Release|Win32
-		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release_Delay_Sign|ARM.ActiveCfg = Release|Win32
-		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release_Delay_Sign|ARM.Build.0 = Release|Win32
-		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release_Delay_Sign|x64.ActiveCfg = Release|Win32
-		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release_Delay_Sign|x64.Build.0 = Release|Win32
-		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release_Delay_Sign|x86.ActiveCfg = Release|Win32
-		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release_Delay_Sign|x86.Build.0 = Release|Win32
-		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|Any CPU.ActiveCfg = Release|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x86.Build.0 = Debug|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|ARM.ActiveCfg = Release|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x64.ActiveCfg = Release|Win32
 		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.ActiveCfg = Release|Win32
@@ -75,5 +46,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B2C3DB92-2E6D-413E-8F98-0A20AEDF515C}
 	EndGlobalSection
 EndGlobal

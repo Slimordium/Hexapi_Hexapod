@@ -1,30 +1,29 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProjectGuid>{487F0162-D2F2-430B-93F9-FCE62A5CB471}</ProjectGuid>
+    <ProjectGuid>{E93616CE-DEEC-417D-94CA-D30CD0C53759}</ProjectGuid>
     <OutputType>winmdobj</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>HexapiBackground</RootNamespace>
     <AssemblyName>HexapiBackground</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
-    <TargetPlatformVersion>10.0.10586.0</TargetPlatformVersion>
+    <TargetPlatformVersion>10.0.16299.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.10586.0</TargetPlatformMinVersion>
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <EnableDotNetNativeCompatibleProfile>true</EnableDotNetNativeCompatibleProfile>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <AllowCrossPlatformRetargeting>false</AllowCrossPlatformRetargeting>
-    <PackageCertificateKeyFile>HexapiBackground_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateKeyFile>HexapiRefactor_TemporaryKey.pfx</PackageCertificateKeyFile>
     <AppxPackage>true</AppxPackage>
     <ContainsStartupTask>true</ContainsStartupTask>
-    <SccProjectName>SAK</SccProjectName>
-    <SccLocalPath>SAK</SccLocalPath>
-    <SccAuxPath>SAK</SccAuxPath>
-    <SccProvider>SAK</SccProvider>
+    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <AppxBundle>Always</AppxBundle>
+    <AppxBundlePlatforms>arm</AppxBundlePlatforms>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|ARM'">
     <DebugSymbols>true</DebugSymbols>
@@ -36,12 +35,11 @@
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <ErrorReport>prompt</ErrorReport>
     <Prefer32Bit>true</Prefer32Bit>
-    <UseDotNetNativeToolchain>false</UseDotNetNativeToolchain>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|ARM'">
     <OutputPath>bin\ARM\Release\</OutputPath>
     <DefineConstants>TRACE;NETFX_CORE;WINDOWS_UWP</DefineConstants>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <NoWarn>;2008</NoWarn>
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>ARM</PlatformTarget>
@@ -96,98 +94,78 @@
     <Prefer32Bit>true</Prefer32Bit>
     <UseDotNetNativeToolchain>true</UseDotNetNativeToolchain>
   </PropertyGroup>
-  <ItemGroup>
-    <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
-    <Content Include="waypoints.config" />
-    <None Include="app.manifest" />
-    <None Include="project.json" />
-    <Content Include="hexapod.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="rtkGps.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+  <PropertyGroup>
+    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Enums\Ads1115\Config.cs" />
     <Compile Include="Enums\Ads1115\Gain.cs" />
     <Compile Include="Enums\Ads1115\Pointer.cs" />
     <Compile Include="Enums\Behavior.cs" />
+    <Compile Include="Enums\ControllerDirection.cs" />
+    <Compile Include="Enums\GaitType.cs" />
+    <Compile Include="Enums\GpsFixQuality.cs" />
     <Compile Include="Enums\PingStatus.cs" />
     <Compile Include="Enums\SelectedGpsFunction.cs" />
+    <Compile Include="Enums\SelectedIkFunction.cs" />
+    <Compile Include="Extensions\FileExtensions.cs" />
+    <Compile Include="Extensions\GpsExtensions.cs" />
+    <Compile Include="Extensions\MathExtensions.cs" />
+    <Compile Include="Gps\Gps.cs" />
+    <Compile Include="Gps\GpsFixData.cs" />
+    <Compile Include="Hardware\AdafruitFona.cs" />
     <Compile Include="Hardware\Ads1115.cs" />
-    <Compile Include="Hardware\Pca9685.cs" />
+    <Compile Include="Hardware\I2CDevice.cs" />
     <Compile Include="Hardware\Mpr121.cs" />
-    <Compile Include="Hardware\Mpu\Mpu9150.cs" />
+    <Compile Include="Hardware\Pca9685.cs" />
+    <Compile Include="Hardware\RemoteArduino.cs" />
     <Compile Include="Hardware\Rfm69Hcw.cs" />
     <Compile Include="Hardware\SerialDeviceHelper.cs" />
     <Compile Include="Hardware\SparkFunSerial16X2Lcd.cs" />
-    <Compile Include="Enums\ControllerDirection.cs" />
-    <Compile Include="Gps\Gps.cs" />
-    <Compile Include="Hardware\AdafruitFona.cs" />
-    <Compile Include="Hardware\RemoteArduino.cs" />
-    <Compile Include="Extensions\GpsExtensions.cs" />
-    <Compile Include="Extensions\FileExtensions.cs" />
+    <Compile Include="Hardware\XboxController.cs" />
+    <Compile Include="Hexapi.cs" />
     <Compile Include="IK\IkController.cs" />
     <Compile Include="IK\ImuDataEventArgs.cs" />
-    <Compile Include="IoTclient.cs" />
-    <Compile Include="Navigation\Navigator.cs" />
-    <Compile Include="Enums\GaitType.cs" />
-    <Compile Include="Enums\GpsFixQuality.cs" />
-    <Compile Include="Enums\SelectedIkFunction.cs" />
-    <Compile Include="Gps\GpsFixData.cs" />
-    <Compile Include="Extensions\MathExtensions.cs" />
-    <Compile Include="Hexapi.cs" />
-    <Compile Include="Hardware\I2CDevice.cs" />
-    <Compile Include="Hardware\Mpu\Mpu9150Old.cs" />
     <Compile Include="IK\InverseKinematics.cs" />
     <Compile Include="IK\RangeDataEventArgs.cs" />
-    <Compile Include="StartupTask.cs" />
+    <Compile Include="IoTclient.cs" />
+    <Compile Include="Navigation\Navigator.cs" />
+    <Compile Include="Ntrip\NtripClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Hardware\XboxController.cs" />
+    <Compile Include="StartupTask.cs" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <None Include="HexapiBackground_TemporaryKey.pfx" />
+    <None Include="HexapiRefactor_TemporaryKey.pfx" />
+    <Content Include="hexapod.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="rtkGps.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="waypoints.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Properties\Default.rd.xml" />
-    <Content Include="Assets\LockScreenLogo.scale-200.png">
-      <InProject>false</InProject>
-    </Content>
-    <Content Include="Assets\SplashScreen.scale-200.png">
-      <InProject>false</InProject>
-    </Content>
-    <Content Include="Assets\Square150x150Logo.scale-200.png">
-      <InProject>false</InProject>
-    </Content>
-    <Content Include="Assets\Square44x44Logo.scale-200.png">
-      <InProject>false</InProject>
-    </Content>
-    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png">
-      <InProject>false</InProject>
-    </Content>
-    <Content Include="Assets\StoreLogo.png">
-      <InProject>false</InProject>
-    </Content>
-    <Content Include="Assets\Wide310x150Logo.scale-200.png">
-      <InProject>false</InProject>
-    </Content>
+    <Content Include="Assets\LockScreenLogo.scale-200.png" />
+    <Content Include="Assets\SplashScreen.scale-200.png" />
+    <Content Include="Assets\Square150x150Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
+    <Content Include="Assets\StoreLogo.png" />
+    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
   <ItemGroup>
-    <SDKReference Include="WindowsIoT, Version=10.0.10586.0">
-      <Name>Windows IoT Extensions for the UWP</Name>
-    </SDKReference>
+    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
+      <Version>6.0.4</Version>
+    </PackageReference>
   </ItemGroup>
-  <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
-    <VisualStudioVersion>14.0</VisualStudioVersion>
-  </PropertyGroup>
-  <PropertyGroup />
-  <PropertyGroup>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
+  <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '15.0' ">
+    <VisualStudioVersion>15.0</VisualStudioVersion>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

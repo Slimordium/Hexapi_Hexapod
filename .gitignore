@@ -24,3 +24,7 @@
 /Microsoft.Azure.Devices.Client.WinRT
 /packages
 /HexapiBackground/obj/x86/Debug
+/.vs/HexapiBackground/v15
+/HexapiBackground/AppPackages
+/HexapiBackground/obj
+/HexapiBackground/BundleArtifacts
